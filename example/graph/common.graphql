@@ -1,0 +1,31 @@
+
+enum OperatorTypes {
+    EQ
+    NEQ
+    GT
+    LT
+    LTE
+    GTE
+    LIKE
+    ILIKE
+}
+
+input Operator {
+    name: OperatorTypes!
+    type: String = None
+}
+
+# Generate filter input on an object
+directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
+
+# Generate arguments for a given field or all object fields
+directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True) on OBJECT
+
+
+enum _relationType {
+    ONE_TO_ONE
+    ONE_TO_MANY
+    MANY_TO_MANY
+}
+
+directive @sqlRelation(relationType: _relationType baseTableName: String, relTableName: String, baseTableKeys: [String], relTableKeys: [String]) on FIELD_DEFINITION
