@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 	"math/rand"
 	"unsafe"
@@ -55,7 +56,9 @@ func NewBuilder(tableName string) QueryBuilder {
 }
 
 func (qb QueryBuilder) Query() (string, []interface{}, error) {
-	return qb.builder.Select(buildJsonObjectExp(qb.columns, "")).ToSQL()
+	query, args, err := qb.builder.Select(buildJsonObjectExp(qb.columns, "")).ToSQL()
+	fmt.Println(query)
+	return query, args ,err
 }
 
 func (qb QueryBuilder) Builder() *goqu.SelectDataset {
@@ -80,6 +83,50 @@ func (qb *QueryBuilder) OnMultiField(f *ast.Field, variables map[string]interfac
 	return nil
 }
 
+
+func (qb *QueryBuilder) OnCollectStart(f *ast.Field, variables map[string]interface{}) error {
+
+	limitArg := f.Arguments.ForName("limit")
+	if limitArg != nil {
+		limit, err := limitArg.Value.Value(variables)
+		if err != nil {
+			return err
+		}
+		qb.builder = qb.builder.Limit(cast.ToUint(limit))
+	}
+
+	offsetArg := f.Arguments.ForName("offset")
+	if offsetArg != nil {
+		offset, err := offsetArg.Value.Value(variables)
+		if err != nil {
+			return err
+		}
+		qb.builder = qb.builder.Offset(cast.ToUint(offset))
+	}
+
+	filterArg := f.Arguments.ForName("filter")
+	if offsetArg != nil {
+		filter, err := filterArg.Value.Value(variables)
+		if err != nil {
+			return err
+		}
+		filterMap, ok := filter.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("invalid filter type")
+		}
+		if err := qb.buildCondition(filterMap); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (qb *QueryBuilder) buildCondition(filter map[string]interface{}) error {
+	fmt.Print(filter)
+	return nil
+}
+
 func (qb *QueryBuilder) buildRelation(rel relation, f *ast.Field, variables map[string]interface{}) error {
 
 	builder := NewBuilder(rel.relationTableName)
@@ -92,13 +139,13 @@ func (qb *QueryBuilder) buildRelation(rel relation, f *ast.Field, variables map[
 		qb.builder = qb.builder.LeftJoin(
 			goqu.Lateral(builder.Builder().Select(buildJsonObjectExp(
 				builder.columns, f.Name)).As(builder.name)),
-			buildCondition(qb.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
+			buildJoinCondition(qb.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
 			)
 		qb.columns = append(qb.columns, column{name: f.Name, alias: "", tableName: builder.name})
 	case OneToMany:
 		qb.builder = qb.builder.LeftJoin(
 			goqu.Lateral(builder.Builder().Select(buildJsonAgg(builder.columns, f.Name)).As(builder.name)),
-			buildCondition(qb.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
+			buildJoinCondition(qb.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
 			)
 		qb.columns = append(qb.columns, column{name: f.Name, alias: "", tableName: builder.name})
 	}
@@ -121,7 +168,7 @@ func buildJsonObjectExp(columns []column, alias string) exp.Expression {
 	return buildJsonObj
 }
 
-func buildCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.JoinCondition {
+func buildJoinCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.JoinCondition {
 	var keys = make([]exp.Expression, len(leftKeys))
 	for i := range leftKeys {
 		keys[i] = goqu.Ex{fmt.Sprintf("%s.%s", leftTableName, leftKeys[i]): fmt.Sprintf("%s.%s", rightTableName, rightKeys[i])}

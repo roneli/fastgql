@@ -8,9 +8,12 @@ import (
 	"github.com/99designs/gqlgen/codegen/templates"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/pkg/errors"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"text/template"
 )
 
 func New() plugin.Plugin {
@@ -107,8 +110,6 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 			if implementation == "" {
 				implementation = `panic(fmt.Errorf("not implemented"))`
 			}
-			//implementation = `{{.render sql.tpl $resolver}}`
-
 			resolver := Resolver{o, f, implementation}
 			fn := gqlToResolverName(data.Config.Resolver.Dir(), f.Position.Src.Name, data.Config.Resolver.FilenameTemplate)
 			if files[fn] == nil {
@@ -140,10 +141,9 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 			Data:     resolverBuild,
 			Packages: data.Config.Packages,
 			Funcs: map[string]interface{}{
-				"renderResolver": func(resolver interface{}) (*bytes.Buffer, error){
-					buf := &bytes.Buffer{}
-					buf.WriteString(`panic(fmt.Errorf("not implemented"))`)
-					return  buf, nil
+				"renderResolver": func (resolver interface{}) (*bytes.Buffer, error){
+					r := resolver.(*Resolver)
+					return m.renderResolver(r)
 				},
 			},
 		})
@@ -159,7 +159,14 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 				// This file will not be regenerated automatically.
 				//
 				// It serves as dependency injection for your app, add any dependencies you require here.`,
-			Template: `type {{.}} struct {}`,
+			Template: `{{ reserveImport "context"  }}
+					   {{ reserveImport "github.com/jackc/pgx/v4" }}
+
+					   type {{.}} struct {sql SqlRepo}
+
+  					   type SqlRepo interface {
+							Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
+						}`,
 			Filename: data.Config.Resolver.Filename,
 			Data:     data.Config.Resolver.Type,
 			Packages: data.Config.Packages,
@@ -169,6 +176,39 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 		}
 	}
 	return nil
+}
+
+
+func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error){
+	t := template.New("").Funcs(templates.Funcs())
+
+
+	fileName := resolveName("sql.tpl", 0)
+
+	b, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	t, err = t.New(filepath.Base(fileName)).Parse(string(b))
+	if err != nil {
+		panic(err)
+	}
+
+	buf := &bytes.Buffer{}
+	return buf, t.Execute(buf, resolver)
+}
+
+func resolveName(name string, skip int) string {
+	if name[0] == '.' {
+		// load path relative to calling source file
+		_, callerFile, _, _ := runtime.Caller(skip + 1)
+		return filepath.Join(filepath.Dir(callerFile), name[1:])
+	}
+
+	// load path relative to this directory
+	_, callerFile, _, _ := runtime.Caller(0)
+	return filepath.Join(filepath.Dir(callerFile), name)
 }
 
 type ResolverBuild struct {

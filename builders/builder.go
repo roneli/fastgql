@@ -2,43 +2,33 @@ package builders
 
 import (
 	"fmt"
-	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/v2/ast"
 	"strings"
 )
 
-type Params struct {
-	limit int
-	offset int
-	filterInput map[string]interface{}
-}
-
-
-
-type DataResolver interface {
-	Startup()
-	Shutdown()
-	Resolve(ctx graphql.FieldContext, params Params) (interface{}, error)
-}
-
 
 // Builders are called when fields are collected
 type QueryBuilder interface {
+	OnCollectStart(f *ast.Field, variables map[string]interface{}) error
 	OnSingleField(f *ast.Field, variables map[string]interface{}) error
 	OnMultiField(f *ast.Field, variables map[string]interface{}) error
+	Query() (string, []interface{}, error)
 }
 
 type CollectedField struct {
 	// Original field definition
 	*ast.Field
-
 	Directives []string
 	Fields []CollectedField
 }
 
-
 // CollectFields allows for a translator to collect fields and get called by on passed builders
 func CollectFields(builder QueryBuilder, f *ast.Field, variables map[string]interface{}) error {
+
+	err := builder.OnCollectStart(f, variables)
+	if err != nil {
+		return err
+	}
 	for _, field := range f.SelectionSet {
 		switch field := field.(type) {
 		case *ast.Field:

@@ -5,21 +5,85 @@ package graph
 
 import (
 	"context"
+	"fastgql/builders"
+	"fastgql/builders/sql"
 	"fastgql/example/graph/generated"
 	"fastgql/example/graph/model"
-	"fmt"
+
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/georgysavva/scany/pgxscan"
 )
 
 func (r *queryResolver) Hero(ctx context.Context, episode *model.Episode, limit *int, offset *int, filter *model.CharacterFilterInput) ([]model.Character, error) {
-	panic(fmt.Errorf("not implemented"))
+	opCtx := graphql.GetOperationContext(ctx)
+	fCtx := graphql.GetFieldContext(ctx)
+
+	builder := sql.NewBuilder(fCtx.Field.Name)
+	err := builders.CollectFields(&builder, fCtx.Field.Field, opCtx.Variables)
+	if err != nil {
+		return nil, err
+	}
+
+	q, args, err := builder.Query()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Sql.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	var data []model.Character
+
+	if err := pgxscan.ScanAll(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (r *queryResolver) Human(ctx context.Context, id string, filter *model.HumanFilterInput) (*model.Human, error) {
-	panic(fmt.Errorf("not implemented"))
+	opCtx := graphql.GetOperationContext(ctx)
+	fCtx := graphql.GetFieldContext(ctx)
+
+	builder := sql.NewBuilder(fCtx.Field.Name)
+	err := builders.CollectFields(&builder, fCtx.Field.Field, opCtx.Variables)
+	if err != nil {
+		return nil, err
+	}
+
+	q, args, err := builder.Query()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Sql.Query(ctx, q, args...)
+	var data *model.Human
+
+	if err := pgxscan.ScanAll(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (r *queryResolver) Droid(ctx context.Context, id string, filter *model.DroidFilterInput) (*model.Droid, error) {
-	panic(fmt.Errorf("not implemented"))
+	opCtx := graphql.GetOperationContext(ctx)
+	fCtx := graphql.GetFieldContext(ctx)
+
+	builder := sql.NewBuilder(fCtx.Field.Name)
+	err := builders.CollectFields(&builder, fCtx.Field.Field, opCtx.Variables)
+	if err != nil {
+		return nil, err
+	}
+
+	q, args, err := builder.Query()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Sql.Query(ctx, q, args...)
+	var data *model.Droid
+
+	if err := pgxscan.ScanAll(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // Query returns generated.QueryResolver implementation.
