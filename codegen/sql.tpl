@@ -1,16 +1,16 @@
     opCtx := graphql.GetOperationContext(ctx)
     fCtx := graphql.GetFieldContext(ctx)
 
-    builder := sql.NewBuilder(fCtx.Field.Name)
-    err := builders.CollectFields(&builder, fCtx.Field.Field, opCtx.Variables)
-    if err != nil {
-        return nil, err
-    }
+	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
+	if err != nil {
+		return nil, err
+	}
 
-    q, args, err := builder.Query()
-    if err != nil {
-        return nil, err
-    }
+	q, args, err := builder.Query()
+	if err != nil {
+		return nil, err
+	}
     rows, err := r.Sql.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err

@@ -14,12 +14,18 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
+func Opt(builder builders.Builder) (builders.Builder, error) {
+
+
+	return builder, nil
+}
+
 func (r *queryResolver) Hero(ctx context.Context, episode *model.Episode, limit *int, offset *int, filter *model.CharacterFilterInput) ([]model.Character, error) {
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
-	builder := sql.NewBuilder(fCtx.Field.Name)
-	err := builders.CollectFields(&builder, fCtx.Field.Field, opCtx.Variables)
+	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +50,8 @@ func (r *queryResolver) Human(ctx context.Context, id string, filter *model.Huma
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
-	builder := sql.NewBuilder(fCtx.Field.Name)
-	err := builders.CollectFields(&builder, fCtx.Field.Field, opCtx.Variables)
+	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	err := builders.BuildFields(&builder, fCtx.Field.Field, opCtx.Variables)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +73,8 @@ func (r *queryResolver) Droid(ctx context.Context, id string, filter *model.Droi
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
-	builder := sql.NewBuilder(fCtx.Field.Name)
-	err := builders.CollectFields(&builder, fCtx.Field.Field, opCtx.Variables)
+	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	err := builders.BuildFields(&builder, fCtx.Field.Field, opCtx.Variables)
 	if err != nil {
 		return nil, err
 	}
