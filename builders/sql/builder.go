@@ -1,39 +1,20 @@
 package sql
 
 import (
+	"errors"
 	"fastgql/builders"
+	"fastgql/schema"
 	"fmt"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	// import the dialect
+	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
+	"github.com/iancoleman/strcase"
+	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
-	"math/rand"
-	"unsafe"
 )
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyz"
-const (
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
-)
 
-func GenerateTableName(n int) string {
-	b := make([]byte, n)
-	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
-	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = rand.Int63(), letterIdxMax
-		}
-		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
-			i--
-		}
-		cache >>= letterIdxBits
-		remain--
-	}
-
-	return *(*string)(unsafe.Pointer(&b))
-}
 
 type column struct {
 	name string
@@ -41,38 +22,53 @@ type column struct {
 	alias string
 }
 
-type QueryBuilder struct {
+type Builder struct {
+	operators map[string]Operator
 	builder *goqu.SelectDataset
 	name string
 	table exp.AliasedExpression
 	columns []column
 }
 
-func NewBuilder(tableName string) QueryBuilder {
+var defaultOperators = map[string]Operator{
+	"eq": Eq,
+	"neq": Neq,
+}
+
+// NewBuilder is the entry point for creating builders
+func NewBuilder(tableName string) (Builder, error) {
 	genName := GenerateTableName(6)
 	table := goqu.T(tableName).As(genName)
-	return QueryBuilder{goqu.From(table), genName, table, nil}
+	return Builder{defaultOperators, goqu.From(table), genName, table, nil}, nil
 }
 
-func (qb QueryBuilder) Query() (string, []interface{}, error) {
-	return qb.builder.Select(buildJsonObjectExp(qb.columns, "")).ToSQL()
+func (b Builder) Query() (string, []interface{}, error) {
+	query, args, err := b.builder.WithDialect("postgres").Select(buildJsonObjectExp(b.columns, "")).Prepared(true).ToSQL()
+	fmt.Println(query, args)
+	return query, args ,err
 }
 
-func (qb QueryBuilder) Builder() *goqu.SelectDataset {
-	return qb.builder.Clone().(*goqu.SelectDataset)
+
+func (b Builder) Type() string {
+	return "SQL"
 }
 
-func (qb *QueryBuilder) OnSingleField(f *ast.Field, variables map[string]interface{}) error {
-	// add simple fields as columns
-	qb.columns = append(qb.columns, column{name: f.Name, alias: f.Alias, tableName: qb.name})
+func (b Builder) Config() *builders.Config{
 	return nil
 }
 
-func (qb *QueryBuilder) OnMultiField(f *ast.Field, variables map[string]interface{}) error {
+
+func (b *Builder) OnSingleField(f *ast.Field, variables map[string]interface{}) error {
+	// add simple fields as columns
+	b.columns = append(b.columns, column{name: f.Name, alias: f.Alias, tableName: b.name})
+	return nil
+}
+
+func (b *Builder) OnSelectionField(f *ast.Field, variables map[string]interface{}) error {
 	d := f.Definition.Directives.ForName("sqlRelation")
 	if d != nil {
 		rel := parseRelationDirective(d)
-		err := qb.buildRelation(rel, f, variables)
+		err := b.buildRelation(rel, f, variables)
 		if err != nil {
 			return err
 		}
@@ -80,27 +76,67 @@ func (qb *QueryBuilder) OnMultiField(f *ast.Field, variables map[string]interfac
 	return nil
 }
 
-func (qb *QueryBuilder) buildRelation(rel relation, f *ast.Field, variables map[string]interface{}) error {
+func (b *Builder) Limit(limit uint) error {
+	b.builder = b.builder.Limit(cast.ToUint(limit))
+	return nil
+}
 
-	builder := NewBuilder(rel.relationTableName)
-	err := builders.CollectFields(&builder, f, variables)
+func (b *Builder) Offset(offset uint) error {
+	b.builder = b.builder.Offset(offset)
+	return nil
+}
+
+
+func (b *Builder) Operation(name, key string, value interface{}) error {
+	op, ok := b.operators[key]
+	if !ok {
+		return fmt.Errorf("key operator %s not supported", key)
+	}
+	b.builder = b.builder.Where(op(b.table, strcase.ToSnake(name), value))
+	return nil
+}
+
+func (b *Builder) Filter(f *ast.Field, key string, value map[string]interface{}) error {
+	return nil
+}
+
+func (b *Builder) Logical(f *ast.Field, logicalExp schema.LogicalOperator, values []interface{}) error {
+	switch logicalExp {
+	case schema.LogicalOperatorOR, schema.LogicalOperatorAND:
+		expList := newExpressionBuilder(b, logicalExp)
+		if err := expList.Logical(f, logicalExp, values); err != nil {
+			return err
+		}
+		b.builder = b.builder.Where(expList)
+	case schema.LogicalOperatorNot:
+		return errors.New("not implemented")
+	}
+	return nil
+}
+
+// ======================================== Internal Methods ============================================
+
+func (b *Builder) buildRelation(rel relation, f *ast.Field, variables map[string]interface{}) error {
+
+	builder, nil := NewBuilder(rel.relationTableName)
+	err := builders.BuildFields(&builder, f, variables)
 	if err != nil {
 		return err
 	}
 	switch rel.relType {
 	case OneToOne:
-		qb.builder = qb.builder.LeftJoin(
-			goqu.Lateral(builder.Builder().Select(buildJsonObjectExp(
+		b.builder = b.builder.LeftJoin(
+			goqu.Lateral(builder.builder.Select(buildJsonObjectExp(
 				builder.columns, f.Name)).As(builder.name)),
-			buildCondition(qb.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
+			buildJoinCondition(b.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
 			)
-		qb.columns = append(qb.columns, column{name: f.Name, alias: "", tableName: builder.name})
+		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: builder.name})
 	case OneToMany:
-		qb.builder = qb.builder.LeftJoin(
-			goqu.Lateral(builder.Builder().Select(buildJsonAgg(builder.columns, f.Name)).As(builder.name)),
-			buildCondition(qb.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
+		b.builder = b.builder.LeftJoin(
+			goqu.Lateral(builder.builder.Select(buildJsonAgg(builder.columns, f.Name)).As(builder.name)),
+			buildJoinCondition(b.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
 			)
-		qb.columns = append(qb.columns, column{name: f.Name, alias: "", tableName: builder.name})
+		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: builder.name})
 	}
 	return err
 }
@@ -121,10 +157,10 @@ func buildJsonObjectExp(columns []column, alias string) exp.Expression {
 	return buildJsonObj
 }
 
-func buildCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.JoinCondition {
+func buildJoinCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.JoinCondition {
 	var keys = make([]exp.Expression, len(leftKeys))
 	for i := range leftKeys {
-		keys[i] = goqu.Ex{fmt.Sprintf("%s.%s", leftTableName, leftKeys[i]): fmt.Sprintf("%s.%s", rightTableName, rightKeys[i])}
+		keys[i] = goqu.L(fmt.Sprintf("%s.%s = %s.%s", leftTableName, leftKeys, rightTableName, rightKeys[i]))
 	}
 	return goqu.On(keys...)
 }

@@ -17,6 +17,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(generateCmd)
+	generateCmd.Flags().StringVarP(&configPath, "config", "c", "", "path to server config")
 }
 
 func Execute() {

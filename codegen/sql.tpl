@@ -1,12 +1,23 @@
-opctx := graphql.GetOperationContext(ctx)
-fctx := graphql.GetFieldContext(ctx)
+    opCtx := graphql.GetOperationContext(ctx)
+    fCtx := graphql.GetFieldContext(ctx)
 
-builder := sql.NewBuilder(fctx.Field.Name, fctx.Field.Field)
-err := resolvers.CollectFields(&builder, fctx.Field.Field, opctx.Variables)
-if err != nil {
-    return nil, err
-}
+	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
+	if err != nil {
+		return nil, err
+	}
 
-q, _, _ := builder.Query()
-fmt.Println(q)
-return nil, nil
+	q, args, err := builder.Query()
+	if err != nil {
+		return nil, err
+	}
+    rows, err := r.Sql.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+    var data {{.Field.TypeReference.GO | ref}}
+    if err := pgxscan.ScanAll(&data, rows); err != nil {
+        return nil, err
+    }
+    return data, nil
