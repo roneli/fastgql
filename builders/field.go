@@ -51,7 +51,21 @@ func BuildFields(builder FieldBuilder, f *ast.Field, variables map[string]interf
 			}
 
 		case *ast.FragmentSpread: {
-			fmt.Print("fragment spread")
+			for _, s := range field.Definition.SelectionSet {
+				fragmentField, ok := s.(*ast.Field)
+				if !ok {
+					return fmt.Errorf("expected type of selection field got %s", s)
+				}
+				if fragmentField.SelectionSet != nil {
+					if err := builder.OnSelectionField(fragmentField, variables);  err != nil {
+						return err
+					}
+				} else if err := builder.OnSingleField(fragmentField, variables); err != nil {
+					return err
+				}
+
+			}
+
 		}
 		case *ast.InlineFragment: {
 			fmt.Print("inline fragment")

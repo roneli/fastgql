@@ -180,9 +180,13 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 
 
 func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error){
+
+	buf := &bytes.Buffer{}
+	if resolver.Field.TypeReference.Definition.IsAbstractType() {
+		buf.WriteString(`panic(fmt.Errorf("interface support not implemented"))`)
+		return buf, nil
+	}
 	t := template.New("").Funcs(templates.Funcs())
-
-
 	fileName := resolveName("sql.tpl", 0)
 
 	b, err := ioutil.ReadFile(fileName)
@@ -195,7 +199,7 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error){
 		panic(err)
 	}
 
-	buf := &bytes.Buffer{}
+
 	return buf, t.Execute(buf, resolver)
 }
 

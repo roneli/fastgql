@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	// import the dialect
+	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 	"github.com/iancoleman/strcase"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -41,8 +43,8 @@ func NewBuilder(tableName string) (Builder, error) {
 }
 
 func (b Builder) Query() (string, []interface{}, error) {
-	query, args, err := b.builder.Select(buildJsonObjectExp(b.columns, "")).ToSQL()
-	fmt.Println(query)
+	query, args, err := b.builder.WithDialect("postgres").Select(buildJsonObjectExp(b.columns, "")).Prepared(true).ToSQL()
+	fmt.Println(query, args)
 	return query, args ,err
 }
 
@@ -158,7 +160,7 @@ func buildJsonObjectExp(columns []column, alias string) exp.Expression {
 func buildJoinCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.JoinCondition {
 	var keys = make([]exp.Expression, len(leftKeys))
 	for i := range leftKeys {
-		keys[i] = goqu.Ex{fmt.Sprintf("%s.%s", leftTableName, leftKeys[i]): fmt.Sprintf("%s.%s", rightTableName, rightKeys[i])}
+		keys[i] = goqu.L(fmt.Sprintf("%s.%s = %s.%s", leftTableName, leftKeys, rightTableName, rightKeys[i]))
 	}
 	return goqu.On(keys...)
 }

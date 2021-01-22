@@ -5,10 +5,17 @@ import (
 	"fastgql/builders"
 	"fastgql/schema"
 	"fmt"
+	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/iancoleman/strcase"
 	"github.com/vektah/gqlparser/v2/ast"
 )
+
+// expressionsBuilder allows to create internal an internal filterBuilder for nested filtering
+type expressionsBuilder struct {
+	exp.ExpressionList
+	builder *Builder
+}
 
 func newExpressionBuilder(b *Builder, logicalType schema.LogicalOperator) *expressionsBuilder{
 	switch logicalType {
@@ -25,11 +32,6 @@ func newExpressionBuilder(b *Builder, logicalType schema.LogicalOperator) *expre
 	}
 }
 
-
-type expressionsBuilder struct {
-	exp.ExpressionList
-	builder *Builder
-}
 
 func (e *expressionsBuilder) Operation(name, key string, value interface{}) error {
 
@@ -64,4 +66,15 @@ func (e *expressionsBuilder) Logical(f *ast.Field, logicalExp schema.LogicalOper
 		return errors.New("not implemented")
 	}
 	return nil
+}
+
+type Operator func(table exp.AliasedExpression, key string, value interface{}) goqu.Expression
+
+
+func Eq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).Eq(value)
+}
+
+func Neq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).Neq(value)
 }
