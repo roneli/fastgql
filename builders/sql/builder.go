@@ -86,6 +86,21 @@ func (b *Builder) Offset(offset uint) error {
 	return nil
 }
 
+func (b *Builder) OrderBy(orderFields []builders.OrderField) error {
+	for _, o := range orderFields {
+		switch o.Type {
+		case builders.OrderingTypesAsc:
+			b.builder = b.builder.OrderAppend(b.table.Col(strcase.ToSnake(o.Key)).Asc().NullsLast())
+		case builders.OrderingTypesAscNull:
+			b.builder = b.builder.OrderAppend(b.table.Col(strcase.ToSnake(o.Key)).Asc().NullsFirst())
+		case builders.OrderingTypesDesc:
+			b.builder = b.builder.OrderAppend(b.table.Col(strcase.ToSnake(o.Key)).Desc().NullsLast())
+		case builders.OrderingTypesDescNull:
+			b.builder = b.builder.OrderAppend(b.table.Col(strcase.ToSnake(o.Key)).Desc().NullsFirst())
+		}
+	}
+	return nil
+}
 
 func (b *Builder) Operation(name, key string, value interface{}) error {
 	op, ok := b.operators[key]

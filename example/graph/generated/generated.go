@@ -60,14 +60,14 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Droid func(childComplexity int, id string, filter *model.DroidFilterInput) int
-		Hero  func(childComplexity int, episode *model.Episode, limit *int, offset *int, filter *model.CharacterFilterInput) int
-		Human func(childComplexity int, id string, filter *model.HumanFilterInput) int
+		Hero  func(childComplexity int, episode *model.Episode, limit *int, offset *int, orderBy *model.CharacterOrdering, filter *model.CharacterFilterInput) int
+		Human func(childComplexity int, limit *int, offset *int, orderBy *model.HumanOrdering, filter *model.HumanFilterInput) int
 	}
 }
 
 type QueryResolver interface {
-	Hero(ctx context.Context, episode *model.Episode, limit *int, offset *int, filter *model.CharacterFilterInput) ([]model.Character, error)
-	Human(ctx context.Context, id string, filter *model.HumanFilterInput) (*model.Human, error)
+	Hero(ctx context.Context, episode *model.Episode, limit *int, offset *int, orderBy *model.CharacterOrdering, filter *model.CharacterFilterInput) ([]model.Character, error)
+	Human(ctx context.Context, limit *int, offset *int, orderBy *model.HumanOrdering, filter *model.HumanFilterInput) ([]*model.Human, error)
 	Droid(ctx context.Context, id string, filter *model.DroidFilterInput) (*model.Droid, error)
 }
 
@@ -178,7 +178,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Hero(childComplexity, args["episode"].(*model.Episode), args["limit"].(*int), args["offset"].(*int), args["filter"].(*model.CharacterFilterInput)), true
+		return e.complexity.Query.Hero(childComplexity, args["episode"].(*model.Episode), args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CharacterOrdering), args["filter"].(*model.CharacterFilterInput)), true
 
 	case "Query.human":
 		if e.complexity.Query.Human == nil {
@@ -190,7 +190,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Human(childComplexity, args["id"].(string), args["filter"].(*model.HumanFilterInput)), true
+		return e.complexity.Query.Human(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.HumanOrdering), args["filter"].(*model.HumanFilterInput)), true
 
 	}
 	return 0, false
@@ -272,6 +272,23 @@ input CharacterFilterInput {
 	"""
 	NOT: CharacterFilterInput
 }
+"""
+Ordering for Character
+"""
+input CharacterOrdering {
+	"""
+	Order Character by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Character by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order Character by appearsIn
+	"""
+	appearsIn: _OrderingTypes
+}
 type Droid implements Character @generateFilterInput(name: "DroidFilterInput") {
 	id: String!
 	name: String
@@ -327,6 +344,27 @@ input HumanFilterInput {
 	"""
 	NOT: HumanFilterInput
 }
+"""
+Ordering for Human
+"""
+input HumanOrdering {
+	"""
+	Order Human by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Human by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order Human by appearsIn
+	"""
+	appearsIn: _OrderingTypes
+	"""
+	Order Human by homePlanet
+	"""
+	homePlanet: _OrderingTypes
+}
 input IntComparator {
 	eq: Int
 	neq: Int
@@ -363,13 +401,25 @@ type Query @generateArguments {
 	Offset
 	"""
 	offset: Int = 0, """
+	Ordering for Character
+	"""
+	orderBy: CharacterOrdering, """
 	Filter hero
 	"""
 	filter: CharacterFilterInput): [Character]
-	human(id: String!, """
+	human("""
+	Limit
+	"""
+	limit: Int = 100, """
+	Offset
+	"""
+	offset: Int = 0, """
+	Ordering for Human
+	"""
+	orderBy: HumanOrdering, """
 	Filter human
 	"""
-	filter: HumanFilterInput): Human
+	filter: HumanFilterInput): [Human]
 	droid(id: String!, """
 	Filter droid
 	"""
@@ -384,6 +434,12 @@ input StringComparator {
 	ilike: String
 	suffix: String
 	prefix: String
+}
+enum _OrderingTypes {
+	ASC
+	DESC
+	ASC_NULL_FIRST
+	DESC_NULL_FIRST
 }
 enum _relationType {
 	ONE_TO_ONE
@@ -467,39 +523,66 @@ func (ec *executionContext) field_Query_hero_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["offset"] = arg2
-	var arg3 *model.CharacterFilterInput
-	if tmp, ok := rawArgs["filter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg3, err = ec.unmarshalOCharacterFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, tmp)
+	var arg3 *model.CharacterOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg3, err = ec.unmarshalOCharacterOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["filter"] = arg3
+	args["orderBy"] = arg3
+	var arg4 *model.CharacterFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg4, err = ec.unmarshalOCharacterFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg4
 	return args, nil
 }
 
 func (ec *executionContext) field_Query_human_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
-	var arg1 *model.HumanFilterInput
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg1
+	var arg2 *model.HumanOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg2, err = ec.unmarshalOHumanOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanOrdering(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg2
+	var arg3 *model.HumanFilterInput
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg1, err = ec.unmarshalOHumanFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx, tmp)
+		arg3, err = ec.unmarshalOHumanFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["filter"] = arg1
+	args["filter"] = arg3
 	return args, nil
 }
 
@@ -892,7 +975,7 @@ func (ec *executionContext) _Query_hero(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Hero(rctx, args["episode"].(*model.Episode), args["limit"].(*int), args["offset"].(*int), args["filter"].(*model.CharacterFilterInput))
+		return ec.resolvers.Query().Hero(rctx, args["episode"].(*model.Episode), args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CharacterOrdering), args["filter"].(*model.CharacterFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -931,7 +1014,7 @@ func (ec *executionContext) _Query_human(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Human(rctx, args["id"].(string), args["filter"].(*model.HumanFilterInput))
+		return ec.resolvers.Query().Human(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.HumanOrdering), args["filter"].(*model.HumanFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -940,9 +1023,9 @@ func (ec *executionContext) _Query_human(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Human)
+	res := resTmp.([]*model.Human)
 	fc.Result = res
-	return ec.marshalOHuman2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHuman(ctx, field.Selections, res)
+	return ec.marshalOHuman2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHuman(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_droid(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2230,6 +2313,42 @@ func (ec *executionContext) unmarshalInputCharacterFilterInput(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCharacterOrdering(ctx context.Context, obj interface{}) (model.CharacterOrdering, error) {
+	var it model.CharacterOrdering
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "appearsIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("appearsIn"))
+			it.AppearsIn, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDroidFilterInput(ctx context.Context, obj interface{}) (model.DroidFilterInput, error) {
 	var it model.DroidFilterInput
 	var asMap = obj.(map[string]interface{})
@@ -2357,6 +2476,50 @@ func (ec *executionContext) unmarshalInputHumanFilterInput(ctx context.Context, 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
 			it.Not, err = ec.unmarshalOHumanFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputHumanOrdering(ctx context.Context, obj interface{}) (model.HumanOrdering, error) {
+	var it model.HumanOrdering
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "appearsIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("appearsIn"))
+			it.AppearsIn, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "homePlanet":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("homePlanet"))
+			it.HomePlanet, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3359,6 +3522,14 @@ func (ec *executionContext) unmarshalOCharacterFilterInput2ᚖfastgqlᚋexample�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOCharacterOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterOrdering(ctx context.Context, v interface{}) (*model.CharacterOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCharacterOrdering(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalODroid2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroid(ctx context.Context, sel ast.SelectionSet, v *model.Droid) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -3478,6 +3649,46 @@ func (ec *executionContext) marshalOEpisode2ᚖfastgqlᚋexampleᚋgraphᚋmodel
 	return v
 }
 
+func (ec *executionContext) marshalOHuman2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHuman(ctx context.Context, sel ast.SelectionSet, v []*model.Human) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOHuman2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHuman(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalOHuman2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHuman(ctx context.Context, sel ast.SelectionSet, v *model.Human) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -3514,6 +3725,14 @@ func (ec *executionContext) unmarshalOHumanFilterInput2ᚖfastgqlᚋexampleᚋgr
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputHumanFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOHumanOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanOrdering(ctx context.Context, v interface{}) (*model.HumanOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputHumanOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -3634,6 +3853,22 @@ func (ec *executionContext) unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgr
 	}
 	res, err := ec.unmarshalInputStringComparator(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, v interface{}) (*model.OrderingTypes, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.OrderingTypes)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, sel ast.SelectionSet, v *model.OrderingTypes) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {
