@@ -15,11 +15,11 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
-func (r *queryResolver) Hero(ctx context.Context, episode *model.Episode, limit *int, offset *int, filter *model.CharacterFilterInput) ([]model.Character, error) {
+func (r *queryResolver) Hero(ctx context.Context, episode *model.Episode, limit *int, offset *int, orderBy *model.CharacterOrdering, filter *model.CharacterFilterInput) ([]model.Character, error) {
 	panic(fmt.Errorf("interface support not implemented"))
 }
 
-func (r *queryResolver) Human(ctx context.Context, id string, filter *model.HumanFilterInput) (*model.Human, error) {
+func (r *queryResolver) Human(ctx context.Context, limit *int, offset *int, orderBy *model.HumanOrdering, filter *model.HumanFilterInput) ([]*model.Human, error) {
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
@@ -38,7 +38,7 @@ func (r *queryResolver) Human(ctx context.Context, id string, filter *model.Huma
 		return nil, err
 	}
 
-	var data *model.Human
+	var data []*model.Human
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
 	}

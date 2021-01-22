@@ -96,6 +96,14 @@ func BuildArguments(builder ArgumentsBuilder, f *ast.Field, variables map[string
 			return err
 		}
 	}
+
+	orderingArg := f.Arguments.ForName("orderBy")
+	if orderingArg != nil {
+		if err := BuildOrdering(builder, orderingArg, variables); err != nil {
+			return err
+		}
+	}
+
 	filterArg := f.Arguments.ForName("filter")
 	if offsetArg != nil {
 		filter, err := filterArg.Value.Value(variables)
@@ -111,6 +119,26 @@ func BuildArguments(builder ArgumentsBuilder, f *ast.Field, variables map[string
 		}
 	}
 	return nil
+}
+
+func BuildOrdering(builder OrderingBuilder, arg *ast.Argument, variables map[string]interface{}) error {
+	value, err := arg.Value.Value(variables)
+	if err != nil {
+		return err
+	}
+	argMap, ok := value.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid value type")
+	}
+
+	orderFields := make([]OrderField, len(argMap))
+	for k, v := range argMap {
+		orderFields = append(orderFields, OrderField{
+			Key:  k,
+			Type: OrderingTypes(cast.ToString(v)),
+		})
+	}
+	return builder.OrderBy(orderFields)
 }
 
 func BuildFilter(builder FilterBuilder, field *ast.Field, filter map[string]interface{}) error {

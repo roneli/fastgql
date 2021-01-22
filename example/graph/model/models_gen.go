@@ -29,6 +29,16 @@ type CharacterFilterInput struct {
 	Not *CharacterFilterInput `json:"NOT"`
 }
 
+// Ordering for Character
+type CharacterOrdering struct {
+	// Order Character by id
+	ID *OrderingTypes `json:"id"`
+	// Order Character by name
+	Name *OrderingTypes `json:"name"`
+	// Order Character by appearsIn
+	AppearsIn *OrderingTypes `json:"appearsIn"`
+}
+
 type Droid struct {
 	ID              string      `json:"id"`
 	Name            *string     `json:"name"`
@@ -73,6 +83,18 @@ type HumanFilterInput struct {
 	Or []*HumanFilterInput `json:"OR"`
 	// Logical NOT of FilterInput
 	Not *HumanFilterInput `json:"NOT"`
+}
+
+// Ordering for Human
+type HumanOrdering struct {
+	// Order Human by id
+	ID *OrderingTypes `json:"id"`
+	// Order Human by name
+	Name *OrderingTypes `json:"name"`
+	// Order Human by appearsIn
+	AppearsIn *OrderingTypes `json:"appearsIn"`
+	// Order Human by homePlanet
+	HomePlanet *OrderingTypes `json:"homePlanet"`
 }
 
 type IntComparator struct {
@@ -200,6 +222,51 @@ func (e *OperatorTypes) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OperatorTypes) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OrderingTypes string
+
+const (
+	OrderingTypesAsc           OrderingTypes = "ASC"
+	OrderingTypesDesc          OrderingTypes = "DESC"
+	OrderingTypesAscNullFirst  OrderingTypes = "ASC_NULL_FIRST"
+	OrderingTypesDescNullFirst OrderingTypes = "DESC_NULL_FIRST"
+)
+
+var AllOrderingTypes = []OrderingTypes{
+	OrderingTypesAsc,
+	OrderingTypesDesc,
+	OrderingTypesAscNullFirst,
+	OrderingTypesDescNullFirst,
+}
+
+func (e OrderingTypes) IsValid() bool {
+	switch e {
+	case OrderingTypesAsc, OrderingTypesDesc, OrderingTypesAscNullFirst, OrderingTypesDescNullFirst:
+		return true
+	}
+	return false
+}
+
+func (e OrderingTypes) String() string {
+	return string(e)
+}
+
+func (e *OrderingTypes) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderingTypes(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid _OrderingTypes", str)
+	}
+	return nil
+}
+
+func (e OrderingTypes) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

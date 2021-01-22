@@ -33,3 +33,10 @@ enum _relationType {
 
 
 directive @sqlRelation(relationType: _relationType baseTableName: String, relTableName: String, baseTableKeys: [String], relTableKeys: [String]) on FIELD_DEFINITION
+
+enum _OrderingTypes {
+    ASC
+    DESC
+    ASC_NULL_FIRST
+    DESC_NULL_FIRST
+}

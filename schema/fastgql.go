@@ -28,6 +28,7 @@ func (f FastGqlPlugin) MutateConfig(cfg *config.Config) error {
 // TODO: make this configurable
 func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) *ast.Source {
 	_ = augmenters.Pagination{}.Augment(schema)
+	_ = augmenters.Ordering{}.Augment(schema)
 	_ = augmenters.FilterInput{}.Augment(schema)
 	_ = augmenters.FilterArguments{}.Augment(schema)
 

@@ -30,7 +30,7 @@ type Droid implements Character @generateFilterInput(name: "DroidFilterInput") {
 
 type Query @generateArguments {
   hero(episode: Episode): [Character]
-  human(id: String!): Human
+  human: [Human]
   droid(id: String!): Droid
 }
 

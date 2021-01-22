@@ -34,6 +34,17 @@ type (
 		Offset(offset uint) error
 	}
 
+	OrderingTypes string
+
+	OrderField struct {
+		Key  string
+		Type OrderingTypes
+	}
+
+	OrderingBuilder interface {
+		OrderBy([]OrderField) error
+	}
+
 	// FilterBuilder allow builders to support condition building
 	FilterBuilder interface {
 		// Operation is called when a simple operator is found
@@ -48,6 +59,7 @@ type (
 	ArgumentsBuilder interface {
 		PaginationBuilder
 		FilterBuilder
+		OrderingBuilder
 	}
 
 	// ArgumentsBuilder allows Builders to build aggregate queries on _XYZAggregate fields
@@ -64,4 +76,11 @@ type (
 		Query() (string, []interface{}, error)
 	}
 
+)
+
+const (
+	OrderingTypesAsc      OrderingTypes = "ASC"
+	OrderingTypesDesc     OrderingTypes = "DESC"
+	OrderingTypesAscNull  OrderingTypes = "ASC_NULL_FIRST"
+	OrderingTypesDescNull OrderingTypes = "DESC_NULL_FIRST"
 )
