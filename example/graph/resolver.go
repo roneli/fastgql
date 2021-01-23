@@ -6,10 +6,16 @@ package graph
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
+	"github.com/vektah/gqlparser/v2/ast"
+
+	pgx "github.com/jackc/pgx/v4"
 )
 
-type Resolver struct{ Sql SqlRepo }
+type Resolver struct{
+	Schema *ast.Schema
+	Sql SqlRepo
+}
+
 type SqlRepo interface {
 	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
 }

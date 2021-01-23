@@ -1,36 +1,26 @@
 
-
-enum Episode
-{
-    NEW_HOPE, EMPIRE, JEDI
+type User @generateFilterInput(name: "UserFilterInput") {
+  id: Int!
+  name: String!
+  posts: [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
 }
 
-interface Character @generateFilterInput(name: "CharacterFilterInput") {
-  id: String!
+type Post @generateFilterInput(name: "PostFilterInput") {
+  id: Int!
   name: String
-  friends: [Character] @sqlRelation(relationType: ONE_TO_MANY, baseTableName: "Character", relTableName: "Character", baseTableKeys: ["id"], relTableKeys: ["id"])
-  appearsIn: [Episode]
+  categories: [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"]
+    manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+  user: User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
 }
 
-type Human implements Character @generateFilterInput(name: "HumanFilterInput") {
-  id: String!
-  name: String
-  friends: [Character] @sqlRelation(relationType: ONE_TO_MANY, baseTableName: "Character", relTableName: "Character", baseTableKeys: ["id"], relTableKeys: ["id"])
-  appearsIn: [Episode]
-  homePlanet: String
-}
 
-type Droid implements Character @generateFilterInput(name: "DroidFilterInput") {
-  id: String!
+type Category @generateFilterInput(name: "CategoryFilterInput"){
+  id: Int!
   name: String
-  friends: [Character] @sqlRelation(relationType: ONE_TO_MANY, baseTableName: "Character", relTableName: "Character", baseTableKeys: ["id"], relTableKeys: ["id"])
-  appearsIn: [Episode]
-  primaryFunction: String
 }
 
 type Query @generateArguments {
-  hero(episode: Episode): [Character]
-  human: [Human]
-  droid(id: String!): Droid
+  posts: [Post]
+  users: [User]
+  categories: [Category]
 }
-

@@ -16,20 +16,30 @@ const(
 
 type relation struct {
 	relType           RelationType
-	baseTableName     string
-	relationTableName string
-	baseTableKeys     []string
-	relationTableKeys []string
+	baseTable     	  string
+	referenceTable 	  string
+	fields     		  []string
+	references        []string
+	manyToManyTable   string
+	manyToManyReferences []string
+	manyToManyFields  []string
 }
 
-
+/*
+directive @sqlRelation(fields: [String]!, references: [String]!, baseTableName: String, refTableName: String,
+    relationTableName: String, relationTableFields: [String]) on FIELD_DEFINITION
+ */
 func parseRelationDirective(d *ast.Directive) relation {
 	relType := d.Arguments.ForName("relationType").Value.Raw
 	return relation{
 		relType:           RelationType(relType),
-		baseTableName:     cast.ToString(gql.GetDirectiveValue(d, "baseTableName")),
-		relationTableName: cast.ToString(gql.GetDirectiveValue(d, "relTableName")),
-		baseTableKeys:     cast.ToStringSlice(gql.GetDirectiveValue(d, "baseTableKeys")),
-		relationTableKeys: cast.ToStringSlice(gql.GetDirectiveValue(d, "relTableKeys")),
+		fields:  cast.ToStringSlice(gql.GetDirectiveValue(d, "fields")),
+		references:  cast.ToStringSlice(gql.GetDirectiveValue(d, "references")),
+		baseTable: cast.ToString(gql.GetDirectiveValue(d, "baseTable")),
+		referenceTable: cast.ToString(gql.GetDirectiveValue(d, "refTable")),
+		manyToManyTable:  cast.ToString(gql.GetDirectiveValue(d, "manyToManyTable")),
+		manyToManyFields:  cast.ToStringSlice(gql.GetDirectiveValue(d, "manyToManyFields")),
+		manyToManyReferences:  cast.ToStringSlice(gql.GetDirectiveValue(d, "manyToManyReferences")),
 	}
 }
+

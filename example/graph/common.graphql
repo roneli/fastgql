@@ -28,7 +28,8 @@ enum _relationType {
     MANY_TO_MANY
 }
 
-directive @sqlRelation(relationType: _relationType baseTableName: String, relTableName: String, baseTableKeys: [String], relTableKeys: [String]) on FIELD_DEFINITION
+directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!,
+                       references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 
 enum _OrderingTypes {
     ASC

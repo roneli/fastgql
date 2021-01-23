@@ -14,6 +14,10 @@ func GetType(a *ast.Type) *ast.Type {
 }
 
 func GetDirectiveValue(d *ast.Directive, name string) interface{} {
-	v, _ := d.Arguments.ForName(name).Value.Value(nil)
+	arg := d.Arguments.ForName(name)
+	if arg == nil {
+		return nil
+	}
+	v, _ := arg.Value.Value(nil)
 	return v
 }

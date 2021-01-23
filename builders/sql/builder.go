@@ -43,7 +43,16 @@ func NewBuilder(tableName string) (Builder, error) {
 }
 
 func (b Builder) Query() (string, []interface{}, error) {
-	query, args, err := b.builder.WithDialect("postgres").Select(buildJsonObjectExp(b.columns, "")).Prepared(true).ToSQL()
+
+
+	for i, c := range b.columns {
+		if i == 0 {
+			b.builder = b.builder.Select(goqu.T(c.tableName).Col(c.name).As(c.name))
+		} else {
+			b.builder = b.builder.SelectAppend(goqu.T(c.tableName).Col(c.name).As(c.name))
+		}
+	}
+	query, args, err := b.builder.WithDialect("postgres").Prepared(true).ToSQL()
 	fmt.Println(query, args)
 	return query, args ,err
 }
@@ -133,7 +142,7 @@ func (b *Builder) Logical(f *ast.Field, logicalExp schema.LogicalOperator, value
 
 func (b *Builder) buildRelation(rel relation, f *ast.Field, variables map[string]interface{}) error {
 
-	builder, nil := NewBuilder(rel.relationTableName)
+	builder, _ := NewBuilder(rel.referenceTable)
 	err := builders.BuildFields(&builder, f, variables)
 	if err != nil {
 		return err
@@ -142,28 +151,42 @@ func (b *Builder) buildRelation(rel relation, f *ast.Field, variables map[string
 	case OneToOne:
 		b.builder = b.builder.LeftJoin(
 			goqu.Lateral(builder.builder.Select(buildJsonObjectExp(
-				builder.columns, f.Name)).As(builder.name)),
-			buildJoinCondition(b.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
+				builder.columns, f.Name)).As(builder.name).
+				Where(buildCrossCondition(b.name, rel.fields, builder.name, rel.references))),
+				goqu.On(goqu.L("true")),
 			)
 		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: builder.name})
 	case OneToMany:
 		b.builder = b.builder.LeftJoin(
-			goqu.Lateral(builder.builder.Select(buildJsonAgg(builder.columns, f.Name)).As(builder.name)),
-			buildJoinCondition(b.name, rel.baseTableKeys, builder.name, rel.relationTableKeys),
+			goqu.Lateral(builder.builder.Select(buildJsonAgg(builder.columns, f.Name)).As(builder.name).
+			Where(buildCrossCondition(b.name, rel.fields, builder.name, rel.references))),
+			goqu.On(goqu.L("true")),
 			)
 		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: builder.name})
+	case ManyToMany:
+		m2mTableName := GenerateTableName(6)
+		m2mQuery := goqu.From(goqu.T(rel.manyToManyTable).As(m2mTableName)).Select(
+			goqu.COALESCE(goqu.Func("jsonb_agg", builder.table.Col(f.Name)), goqu.L("'[]'::jsonb")).As(f.Name)).As(m2mTableName)
+		// Join the referenced table to the m2mQuery
+		m2mQuery = m2mQuery.LeftJoin(goqu.Lateral(builder.builder.Select(buildJsonObjectExp(builder.columns, f.Name)).
+			As(builder.name).Where(buildCrossCondition(m2mTableName, rel.manyToManyReferences, builder.name, rel.references))),
+			goqu.On(goqu.L("true")),
+			)
+		// Finally join the m2m table with the main query
+		b.builder = b.builder.LeftJoin(goqu.Lateral(m2mQuery.Where(buildCrossCondition(b.name, rel.fields, m2mTableName, rel.manyToManyFields))), goqu.On(goqu.L("true")))
+		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: m2mTableName})
 	}
 	return err
 }
 
 func buildJsonAgg(columns []column, alias string) exp.Expression {
-	return goqu.COALESCE(goqu.Func("jsonb_agg", buildJsonObjectExp(columns, "")), goqu.L("[]")).As(alias)
+	return goqu.COALESCE(goqu.Func("jsonb_agg", buildJsonObjectExp(columns, "")), goqu.L("'[]'::jsonb")).As(alias)
 }
 
 func buildJsonObjectExp(columns []column, alias string) exp.Expression {
 	var args []interface{}
 	for _, c := range columns {
-		args = append(args, goqu.I(c.name), goqu.I(fmt.Sprintf("%s.%s", c.tableName, c.name)))
+		args = append(args, goqu.L(fmt.Sprintf("'%s'", c.name)), goqu.I(fmt.Sprintf("%s.%s", c.tableName, c.name)))
 	}
 	buildJsonObj := goqu.Func("jsonb_build_object", args...)
 	if alias != "" {
@@ -172,10 +195,19 @@ func buildJsonObjectExp(columns []column, alias string) exp.Expression {
 	return buildJsonObj
 }
 
+func buildCrossCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.ExpressionList {
+	var keys = make([]exp.Expression, len(leftKeys))
+	for i := range leftKeys {
+		keys[i] = goqu.L(fmt.Sprintf("%s.%s = %s.%s", leftTableName, leftKeys[i], rightTableName, rightKeys[i]))
+	}
+	return goqu.And(keys...)
+}
+
+
 func buildJoinCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.JoinCondition {
 	var keys = make([]exp.Expression, len(leftKeys))
 	for i := range leftKeys {
-		keys[i] = goqu.L(fmt.Sprintf("%s.%s = %s.%s", leftTableName, leftKeys, rightTableName, rightKeys[i]))
+		keys[i] = goqu.L(fmt.Sprintf("%s.%s = %s.%s", leftTableName, leftKeys[i], rightTableName, rightKeys[i]))
 	}
 	return goqu.On(keys...)
 }

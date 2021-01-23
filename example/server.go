@@ -4,7 +4,6 @@ import (
 	"context"
 	"fastgql/example/graph"
 	"fastgql/example/graph/generated"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4"
 
@@ -15,7 +14,12 @@ import (
 type MockRepo struct {}
 
 func (m MockRepo) Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error) {
-	return nil, fmt.Errorf("mock not implemented")
+
+	conn, err := pgx.Connect(ctx, "postgresql://localhost/postgres?user=postgres&password=changeme&search_path=main")
+	if err != nil {
+		return nil, err
+	}
+	return conn.Query(ctx, query, args...)
 }
 
 // Defining the Graphql handler
@@ -25,6 +29,8 @@ func graphqlHandler() gin.HandlerFunc {
 	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers:
 		&graph.Resolver{Sql: MockRepo{}},
 	}))
+	
+
 
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)

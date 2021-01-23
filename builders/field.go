@@ -105,7 +105,7 @@ func BuildArguments(builder ArgumentsBuilder, f *ast.Field, variables map[string
 	}
 
 	filterArg := f.Arguments.ForName("filter")
-	if offsetArg != nil {
+	if filterArg != nil {
 		filter, err := filterArg.Value.Value(variables)
 		if err != nil {
 			return err
@@ -142,7 +142,10 @@ func BuildOrdering(builder OrderingBuilder, arg *ast.Argument, variables map[str
 }
 
 func BuildFilter(builder FilterBuilder, field *ast.Field, filter map[string]interface{}) error {
-	for k, v := range filter {
+
+	filterDef := field.Definition.Arguments.ForName("filter")
+	for k, v := range filter
+		kDef := filterDef.
 		var err error
 		if k == string(schema.LogicalOperatorAND) || k == string(schema.LogicalOperatorOR) {
 			vv, ok  := v.([]interface{})
