@@ -18,7 +18,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
-	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	builder, _ := sql.NewBuilder(r.Cfg, fCtx.Field.Field)
 	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
-	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	builder, _ := sql.NewBuilder(r.Cfg, fCtx.Field.Field)
 	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int,
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
-	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	builder, _ := sql.NewBuilder(r.Cfg, fCtx.Field.Field)
 	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
 	if err != nil {
 		return nil, err

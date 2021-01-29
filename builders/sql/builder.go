@@ -23,28 +23,39 @@ type column struct {
 }
 
 type Builder struct {
+	// base builders config, includes logger, schema etc'
+	config *builders.Config
+	// operators supported for filtering
 	operators map[string]Operator
+	// actual goqu query sqlbuilder
 	builder *goqu.SelectDataset
+	// Name of table, this will be the generated name
 	name string
+	// table expression used by the goqu builder
 	table exp.AliasedExpression
+	// columns collected by builders.BuildFields these columns are used to buildJsonObject or buildJsonAgg
 	columns []column
 }
 
 var defaultOperators = map[string]Operator{
 	"eq": Eq,
 	"neq": Neq,
+	"like": Like,
+	"ilike": ILike,
 }
 
 // NewBuilder is the entry point for creating builders
-func NewBuilder(tableName string) (Builder, error) {
+func NewBuilder(cfg *builders.Config, field *ast.Field) (Builder, error) {
 	genName := GenerateTableName(6)
-	table := goqu.T(tableName).As(genName)
-	return Builder{defaultOperators, goqu.From(table), genName, table, nil}, nil
+	table := goqu.T(getTableName(cfg.Schema, field.Definition)).As(genName)
+	return Builder{cfg, defaultOperators, goqu.From(table), genName, table, nil}, nil
+}
+
+func (b Builder) Config() *builders.Config{
+	return b.config
 }
 
 func (b Builder) Query() (string, []interface{}, error) {
-
-
 	for i, c := range b.columns {
 		if i == 0 {
 			b.builder = b.builder.Select(goqu.T(c.tableName).Col(c.name).As(c.name))
@@ -57,16 +68,6 @@ func (b Builder) Query() (string, []interface{}, error) {
 	return query, args ,err
 }
 
-
-func (b Builder) Type() string {
-	return "SQL"
-}
-
-func (b Builder) Config() *builders.Config{
-	return nil
-}
-
-
 func (b *Builder) OnSingleField(f *ast.Field, variables map[string]interface{}) error {
 	// add simple fields as columns
 	b.columns = append(b.columns, column{name: f.Name, alias: f.Alias, tableName: b.name})
@@ -77,7 +78,7 @@ func (b *Builder) OnSelectionField(f *ast.Field, variables map[string]interface{
 	d := f.Definition.Directives.ForName("sqlRelation")
 	if d != nil {
 		rel := parseRelationDirective(d)
-		err := b.buildRelation(rel, f, variables)
+		err := b.buildRelationQuery(rel, f, variables)
 		if err != nil {
 			return err
 		}
@@ -120,11 +121,27 @@ func (b *Builder) Operation(name, key string, value interface{}) error {
 	return nil
 }
 
-func (b *Builder) Filter(f *ast.Field, key string, value map[string]interface{}) error {
+func (b *Builder) Filter(f *ast.FieldDefinition, key string, value map[string]interface{}) error {
+	fieldDef := b.Config().Schema.Types[f.Type.Name()]
+	filterFieldDef := fieldDef.Fields.ForName(key)
+	// Create a builder
+	d := filterFieldDef.Directives.ForName("sqlRelation")
+	if d == nil {
+		return fmt.Errorf("missing directive sqlRelation")
+	}
+	fb, err := buildFilterInput(b, parseRelationDirective(d))
+	if err != nil {
+		return err
+	}
+
+	if err := builders.BuildFilter(&fb, filterFieldDef, value); err != nil {
+		return err
+	}
+	b.builder = b.builder.Where(goqu.Func("exists", fb.builder))
 	return nil
 }
 
-func (b *Builder) Logical(f *ast.Field, logicalExp schema.LogicalOperator, values []interface{}) error {
+func (b *Builder) Logical(f *ast.FieldDefinition, logicalExp schema.LogicalOperator, values []interface{}) error {
 	switch logicalExp {
 	case schema.LogicalOperatorOR, schema.LogicalOperatorAND:
 		expList := newExpressionBuilder(b, logicalExp)
@@ -140,50 +157,75 @@ func (b *Builder) Logical(f *ast.Field, logicalExp schema.LogicalOperator, value
 
 // ======================================== Internal Methods ============================================
 
-func (b *Builder) buildRelation(rel relation, f *ast.Field, variables map[string]interface{}) error {
+// createInnerBuilder creates an internal builder for a relation or filter query. The internal builder uses the
+// same configuration as defined form the parent builder.
+func (b *Builder) createInnerBuilder(tableName string) (Builder, error) {
 
-	builder, _ := NewBuilder(rel.referenceTable)
-	err := builders.BuildFields(&builder, f, variables)
-	if err != nil {
+	tableAlias := GenerateTableName(6)
+	table := goqu.T(tableName).As(tableAlias)
+	return Builder{
+		config:    b.config,
+		operators: b.operators,
+		builder:   goqu.Dialect("postgres").From(table),
+		name:      tableAlias,
+		table:     table,
+		columns:   nil,
+	}, nil
+}
+
+func (b *Builder) buildRelationQuery(rel relation, f *ast.Field, variables map[string]interface{}) error {
+	relBuilder, _ := b.createInnerBuilder(rel.referenceTable)
+	if err := builders.BuildFields(&relBuilder, f, variables);  err != nil {
 		return err
 	}
+	if err := builders.BuildArguments(&relBuilder, f, variables); err != nil {
+		return err
+	}
+
 	switch rel.relType {
 	case OneToOne:
 		b.builder = b.builder.LeftJoin(
-			goqu.Lateral(builder.builder.Select(buildJsonObjectExp(
-				builder.columns, f.Name)).As(builder.name).
-				Where(buildCrossCondition(b.name, rel.fields, builder.name, rel.references))),
-				goqu.On(goqu.L("true")),
-			)
-		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: builder.name})
+			goqu.Lateral(relBuilder.builder.Select(buildJsonObject(
+				relBuilder.columns, f.Name)).As(relBuilder.name).
+				Where(buildCrossCondition(b.name, rel.fields, relBuilder.name, rel.references))),
+			goqu.On(goqu.L("true")),
+		)
+		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: relBuilder.name})
 	case OneToMany:
 		b.builder = b.builder.LeftJoin(
-			goqu.Lateral(builder.builder.Select(buildJsonAgg(builder.columns, f.Name)).As(builder.name).
-			Where(buildCrossCondition(b.name, rel.fields, builder.name, rel.references))),
+			goqu.Lateral(relBuilder.builder.Select(buildJsonAgg(relBuilder.columns, f.Name)).As(relBuilder.name).
+				Where(buildCrossCondition(b.name, rel.fields, relBuilder.name, rel.references))),
 			goqu.On(goqu.L("true")),
-			)
-		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: builder.name})
+		)
+		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: relBuilder.name})
 	case ManyToMany:
 		m2mTableName := GenerateTableName(6)
 		m2mQuery := goqu.From(goqu.T(rel.manyToManyTable).As(m2mTableName)).Select(
-			goqu.COALESCE(goqu.Func("jsonb_agg", builder.table.Col(f.Name)), goqu.L("'[]'::jsonb")).As(f.Name)).As(m2mTableName)
+			goqu.COALESCE(goqu.Func("jsonb_agg", relBuilder.table.Col(f.Name)), goqu.L("'[]'::jsonb")).As(f.Name)).As(m2mTableName)
 		// Join the referenced table to the m2mQuery
-		m2mQuery = m2mQuery.LeftJoin(goqu.Lateral(builder.builder.Select(buildJsonObjectExp(builder.columns, f.Name)).
-			As(builder.name).Where(buildCrossCondition(m2mTableName, rel.manyToManyReferences, builder.name, rel.references))),
+		m2mQuery = m2mQuery.LeftJoin(goqu.Lateral(relBuilder.builder.Select(buildJsonObject(relBuilder.columns, f.Name)).
+			As(relBuilder.name).Where(buildCrossCondition(m2mTableName, rel.manyToManyReferences, relBuilder.name, rel.references))),
 			goqu.On(goqu.L("true")),
-			)
+		)
 		// Finally join the m2m table with the main query
 		b.builder = b.builder.LeftJoin(goqu.Lateral(m2mQuery.Where(buildCrossCondition(b.name, rel.fields, m2mTableName, rel.manyToManyFields))), goqu.On(goqu.L("true")))
 		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: m2mTableName})
 	}
-	return err
+	return nil
 }
 
+
+// ====================================================================================================================
+//      											Helper Functions
+// ====================================================================================================================
+
+// buildJsonAgg collects all the column values, including nulls, into a JSON array. Values are converted to JSON as per to_json or to_jsonb.
+// See https://www.postgresql.org/docs/current/functions-aggregate.html for more information on this function.
 func buildJsonAgg(columns []column, alias string) exp.Expression {
-	return goqu.COALESCE(goqu.Func("jsonb_agg", buildJsonObjectExp(columns, "")), goqu.L("'[]'::jsonb")).As(alias)
+	return goqu.COALESCE(goqu.Func("jsonb_agg", buildJsonObject(columns, "")), goqu.L("'[]'::jsonb")).As(alias)
 }
 
-func buildJsonObjectExp(columns []column, alias string) exp.Expression {
+func buildJsonObject(columns []column, alias string) exp.Expression {
 	var args []interface{}
 	for _, c := range columns {
 		args = append(args, goqu.L(fmt.Sprintf("'%s'", c.name)), goqu.I(fmt.Sprintf("%s.%s", c.tableName, c.name)))
@@ -196,18 +238,35 @@ func buildJsonObjectExp(columns []column, alias string) exp.Expression {
 }
 
 func buildCrossCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.ExpressionList {
-	var keys = make([]exp.Expression, len(leftKeys))
-	for i := range leftKeys {
-		keys[i] = goqu.L(fmt.Sprintf("%s.%s = %s.%s", leftTableName, leftKeys[i], rightTableName, rightKeys[i]))
-	}
-	return goqu.And(keys...)
+	return goqu.And(buildJoinCondition(leftTableName, leftKeys, rightTableName, rightKeys)...)
 }
 
-
-func buildJoinCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.JoinCondition {
+func buildJoinCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) []exp.Expression {
 	var keys = make([]exp.Expression, len(leftKeys))
 	for i := range leftKeys {
 		keys[i] = goqu.L(fmt.Sprintf("%s.%s = %s.%s", leftTableName, leftKeys[i], rightTableName, rightKeys[i]))
 	}
-	return goqu.On(keys...)
+	return keys
+}
+
+func buildFilterInput(parentBuilder *Builder, rel relation) (Builder, error) {
+	fq, _ := parentBuilder.createInnerBuilder(rel.referenceTable)
+	fq.builder = fq.builder.Select(goqu.L("1")).From(fq.table)
+	switch rel.relType {
+	case ManyToMany:
+		m2mTableName := GenerateTableName(6)
+		jExps := buildJoinCondition(parentBuilder.name, rel.fields, m2mTableName, rel.manyToManyFields)
+		jExps = append(jExps, buildJoinCondition(m2mTableName, rel.manyToManyReferences, fq.name, rel.references)...)
+		fq.builder = fq.builder.InnerJoin(goqu.T(rel.manyToManyTable).As(m2mTableName), goqu.On(jExps...))
+	case OneToOne:
+		relationTableName := GenerateTableName(6)
+		jExps := buildJoinCondition(parentBuilder.name, rel.fields, fq.name, rel.references)
+		jExps = append(jExps, buildJoinCondition(parentBuilder.name, rel.fields, relationTableName, rel.fields)...)
+		fq.builder = fq.builder.InnerJoin(goqu.T(rel.baseTable).As(relationTableName), goqu.On(jExps...))
+	case OneToMany:
+		fq.builder = fq.builder.InnerJoin(goqu.T(rel.baseTable).As(GenerateTableName(6)), goqu.On(buildJoinCondition(parentBuilder.name, rel.fields, fq.name, rel.references)...))
+	default:
+		panic("unknown relation type")
+	}
+	return fq, nil
 }

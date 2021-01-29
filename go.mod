@@ -12,6 +12,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
+	github.com/stretchr/testify v1.5.1
+	github.com/thanhhh/gin-requestid v0.0.0-20180527051759-221db8554b0d
 	github.com/vektah/gqlparser/v2 v2.1.0
 	golang.org/x/tools v0.0.0-20200114235610-7ae403b6b589
 )

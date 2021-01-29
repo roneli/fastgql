@@ -160,9 +160,10 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 				//
 				// It serves as dependency injection for your app, add any dependencies you require here.`,
 			Template: `{{ reserveImport "context"  }}
+  					   {{ reserveImport "fastgql/builders" }}
 					   {{ reserveImport "github.com/jackc/pgx/v4" }}
 
-					   type {{.}} struct {sql SqlRepo}
+					   type {{.}} struct {cfg *builders.Config sql SqlRepo}
 
   					   type SqlRepo interface {
 							Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)

@@ -11,12 +11,12 @@ type (
 
 	// Config is the basic level of data passed to a builder when it's created
 	Config struct {
+		Schema *ast.Schema
 		Logger internal.Logger
 		LogLevel internal.LogLevel
 	}
 
 	Builder interface {
-		Type() string
 		Config() *Config
 	}
 
@@ -47,12 +47,13 @@ type (
 
 	// FilterBuilder allow builders to support condition building
 	FilterBuilder interface {
+		Builder
 		// Operation is called when a simple operator is found
 		Operation(name, op string, value interface{}) error
 		// Filter is called when the operation is a BoolExp
-		Filter(f *ast.Field, key string, value map[string]interface{}) error
+		Filter(f *ast.FieldDefinition, key string, value map[string]interface{}) error
 		// Logical is called when the operation is AND, OR, NOT
-		Logical(f *ast.Field, logicalExp schema.LogicalOperator, values []interface{}) error
+		Logical(f *ast.FieldDefinition, logicalExp schema.LogicalOperator, values []interface{}) error
 	}
 
 	// ArgumentsBuilder allows Builders to build arguments supported by FastGQL

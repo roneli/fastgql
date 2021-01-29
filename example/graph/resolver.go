@@ -6,13 +6,12 @@ package graph
 
 import (
 	"context"
-	"github.com/vektah/gqlparser/v2/ast"
-
+	"fastgql/builders"
 	pgx "github.com/jackc/pgx/v4"
 )
 
 type Resolver struct{
-	Schema *ast.Schema
+	Cfg *builders.Config
 	Sql SqlRepo
 }
 

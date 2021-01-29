@@ -47,10 +47,10 @@ type ComplexityRoot struct {
 	}
 
 	Post struct {
-		Categories func(childComplexity int) int
+		Categories func(childComplexity int, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) int
 		ID         func(childComplexity int) int
 		Name       func(childComplexity int) int
-		User       func(childComplexity int) int
+		User       func(childComplexity int, filter *model.UserFilterInput) int
 	}
 
 	Query struct {
@@ -62,7 +62,7 @@ type ComplexityRoot struct {
 	User struct {
 		ID    func(childComplexity int) int
 		Name  func(childComplexity int) int
-		Posts func(childComplexity int) int
+		Posts func(childComplexity int, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) int
 	}
 }
 
@@ -106,7 +106,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Post.Categories(childComplexity), true
+		args, err := ec.field_Post_categories_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Post.Categories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput)), true
 
 	case "Post.id":
 		if e.complexity.Post.ID == nil {
@@ -127,7 +132,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Post.User(childComplexity), true
+		args, err := ec.field_Post_user_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Post.User(childComplexity, args["filter"].(*model.UserFilterInput)), true
 
 	case "Query.categories":
 		if e.complexity.Query.Categories == nil {
@@ -184,7 +194,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.User.Posts(childComplexity), true
+		args, err := ec.field_User_posts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
 
 	}
 	return 0, false
@@ -236,9 +251,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema.graphql", Input: `directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True) on OBJECT
+	{Name: "schema.graphql", Input: `directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, recursive: Boolean = True) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+directive @tableName(name: String!) on OBJECT | INTERFACE
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean
@@ -307,8 +323,23 @@ enum OperatorTypes {
 type Post @generateFilterInput(name: "PostFilterInput") {
 	id: Int!
 	name: String
-	categories: [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-	user: User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
+	categories("""
+	Limit
+	"""
+	limit: Int = 100, """
+	Offset
+	"""
+	offset: Int = 0, """
+	Ordering for Category
+	"""
+	orderBy: CategoryOrdering, """
+	Filter categories
+	"""
+	filter: CategoryFilterInput): [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user("""
+	Filter user
+	"""
+	filter: UserFilterInput): User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
 }
 input PostFilterInput {
 	id: IntComparator
@@ -392,10 +423,22 @@ input StringComparator {
 	suffix: String
 	prefix: String
 }
-type User @generateFilterInput(name: "UserFilterInput") {
+type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user") {
 	id: Int!
 	name: String!
-	posts: [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
+	posts("""
+	Limit
+	"""
+	limit: Int = 100, """
+	Offset
+	"""
+	offset: Int = 0, """
+	Ordering for Post
+	"""
+	orderBy: PostOrdering, """
+	Filter posts
+	"""
+	filter: PostFilterInput): [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
 }
 input UserFilterInput {
 	id: IntComparator
@@ -445,6 +488,63 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg1
+	var arg2 *model.CategoryOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg2, err = ec.unmarshalOCategoryOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg2
+	var arg3 *model.CategoryFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOCategoryFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Post_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOUserFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -579,6 +679,48 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
 		arg3, err = ec.unmarshalOUserFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_User_posts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg1
+	var arg2 *model.PostOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg2, err = ec.unmarshalOPostOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg2
+	var arg3 *model.PostFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOPostFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -775,6 +917,13 @@ func (ec *executionContext) _Post_categories(ctx context.Context, field graphql.
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Post_categories_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Categories, nil
@@ -807,6 +956,13 @@ func (ec *executionContext) _Post_user(ctx context.Context, field graphql.Collec
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Post_user_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.User, nil
@@ -1097,6 +1253,13 @@ func (ec *executionContext) _User_posts(ctx context.Context, field graphql.Colle
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_User_posts_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Posts, nil

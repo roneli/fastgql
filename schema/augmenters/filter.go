@@ -112,25 +112,27 @@ func (f FilterInput) initInputs(s *ast.Schema) []*createdInputDef {
 
 type FilterArguments struct {}
 
-func (f FilterArguments) Name() string {
+func (fa FilterArguments) Name() string {
 	return "generateArguments"
 }
 
-func (f FilterArguments) Augment(s *ast.Schema) error {
+func (fa FilterArguments) Augment(s *ast.Schema) error {
 	for _, v := range s.Types {
-		d := v.Directives.ForName(f.Name())
+		d := v.Directives.ForName(fa.Name())
 		if d == nil {
 			continue
 		}
+
 		args := d.ArgumentMap(nil)
-		if addPagination, ok := args["filter"]; ok && cast.ToBool(addPagination) {
-			f.addFilter(s, v)
+		recursive := cast.ToBool(args["recursive"])
+		if addFilters, ok := args["filter"]; ok && cast.ToBool(addFilters) {
+			fa.addFilter(s, v, recursive)
 		}
 	}
 	return nil
 }
 
-func (f FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition) {
+func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
 		if strings.HasPrefix(f.Name, "__") {
 			continue
@@ -139,12 +141,24 @@ func (f FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition) {
 		if !ok {
 			continue
 		}
-		
+
+		if f.Arguments.ForName("filter") != nil{
+			continue
+		}
+
 		f.Arguments = append(f.Arguments,
 			&ast.ArgumentDefinition{Description: fmt.Sprintf("Filter %s", f.Name),
 				Name:         "filter",
 				Type:         &ast.Type{NamedType: input.Name},
 			},
 		)
+		if !recursive {
+			continue
+		}
+		fieldType := s.Types[f.Type.Name()]
+		if !fieldType.IsCompositeType() {
+			continue
+		}
+		fa.addFilter(s, fieldType, recursive)
 	}
 }

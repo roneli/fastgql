@@ -22,15 +22,21 @@ func (o Ordering) Augment(s *ast.Schema) error {
 			continue
 		}
 		args := d.ArgumentMap(nil)
+		recursive := cast.ToBool(args["recursive"])
 		if addOrdering, ok := args["ordering"]; ok && cast.ToBool(addOrdering) {
-			o.addOrdering(s, v)
+			o.addOrdering(s, v, recursive)
 		}
 	}
 	return nil
 }
 
-func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition) {
+func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
+
+		if f.Arguments.ForName("orderBy") != nil {
+			continue
+		}
+
 		if strings.HasPrefix(f.Name, "__") {
 			continue
 		}
@@ -57,6 +63,15 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition) {
 				Type: &ast.Type{NamedType: orderDef.Name},
 			},
 		)
+
+		if !recursive {
+			continue
+		}
+		fieldType := s.Types[f.Type.Name()]
+		if !fieldType.IsCompositeType() {
+			continue
+		}
+		o.addOrdering(s, fieldType, recursive)
 
 	}
 }

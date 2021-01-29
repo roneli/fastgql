@@ -1,5 +1,5 @@
 
-type User @generateFilterInput(name: "UserFilterInput") {
+type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user"){
   id: Int!
   name: String!
   posts: [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
@@ -24,3 +24,4 @@ type Query @generateArguments {
   users: [User]
   categories: [Category]
 }
+
