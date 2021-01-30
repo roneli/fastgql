@@ -1,8 +1,8 @@
 package augmenters
 
 import (
-	"github.com/roneli/fastgql/gql"
 	"fmt"
+	"github.com/roneli/fastgql/gql"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 	"strings"
@@ -60,7 +60,7 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool
 			&ast.ArgumentDefinition{
 				Description: orderDef.Description,
 				Name: "orderBy",
-				Type: &ast.Type{NamedType: orderDef.Name},
+				Type: &ast.Type{Elem: &ast.Type{NamedType: orderDef.Name}},
 			},
 		)
 

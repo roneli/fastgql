@@ -15,7 +15,7 @@ import (
 	"github.com/roneli/fastgql/example/graph/model"
 )
 
-func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
+func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
@@ -41,7 +41,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 	return data, nil
 }
 
-func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy *model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
+func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
@@ -67,7 +67,7 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 	return data, nil
 }
 
-func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error) {
+func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

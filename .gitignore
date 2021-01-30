@@ -1,1 +1,6 @@
 .idea/
+
+
+docs/node_modules/*
+docs/resources/*
+docs/themes/docsy/*
