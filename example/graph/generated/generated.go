@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fastgql/example/graph/model"
-	"fmt"
 	"strconv"
 	"sync"
 
@@ -42,33 +41,35 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	Droid struct {
-		AppearsIn       func(childComplexity int) int
-		Friends         func(childComplexity int) int
-		ID              func(childComplexity int) int
-		Name            func(childComplexity int) int
-		PrimaryFunction func(childComplexity int) int
+	Category struct {
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
 	}
 
-	Human struct {
-		AppearsIn  func(childComplexity int) int
-		Friends    func(childComplexity int) int
-		HomePlanet func(childComplexity int) int
+	Post struct {
+		Categories func(childComplexity int, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) int
 		ID         func(childComplexity int) int
 		Name       func(childComplexity int) int
+		User       func(childComplexity int, filter *model.UserFilterInput) int
 	}
 
 	Query struct {
-		Droid func(childComplexity int, id string, filter *model.DroidFilterInput) int
-		Hero  func(childComplexity int, episode *model.Episode, limit *int, offset *int, orderBy *model.CharacterOrdering, filter *model.CharacterFilterInput) int
-		Human func(childComplexity int, limit *int, offset *int, orderBy *model.HumanOrdering, filter *model.HumanFilterInput) int
+		Categories func(childComplexity int, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) int
+		Posts      func(childComplexity int, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) int
+		Users      func(childComplexity int, limit *int, offset *int, orderBy *model.UserOrdering, filter *model.UserFilterInput) int
+	}
+
+	User struct {
+		ID    func(childComplexity int) int
+		Name  func(childComplexity int) int
+		Posts func(childComplexity int, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) int
 	}
 }
 
 type QueryResolver interface {
-	Hero(ctx context.Context, episode *model.Episode, limit *int, offset *int, orderBy *model.CharacterOrdering, filter *model.CharacterFilterInput) ([]model.Character, error)
-	Human(ctx context.Context, limit *int, offset *int, orderBy *model.HumanOrdering, filter *model.HumanFilterInput) ([]*model.Human, error)
-	Droid(ctx context.Context, id string, filter *model.DroidFilterInput) (*model.Droid, error)
+	Posts(ctx context.Context, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error)
+	Users(ctx context.Context, limit *int, offset *int, orderBy *model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
+	Categories(ctx context.Context, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error)
 }
 
 type executableSchema struct {
@@ -86,111 +87,119 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Droid.appearsIn":
-		if e.complexity.Droid.AppearsIn == nil {
+	case "Category.id":
+		if e.complexity.Category.ID == nil {
 			break
 		}
 
-		return e.complexity.Droid.AppearsIn(childComplexity), true
+		return e.complexity.Category.ID(childComplexity), true
 
-	case "Droid.friends":
-		if e.complexity.Droid.Friends == nil {
+	case "Category.name":
+		if e.complexity.Category.Name == nil {
 			break
 		}
 
-		return e.complexity.Droid.Friends(childComplexity), true
+		return e.complexity.Category.Name(childComplexity), true
 
-	case "Droid.id":
-		if e.complexity.Droid.ID == nil {
+	case "Post.categories":
+		if e.complexity.Post.Categories == nil {
 			break
 		}
 
-		return e.complexity.Droid.ID(childComplexity), true
-
-	case "Droid.name":
-		if e.complexity.Droid.Name == nil {
-			break
-		}
-
-		return e.complexity.Droid.Name(childComplexity), true
-
-	case "Droid.primaryFunction":
-		if e.complexity.Droid.PrimaryFunction == nil {
-			break
-		}
-
-		return e.complexity.Droid.PrimaryFunction(childComplexity), true
-
-	case "Human.appearsIn":
-		if e.complexity.Human.AppearsIn == nil {
-			break
-		}
-
-		return e.complexity.Human.AppearsIn(childComplexity), true
-
-	case "Human.friends":
-		if e.complexity.Human.Friends == nil {
-			break
-		}
-
-		return e.complexity.Human.Friends(childComplexity), true
-
-	case "Human.homePlanet":
-		if e.complexity.Human.HomePlanet == nil {
-			break
-		}
-
-		return e.complexity.Human.HomePlanet(childComplexity), true
-
-	case "Human.id":
-		if e.complexity.Human.ID == nil {
-			break
-		}
-
-		return e.complexity.Human.ID(childComplexity), true
-
-	case "Human.name":
-		if e.complexity.Human.Name == nil {
-			break
-		}
-
-		return e.complexity.Human.Name(childComplexity), true
-
-	case "Query.droid":
-		if e.complexity.Query.Droid == nil {
-			break
-		}
-
-		args, err := ec.field_Query_droid_args(context.TODO(), rawArgs)
+		args, err := ec.field_Post_categories_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Droid(childComplexity, args["id"].(string), args["filter"].(*model.DroidFilterInput)), true
+		return e.complexity.Post.Categories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput)), true
 
-	case "Query.hero":
-		if e.complexity.Query.Hero == nil {
+	case "Post.id":
+		if e.complexity.Post.ID == nil {
 			break
 		}
 
-		args, err := ec.field_Query_hero_args(context.TODO(), rawArgs)
+		return e.complexity.Post.ID(childComplexity), true
+
+	case "Post.name":
+		if e.complexity.Post.Name == nil {
+			break
+		}
+
+		return e.complexity.Post.Name(childComplexity), true
+
+	case "Post.user":
+		if e.complexity.Post.User == nil {
+			break
+		}
+
+		args, err := ec.field_Post_user_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Hero(childComplexity, args["episode"].(*model.Episode), args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CharacterOrdering), args["filter"].(*model.CharacterFilterInput)), true
+		return e.complexity.Post.User(childComplexity, args["filter"].(*model.UserFilterInput)), true
 
-	case "Query.human":
-		if e.complexity.Query.Human == nil {
+	case "Query.categories":
+		if e.complexity.Query.Categories == nil {
 			break
 		}
 
-		args, err := ec.field_Query_human_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_categories_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Human(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.HumanOrdering), args["filter"].(*model.HumanFilterInput)), true
+		return e.complexity.Query.Categories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput)), true
+
+	case "Query.posts":
+		if e.complexity.Query.Posts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_posts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
+
+	case "Query.users":
+		if e.complexity.Query.Users == nil {
+			break
+		}
+
+		args, err := ec.field_Query_users_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Users(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.UserOrdering), args["filter"].(*model.UserFilterInput)), true
+
+	case "User.id":
+		if e.complexity.User.ID == nil {
+			break
+		}
+
+		return e.complexity.User.ID(childComplexity), true
+
+	case "User.name":
+		if e.complexity.User.Name == nil {
+			break
+		}
+
+		return e.complexity.User.Name(childComplexity), true
+
+	case "User.posts":
+		if e.complexity.User.Posts == nil {
+			break
+		}
+
+		args, err := ec.field_User_posts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
 
 	}
 	return 0, false
@@ -242,128 +251,46 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema.graphql", Input: `directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True) on OBJECT
+	{Name: "schema.graphql", Input: `directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, recursive: Boolean = True) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
-directive @sqlRelation(relationType: _relationType, baseTableName: String, relTableName: String, baseTableKeys: [String], relTableKeys: [String]) on FIELD_DEFINITION
+directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+directive @tableName(name: String!) on OBJECT | INTERFACE
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean
 }
-interface Character @generateFilterInput(name: "CharacterFilterInput") {
-	id: String!
+type Category @generateFilterInput(name: "CategoryFilterInput") {
+	id: Int!
 	name: String
-	friends: [Character] @sqlRelation(relationType: ONE_TO_MANY, baseTableName: "Character", relTableName: "Character", baseTableKeys: ["id"], relTableKeys: ["id"])
-	appearsIn: [Episode]
 }
-input CharacterFilterInput {
-	id: StringComparator
+input CategoryFilterInput {
+	id: IntComparator
 	name: StringComparator
-	friends: CharacterFilterInput
 	"""
 	Logical AND of FilterInput
 	"""
-	AND: [CharacterFilterInput]
+	AND: [CategoryFilterInput]
 	"""
 	Logical OR of FilterInput
 	"""
-	OR: [CharacterFilterInput]
+	OR: [CategoryFilterInput]
 	"""
 	Logical NOT of FilterInput
 	"""
-	NOT: CharacterFilterInput
+	NOT: CategoryFilterInput
 }
 """
-Ordering for Character
+Ordering for Category
 """
-input CharacterOrdering {
+input CategoryOrdering {
 	"""
-	Order Character by id
+	Order Category by id
 	"""
 	id: _OrderingTypes
 	"""
-	Order Character by name
+	Order Category by name
 	"""
 	name: _OrderingTypes
-	"""
-	Order Character by appearsIn
-	"""
-	appearsIn: _OrderingTypes
-}
-type Droid implements Character @generateFilterInput(name: "DroidFilterInput") {
-	id: String!
-	name: String
-	friends: [Character] @sqlRelation(relationType: ONE_TO_MANY, baseTableName: "Character", relTableName: "Character", baseTableKeys: ["id"], relTableKeys: ["id"])
-	appearsIn: [Episode]
-	primaryFunction: String
-}
-input DroidFilterInput {
-	id: StringComparator
-	name: StringComparator
-	friends: CharacterFilterInput
-	primaryFunction: StringComparator
-	"""
-	Logical AND of FilterInput
-	"""
-	AND: [DroidFilterInput]
-	"""
-	Logical OR of FilterInput
-	"""
-	OR: [DroidFilterInput]
-	"""
-	Logical NOT of FilterInput
-	"""
-	NOT: DroidFilterInput
-}
-enum Episode {
-	NEW_HOPE
-	EMPIRE
-	JEDI
-}
-type Human implements Character @generateFilterInput(name: "HumanFilterInput") {
-	id: String!
-	name: String
-	friends: [Character] @sqlRelation(relationType: ONE_TO_MANY, baseTableName: "Character", relTableName: "Character", baseTableKeys: ["id"], relTableKeys: ["id"])
-	appearsIn: [Episode]
-	homePlanet: String
-}
-input HumanFilterInput {
-	id: StringComparator
-	name: StringComparator
-	friends: CharacterFilterInput
-	homePlanet: StringComparator
-	"""
-	Logical AND of FilterInput
-	"""
-	AND: [HumanFilterInput]
-	"""
-	Logical OR of FilterInput
-	"""
-	OR: [HumanFilterInput]
-	"""
-	Logical NOT of FilterInput
-	"""
-	NOT: HumanFilterInput
-}
-"""
-Ordering for Human
-"""
-input HumanOrdering {
-	"""
-	Order Human by id
-	"""
-	id: _OrderingTypes
-	"""
-	Order Human by name
-	"""
-	name: _OrderingTypes
-	"""
-	Order Human by appearsIn
-	"""
-	appearsIn: _OrderingTypes
-	"""
-	Order Human by homePlanet
-	"""
-	homePlanet: _OrderingTypes
 }
 input IntComparator {
 	eq: Int
@@ -393,37 +320,98 @@ enum OperatorTypes {
 	LIKE
 	ILIKE
 }
+type Post @generateFilterInput(name: "PostFilterInput") {
+	id: Int!
+	name: String
+	categories("""
+	Limit
+	"""
+	limit: Int = 100, """
+	Offset
+	"""
+	offset: Int = 0, """
+	Ordering for Category
+	"""
+	orderBy: CategoryOrdering, """
+	Filter categories
+	"""
+	filter: CategoryFilterInput): [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user("""
+	Filter user
+	"""
+	filter: UserFilterInput): User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
+}
+input PostFilterInput {
+	id: IntComparator
+	name: StringComparator
+	categories: CategoryFilterInput
+	user: UserFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [PostFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [PostFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: PostFilterInput
+}
+"""
+Ordering for Post
+"""
+input PostOrdering {
+	"""
+	Order Post by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Post by name
+	"""
+	name: _OrderingTypes
+}
 type Query @generateArguments {
-	hero(episode: Episode, """
+	posts("""
 	Limit
 	"""
 	limit: Int = 100, """
 	Offset
 	"""
 	offset: Int = 0, """
-	Ordering for Character
+	Ordering for Post
 	"""
-	orderBy: CharacterOrdering, """
-	Filter hero
+	orderBy: PostOrdering, """
+	Filter posts
 	"""
-	filter: CharacterFilterInput): [Character]
-	human("""
+	filter: PostFilterInput): [Post]
+	users("""
 	Limit
 	"""
 	limit: Int = 100, """
 	Offset
 	"""
 	offset: Int = 0, """
-	Ordering for Human
+	Ordering for User
 	"""
-	orderBy: HumanOrdering, """
-	Filter human
+	orderBy: UserOrdering, """
+	Filter users
 	"""
-	filter: HumanFilterInput): [Human]
-	droid(id: String!, """
-	Filter droid
+	filter: UserFilterInput): [User]
+	categories("""
+	Limit
 	"""
-	filter: DroidFilterInput): Droid
+	limit: Int = 100, """
+	Offset
+	"""
+	offset: Int = 0, """
+	Ordering for Category
+	"""
+	orderBy: CategoryOrdering, """
+	Filter categories
+	"""
+	filter: CategoryFilterInput): [Category]
 }
 input StringComparator {
 	eq: String
@@ -434,6 +422,53 @@ input StringComparator {
 	ilike: String
 	suffix: String
 	prefix: String
+}
+type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user") {
+	id: Int!
+	name: String!
+	posts("""
+	Limit
+	"""
+	limit: Int = 100, """
+	Offset
+	"""
+	offset: Int = 0, """
+	Ordering for Post
+	"""
+	orderBy: PostOrdering, """
+	Filter posts
+	"""
+	filter: PostFilterInput): [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
+}
+input UserFilterInput {
+	id: IntComparator
+	name: StringComparator
+	posts: PostFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [UserFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [UserFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: UserFilterInput
+}
+"""
+Ordering for User
+"""
+input UserOrdering {
+	"""
+	Order User by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order User by name
+	"""
+	name: _OrderingTypes
 }
 enum _OrderingTypes {
 	ASC
@@ -454,97 +489,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["name"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_droid_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 *model.DroidFilterInput
-	if tmp, ok := rawArgs["filter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg1, err = ec.unmarshalODroidFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroidFilterInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["filter"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_hero_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *model.Episode
-	if tmp, ok := rawArgs["episode"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("episode"))
-		arg0, err = ec.unmarshalOEpisode2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐEpisode(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["episode"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["limit"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["limit"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["offset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
-		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["offset"] = arg2
-	var arg3 *model.CharacterOrdering
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg3, err = ec.unmarshalOCharacterOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterOrdering(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["orderBy"] = arg3
-	var arg4 *model.CharacterFilterInput
-	if tmp, ok := rawArgs["filter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg4, err = ec.unmarshalOCharacterFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["filter"] = arg4
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_human_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -565,19 +510,217 @@ func (ec *executionContext) field_Query_human_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["offset"] = arg1
-	var arg2 *model.HumanOrdering
+	var arg2 *model.CategoryOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOHumanOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOCategoryOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["orderBy"] = arg2
-	var arg3 *model.HumanFilterInput
+	var arg3 *model.CategoryFilterInput
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg3, err = ec.unmarshalOHumanFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx, tmp)
+		arg3, err = ec.unmarshalOCategoryFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Post_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOUserFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_categories_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg1
+	var arg2 *model.CategoryOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg2, err = ec.unmarshalOCategoryOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg2
+	var arg3 *model.CategoryFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOCategoryFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg1
+	var arg2 *model.PostOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg2, err = ec.unmarshalOPostOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg2
+	var arg3 *model.PostFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOPostFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg1
+	var arg2 *model.UserOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg2, err = ec.unmarshalOUserOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg2
+	var arg3 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOUserFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_User_posts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg1
+	var arg2 *model.PostOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg2, err = ec.unmarshalOPostOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg2
+	var arg3 *model.PostFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOPostFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -624,7 +767,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Droid_id(ctx context.Context, field graphql.CollectedField, obj *model.Droid) (ret graphql.Marshaler) {
+func (ec *executionContext) _Category_id(ctx context.Context, field graphql.CollectedField, obj *model.Category) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -632,7 +775,7 @@ func (ec *executionContext) _Droid_id(ctx context.Context, field graphql.Collect
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Droid",
+		Object:     "Category",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -654,12 +797,12 @@ func (ec *executionContext) _Droid_id(ctx context.Context, field graphql.Collect
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Droid_name(ctx context.Context, field graphql.CollectedField, obj *model.Droid) (ret graphql.Marshaler) {
+func (ec *executionContext) _Category_name(ctx context.Context, field graphql.CollectedField, obj *model.Category) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -667,7 +810,7 @@ func (ec *executionContext) _Droid_name(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Droid",
+		Object:     "Category",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -691,7 +834,7 @@ func (ec *executionContext) _Droid_name(ctx context.Context, field graphql.Colle
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Droid_friends(ctx context.Context, field graphql.CollectedField, obj *model.Droid) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -699,103 +842,7 @@ func (ec *executionContext) _Droid_friends(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Droid",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Friends, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]model.Character)
-	fc.Result = res
-	return ec.marshalOCharacter2ᚕfastgqlᚋexampleᚋgraphᚋmodelᚐCharacter(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Droid_appearsIn(ctx context.Context, field graphql.CollectedField, obj *model.Droid) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Droid",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AppearsIn, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Episode)
-	fc.Result = res
-	return ec.marshalOEpisode2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐEpisode(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Droid_primaryFunction(ctx context.Context, field graphql.CollectedField, obj *model.Droid) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Droid",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PrimaryFunction, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Human_id(ctx context.Context, field graphql.CollectedField, obj *model.Human) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Human",
+		Object:     "Post",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -817,12 +864,12 @@ func (ec *executionContext) _Human_id(ctx context.Context, field graphql.Collect
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Human_name(ctx context.Context, field graphql.CollectedField, obj *model.Human) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_name(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -830,7 +877,7 @@ func (ec *executionContext) _Human_name(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Human",
+		Object:     "Post",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -854,7 +901,7 @@ func (ec *executionContext) _Human_name(ctx context.Context, field graphql.Colle
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Human_friends(ctx context.Context, field graphql.CollectedField, obj *model.Human) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_categories(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -862,7 +909,7 @@ func (ec *executionContext) _Human_friends(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Human",
+		Object:     "Post",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -870,9 +917,16 @@ func (ec *executionContext) _Human_friends(ctx context.Context, field graphql.Co
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Post_categories_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Friends, nil
+		return obj.Categories, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -881,12 +935,12 @@ func (ec *executionContext) _Human_friends(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]model.Character)
+	res := resTmp.([]*model.Category)
 	fc.Result = res
-	return ec.marshalOCharacter2ᚕfastgqlᚋexampleᚋgraphᚋmodelᚐCharacter(ctx, field.Selections, res)
+	return ec.marshalOCategory2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Human_appearsIn(ctx context.Context, field graphql.CollectedField, obj *model.Human) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_user(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -894,7 +948,7 @@ func (ec *executionContext) _Human_appearsIn(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Human",
+		Object:     "Post",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -902,9 +956,16 @@ func (ec *executionContext) _Human_appearsIn(ctx context.Context, field graphql.
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Post_user_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AppearsIn, nil
+		return obj.User, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -913,44 +974,12 @@ func (ec *executionContext) _Human_appearsIn(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Episode)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalOEpisode2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐEpisode(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Human_homePlanet(ctx context.Context, field graphql.CollectedField, obj *model.Human) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Human",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HomePlanet, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_hero(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -967,7 +996,7 @@ func (ec *executionContext) _Query_hero(ctx context.Context, field graphql.Colle
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_hero_args(ctx, rawArgs)
+	args, err := ec.field_Query_posts_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -975,7 +1004,7 @@ func (ec *executionContext) _Query_hero(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Hero(rctx, args["episode"].(*model.Episode), args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CharacterOrdering), args["filter"].(*model.CharacterFilterInput))
+		return ec.resolvers.Query().Posts(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.PostOrdering), args["filter"].(*model.PostFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -984,12 +1013,12 @@ func (ec *executionContext) _Query_hero(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]model.Character)
+	res := resTmp.([]*model.Post)
 	fc.Result = res
-	return ec.marshalOCharacter2ᚕfastgqlᚋexampleᚋgraphᚋmodelᚐCharacter(ctx, field.Selections, res)
+	return ec.marshalOPost2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_human(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1006,7 +1035,7 @@ func (ec *executionContext) _Query_human(ctx context.Context, field graphql.Coll
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_human_args(ctx, rawArgs)
+	args, err := ec.field_Query_users_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1014,7 +1043,7 @@ func (ec *executionContext) _Query_human(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Human(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.HumanOrdering), args["filter"].(*model.HumanFilterInput))
+		return ec.resolvers.Query().Users(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.UserOrdering), args["filter"].(*model.UserFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1023,12 +1052,12 @@ func (ec *executionContext) _Query_human(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Human)
+	res := resTmp.([]*model.User)
 	fc.Result = res
-	return ec.marshalOHuman2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHuman(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_droid(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_categories(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1045,7 +1074,7 @@ func (ec *executionContext) _Query_droid(ctx context.Context, field graphql.Coll
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_droid_args(ctx, rawArgs)
+	args, err := ec.field_Query_categories_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1053,7 +1082,7 @@ func (ec *executionContext) _Query_droid(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Droid(rctx, args["id"].(string), args["filter"].(*model.DroidFilterInput))
+		return ec.resolvers.Query().Categories(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1062,9 +1091,9 @@ func (ec *executionContext) _Query_droid(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Droid)
+	res := resTmp.([]*model.Category)
 	fc.Result = res
-	return ec.marshalODroid2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroid(ctx, field.Selections, res)
+	return ec.marshalOCategory2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1136,6 +1165,115 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_posts(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_User_posts_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Posts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Post)
+	fc.Result = res
+	return ec.marshalOPost2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2253,8 +2391,8 @@ func (ec *executionContext) unmarshalInputBooleanComparator(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCharacterFilterInput(ctx context.Context, obj interface{}) (model.CharacterFilterInput, error) {
-	var it model.CharacterFilterInput
+func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Context, obj interface{}) (model.CategoryFilterInput, error) {
+	var it model.CategoryFilterInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -2263,7 +2401,7 @@ func (ec *executionContext) unmarshalInputCharacterFilterInput(ctx context.Conte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			it.ID, err = ec.unmarshalOIntComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2275,19 +2413,11 @@ func (ec *executionContext) unmarshalInputCharacterFilterInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "friends":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("friends"))
-			it.Friends, err = ec.unmarshalOCharacterFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "AND":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			it.And, err = ec.unmarshalOCharacterFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, v)
+			it.And, err = ec.unmarshalOCategoryFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2295,7 +2425,7 @@ func (ec *executionContext) unmarshalInputCharacterFilterInput(ctx context.Conte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			it.Or, err = ec.unmarshalOCharacterFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, v)
+			it.Or, err = ec.unmarshalOCategoryFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2303,7 +2433,7 @@ func (ec *executionContext) unmarshalInputCharacterFilterInput(ctx context.Conte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			it.Not, err = ec.unmarshalOCharacterFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, v)
+			it.Not, err = ec.unmarshalOCategoryFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2313,8 +2443,8 @@ func (ec *executionContext) unmarshalInputCharacterFilterInput(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCharacterOrdering(ctx context.Context, obj interface{}) (model.CharacterOrdering, error) {
-	var it model.CharacterOrdering
+func (ec *executionContext) unmarshalInputCategoryOrdering(ctx context.Context, obj interface{}) (model.CategoryOrdering, error) {
+	var it model.CategoryOrdering
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -2332,194 +2462,6 @@ func (ec *executionContext) unmarshalInputCharacterOrdering(ctx context.Context,
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "appearsIn":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("appearsIn"))
-			it.AppearsIn, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputDroidFilterInput(ctx context.Context, obj interface{}) (model.DroidFilterInput, error) {
-	var it model.DroidFilterInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "friends":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("friends"))
-			it.Friends, err = ec.unmarshalOCharacterFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "primaryFunction":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("primaryFunction"))
-			it.PrimaryFunction, err = ec.unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "AND":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			it.And, err = ec.unmarshalODroidFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroidFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "OR":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			it.Or, err = ec.unmarshalODroidFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroidFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "NOT":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			it.Not, err = ec.unmarshalODroidFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroidFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputHumanFilterInput(ctx context.Context, obj interface{}) (model.HumanFilterInput, error) {
-	var it model.HumanFilterInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "friends":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("friends"))
-			it.Friends, err = ec.unmarshalOCharacterFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "homePlanet":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("homePlanet"))
-			it.HomePlanet, err = ec.unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "AND":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			it.And, err = ec.unmarshalOHumanFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "OR":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			it.Or, err = ec.unmarshalOHumanFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "NOT":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			it.Not, err = ec.unmarshalOHumanFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputHumanOrdering(ctx context.Context, obj interface{}) (model.HumanOrdering, error) {
-	var it model.HumanOrdering
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "appearsIn":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("appearsIn"))
-			it.AppearsIn, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "homePlanet":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("homePlanet"))
-			it.HomePlanet, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2665,6 +2607,102 @@ func (ec *executionContext) unmarshalInputOperator(ctx context.Context, obj inte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, obj interface{}) (model.PostFilterInput, error) {
+	var it model.PostFilterInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalOIntComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "categories":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categories"))
+			it.Categories, err = ec.unmarshalOCategoryFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "user":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
+			it.User, err = ec.unmarshalOUserFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "AND":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			it.And, err = ec.unmarshalOPostFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "OR":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			it.Or, err = ec.unmarshalOPostFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "NOT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			it.Not, err = ec.unmarshalOPostFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPostOrdering(ctx context.Context, obj interface{}) (model.PostOrdering, error) {
+	var it model.PostOrdering
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, obj interface{}) (model.StringComparator, error) {
 	var it model.StringComparator
 	var asMap = obj.(map[string]interface{})
@@ -2741,61 +2779,120 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, obj interface{}) (model.UserFilterInput, error) {
+	var it model.UserFilterInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalOIntComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "posts":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("posts"))
+			it.Posts, err = ec.unmarshalOPostFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "AND":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			it.And, err = ec.unmarshalOUserFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "OR":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			it.Or, err = ec.unmarshalOUserFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "NOT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			it.Not, err = ec.unmarshalOUserFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj interface{}) (model.UserOrdering, error) {
+	var it model.UserOrdering
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
-
-func (ec *executionContext) _Character(ctx context.Context, sel ast.SelectionSet, obj model.Character) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.Droid:
-		return ec._Droid(ctx, sel, &obj)
-	case *model.Droid:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Droid(ctx, sel, obj)
-	case model.Human:
-		return ec._Human(ctx, sel, &obj)
-	case *model.Human:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Human(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
 
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
 
-var droidImplementors = []string{"Droid", "Character"}
+var categoryImplementors = []string{"Category"}
 
-func (ec *executionContext) _Droid(ctx context.Context, sel ast.SelectionSet, obj *model.Droid) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, droidImplementors)
+func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet, obj *model.Category) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, categoryImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Droid")
+			out.Values[i] = graphql.MarshalString("Category")
 		case "id":
-			out.Values[i] = ec._Droid_id(ctx, field, obj)
+			out.Values[i] = ec._Category_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "name":
-			out.Values[i] = ec._Droid_name(ctx, field, obj)
-		case "friends":
-			out.Values[i] = ec._Droid_friends(ctx, field, obj)
-		case "appearsIn":
-			out.Values[i] = ec._Droid_appearsIn(ctx, field, obj)
-		case "primaryFunction":
-			out.Values[i] = ec._Droid_primaryFunction(ctx, field, obj)
+			out.Values[i] = ec._Category_name(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2807,30 +2904,28 @@ func (ec *executionContext) _Droid(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
-var humanImplementors = []string{"Human", "Character"}
+var postImplementors = []string{"Post"}
 
-func (ec *executionContext) _Human(ctx context.Context, sel ast.SelectionSet, obj *model.Human) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, humanImplementors)
+func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj *model.Post) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, postImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Human")
+			out.Values[i] = graphql.MarshalString("Post")
 		case "id":
-			out.Values[i] = ec._Human_id(ctx, field, obj)
+			out.Values[i] = ec._Post_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "name":
-			out.Values[i] = ec._Human_name(ctx, field, obj)
-		case "friends":
-			out.Values[i] = ec._Human_friends(ctx, field, obj)
-		case "appearsIn":
-			out.Values[i] = ec._Human_appearsIn(ctx, field, obj)
-		case "homePlanet":
-			out.Values[i] = ec._Human_homePlanet(ctx, field, obj)
+			out.Values[i] = ec._Post_name(ctx, field, obj)
+		case "categories":
+			out.Values[i] = ec._Post_categories(ctx, field, obj)
+		case "user":
+			out.Values[i] = ec._Post_user(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2857,7 +2952,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "hero":
+		case "posts":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -2865,10 +2960,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_hero(ctx, field)
+				res = ec._Query_posts(ctx, field)
 				return res
 			})
-		case "human":
+		case "users":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -2876,10 +2971,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_human(ctx, field)
+				res = ec._Query_users(ctx, field)
 				return res
 			})
-		case "droid":
+		case "categories":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -2887,13 +2982,47 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_droid(ctx, field)
+				res = ec._Query_categories(ctx, field)
 				return res
 			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var userImplementors = []string{"User"}
+
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("User")
+		case "id":
+			out.Values[i] = ec._User_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._User_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "posts":
+			out.Values[i] = ec._User_posts(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3165,6 +3294,21 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNOperatorTypes2fastgqlᚋexampleᚋgraphᚋmodelᚐOperatorTypes(ctx context.Context, v interface{}) (model.OperatorTypes, error) {
 	var res model.OperatorTypes
 	err := res.UnmarshalGQL(v)
@@ -3188,6 +3332,36 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -3419,6 +3593,16 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) unmarshalN_relationType2fastgqlᚋexampleᚋgraphᚋmodelᚐRelationType(ctx context.Context, v interface{}) (model.RelationType, error) {
+	var res model.RelationType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalN_relationType2fastgqlᚋexampleᚋgraphᚋmodelᚐRelationType(ctx context.Context, sel ast.SelectionSet, v model.RelationType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3443,14 +3627,7 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
-func (ec *executionContext) marshalOCharacter2fastgqlᚋexampleᚋgraphᚋmodelᚐCharacter(ctx context.Context, sel ast.SelectionSet, v model.Character) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Character(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOCharacter2ᚕfastgqlᚋexampleᚋgraphᚋmodelᚐCharacter(ctx context.Context, sel ast.SelectionSet, v []model.Character) graphql.Marshaler {
+func (ec *executionContext) marshalOCategory2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v []*model.Category) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -3477,7 +3654,7 @@ func (ec *executionContext) marshalOCharacter2ᚕfastgqlᚋexampleᚋgraphᚋmod
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOCharacter2fastgqlᚋexampleᚋgraphᚋmodelᚐCharacter(ctx, sel, v[i])
+			ret[i] = ec.marshalOCategory2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3490,7 +3667,14 @@ func (ec *executionContext) marshalOCharacter2ᚕfastgqlᚋexampleᚋgraphᚋmod
 	return ret
 }
 
-func (ec *executionContext) unmarshalOCharacterFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx context.Context, v interface{}) ([]*model.CharacterFilterInput, error) {
+func (ec *executionContext) marshalOCategory2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v *model.Category) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Category(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOCategoryFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v interface{}) ([]*model.CategoryFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -3503,10 +3687,10 @@ func (ec *executionContext) unmarshalOCharacterFilterInput2ᚕᚖfastgqlᚋexamp
 		}
 	}
 	var err error
-	res := make([]*model.CharacterFilterInput, len(vSlice))
+	res := make([]*model.CategoryFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOCharacterFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOCategoryFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -3514,225 +3698,19 @@ func (ec *executionContext) unmarshalOCharacterFilterInput2ᚕᚖfastgqlᚋexamp
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOCharacterFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterFilterInput(ctx context.Context, v interface{}) (*model.CharacterFilterInput, error) {
+func (ec *executionContext) unmarshalOCategoryFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v interface{}) (*model.CategoryFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalInputCharacterFilterInput(ctx, v)
+	res, err := ec.unmarshalInputCategoryFilterInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOCharacterOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCharacterOrdering(ctx context.Context, v interface{}) (*model.CharacterOrdering, error) {
+func (ec *executionContext) unmarshalOCategoryOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx context.Context, v interface{}) (*model.CategoryOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalInputCharacterOrdering(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalODroid2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroid(ctx context.Context, sel ast.SelectionSet, v *model.Droid) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Droid(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalODroidFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroidFilterInput(ctx context.Context, v interface{}) ([]*model.DroidFilterInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*model.DroidFilterInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalODroidFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroidFilterInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalODroidFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐDroidFilterInput(ctx context.Context, v interface{}) (*model.DroidFilterInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDroidFilterInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOEpisode2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐEpisode(ctx context.Context, v interface{}) ([]*model.Episode, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*model.Episode, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOEpisode2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐEpisode(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOEpisode2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐEpisode(ctx context.Context, sel ast.SelectionSet, v []*model.Episode) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOEpisode2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐEpisode(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) unmarshalOEpisode2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐEpisode(ctx context.Context, v interface{}) (*model.Episode, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(model.Episode)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOEpisode2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐEpisode(ctx context.Context, sel ast.SelectionSet, v *model.Episode) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
-}
-
-func (ec *executionContext) marshalOHuman2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHuman(ctx context.Context, sel ast.SelectionSet, v []*model.Human) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOHuman2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHuman(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalOHuman2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHuman(ctx context.Context, sel ast.SelectionSet, v *model.Human) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Human(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOHumanFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx context.Context, v interface{}) ([]*model.HumanFilterInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*model.HumanFilterInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOHumanFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalOHumanFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanFilterInput(ctx context.Context, v interface{}) (*model.HumanFilterInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputHumanFilterInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOHumanOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐHumanOrdering(ctx context.Context, v interface{}) (*model.HumanOrdering, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputHumanOrdering(ctx, v)
+	res, err := ec.unmarshalInputCategoryOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -3785,6 +3763,101 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 	return graphql.MarshalInt(*v)
+}
+
+func (ec *executionContext) unmarshalOIntComparator2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx context.Context, v interface{}) (*model.IntComparator, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputIntComparator(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPost2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOPost2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOPost2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Post(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPostFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v interface{}) ([]*model.PostFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.PostFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOPostFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOPostFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v interface{}) (*model.PostFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPostFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOPostOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx context.Context, v interface{}) (*model.PostOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPostOrdering(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
@@ -3852,6 +3925,93 @@ func (ec *executionContext) unmarshalOStringComparator2ᚖfastgqlᚋexampleᚋgr
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputStringComparator(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOUser2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOUser2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOUser2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) ([]*model.UserFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.UserFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOUserFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOUserFilterInput2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) (*model.UserFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUserOrdering2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx context.Context, v interface{}) (*model.UserOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -4043,22 +4203,6 @@ func (ec *executionContext) marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 		return graphql.Null
 	}
 	return ec.___Type(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalO_relationType2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐRelationType(ctx context.Context, v interface{}) (*model.RelationType, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(model.RelationType)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalO_relationType2ᚖfastgqlᚋexampleᚋgraphᚋmodelᚐRelationType(ctx context.Context, sel ast.SelectionSet, v *model.RelationType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 // endregion ***************************** type.gotpl *****************************

@@ -8,93 +8,33 @@ import (
 	"strconv"
 )
 
-type Character interface {
-	IsCharacter()
-}
-
 type BooleanComparator struct {
 	Eq  *bool `json:"eq"`
 	Neq *bool `json:"neq"`
 }
 
-type CharacterFilterInput struct {
-	ID      *StringComparator     `json:"id"`
-	Name    *StringComparator     `json:"name"`
-	Friends *CharacterFilterInput `json:"friends"`
-	// Logical AND of FilterInput
-	And []*CharacterFilterInput `json:"AND"`
-	// Logical OR of FilterInput
-	Or []*CharacterFilterInput `json:"OR"`
-	// Logical NOT of FilterInput
-	Not *CharacterFilterInput `json:"NOT"`
+type Category struct {
+	ID   int     `json:"id"`
+	Name *string `json:"name"`
 }
 
-// Ordering for Character
-type CharacterOrdering struct {
-	// Order Character by id
+type CategoryFilterInput struct {
+	ID   *IntComparator    `json:"id"`
+	Name *StringComparator `json:"name"`
+	// Logical AND of FilterInput
+	And []*CategoryFilterInput `json:"AND"`
+	// Logical OR of FilterInput
+	Or []*CategoryFilterInput `json:"OR"`
+	// Logical NOT of FilterInput
+	Not *CategoryFilterInput `json:"NOT"`
+}
+
+// Ordering for Category
+type CategoryOrdering struct {
+	// Order Category by id
 	ID *OrderingTypes `json:"id"`
-	// Order Character by name
+	// Order Category by name
 	Name *OrderingTypes `json:"name"`
-	// Order Character by appearsIn
-	AppearsIn *OrderingTypes `json:"appearsIn"`
-}
-
-type Droid struct {
-	ID              string      `json:"id"`
-	Name            *string     `json:"name"`
-	Friends         []Character `json:"friends"`
-	AppearsIn       []*Episode  `json:"appearsIn"`
-	PrimaryFunction *string     `json:"primaryFunction"`
-}
-
-func (Droid) IsCharacter() {}
-
-type DroidFilterInput struct {
-	ID              *StringComparator     `json:"id"`
-	Name            *StringComparator     `json:"name"`
-	Friends         *CharacterFilterInput `json:"friends"`
-	PrimaryFunction *StringComparator     `json:"primaryFunction"`
-	// Logical AND of FilterInput
-	And []*DroidFilterInput `json:"AND"`
-	// Logical OR of FilterInput
-	Or []*DroidFilterInput `json:"OR"`
-	// Logical NOT of FilterInput
-	Not *DroidFilterInput `json:"NOT"`
-}
-
-type Human struct {
-	ID         string      `json:"id"`
-	Name       *string     `json:"name"`
-	Friends    []Character `json:"friends"`
-	AppearsIn  []*Episode  `json:"appearsIn"`
-	HomePlanet *string     `json:"homePlanet"`
-}
-
-func (Human) IsCharacter() {}
-
-type HumanFilterInput struct {
-	ID         *StringComparator     `json:"id"`
-	Name       *StringComparator     `json:"name"`
-	Friends    *CharacterFilterInput `json:"friends"`
-	HomePlanet *StringComparator     `json:"homePlanet"`
-	// Logical AND of FilterInput
-	And []*HumanFilterInput `json:"AND"`
-	// Logical OR of FilterInput
-	Or []*HumanFilterInput `json:"OR"`
-	// Logical NOT of FilterInput
-	Not *HumanFilterInput `json:"NOT"`
-}
-
-// Ordering for Human
-type HumanOrdering struct {
-	// Order Human by id
-	ID *OrderingTypes `json:"id"`
-	// Order Human by name
-	Name *OrderingTypes `json:"name"`
-	// Order Human by appearsIn
-	AppearsIn *OrderingTypes `json:"appearsIn"`
-	// Order Human by homePlanet
-	HomePlanet *OrderingTypes `json:"homePlanet"`
 }
 
 type IntComparator struct {
@@ -118,6 +58,34 @@ type Operator struct {
 	Type *string       `json:"type"`
 }
 
+type Post struct {
+	ID         int         `json:"id"`
+	Name       *string     `json:"name"`
+	Categories []*Category `json:"categories"`
+	User       *User       `json:"user"`
+}
+
+type PostFilterInput struct {
+	ID         *IntComparator       `json:"id"`
+	Name       *StringComparator    `json:"name"`
+	Categories *CategoryFilterInput `json:"categories"`
+	User       *UserFilterInput     `json:"user"`
+	// Logical AND of FilterInput
+	And []*PostFilterInput `json:"AND"`
+	// Logical OR of FilterInput
+	Or []*PostFilterInput `json:"OR"`
+	// Logical NOT of FilterInput
+	Not *PostFilterInput `json:"NOT"`
+}
+
+// Ordering for Post
+type PostOrdering struct {
+	// Order Post by id
+	ID *OrderingTypes `json:"id"`
+	// Order Post by name
+	Name *OrderingTypes `json:"name"`
+}
+
 type StringComparator struct {
 	Eq          *string   `json:"eq"`
 	Neq         *string   `json:"neq"`
@@ -129,47 +97,30 @@ type StringComparator struct {
 	Prefix      *string   `json:"prefix"`
 }
 
-type Episode string
-
-const (
-	EpisodeNewHope Episode = "NEW_HOPE"
-	EpisodeEmpire  Episode = "EMPIRE"
-	EpisodeJedi    Episode = "JEDI"
-)
-
-var AllEpisode = []Episode{
-	EpisodeNewHope,
-	EpisodeEmpire,
-	EpisodeJedi,
+type User struct {
+	ID    int     `json:"id"`
+	Name  string  `json:"name"`
+	Posts []*Post `json:"posts"`
 }
 
-func (e Episode) IsValid() bool {
-	switch e {
-	case EpisodeNewHope, EpisodeEmpire, EpisodeJedi:
-		return true
-	}
-	return false
+type UserFilterInput struct {
+	ID    *IntComparator    `json:"id"`
+	Name  *StringComparator `json:"name"`
+	Posts *PostFilterInput  `json:"posts"`
+	// Logical AND of FilterInput
+	And []*UserFilterInput `json:"AND"`
+	// Logical OR of FilterInput
+	Or []*UserFilterInput `json:"OR"`
+	// Logical NOT of FilterInput
+	Not *UserFilterInput `json:"NOT"`
 }
 
-func (e Episode) String() string {
-	return string(e)
-}
-
-func (e *Episode) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = Episode(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid Episode", str)
-	}
-	return nil
-}
-
-func (e Episode) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
+// Ordering for User
+type UserOrdering struct {
+	// Order User by id
+	ID *OrderingTypes `json:"id"`
+	// Order User by name
+	Name *OrderingTypes `json:"name"`
 }
 
 type OperatorTypes string

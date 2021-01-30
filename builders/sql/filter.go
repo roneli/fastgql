@@ -33,6 +33,10 @@ func newExpressionBuilder(b *Builder, logicalType schema.LogicalOperator) *expre
 }
 
 
+func (e *expressionsBuilder) Config() *builders.Config {
+	return e.builder.Config()
+}
+
 func (e *expressionsBuilder) Operation(name, key string, value interface{}) error {
 
 	op, ok := e.builder.operators[key]
@@ -43,11 +47,28 @@ func (e *expressionsBuilder) Operation(name, key string, value interface{}) erro
 	return nil
 }
 
-func (e *expressionsBuilder) Filter(f *ast.Field, key string, values map[string]interface{}) error {
+func (e *expressionsBuilder) Filter(f *ast.FieldDefinition, key string, values map[string]interface{}) error {
+	fieldDef := e.builder.Config().Schema.Types[f.Type.Name()]
+	filterFieldDef := fieldDef.Fields.ForName(key)
+	// Create a builder
+	d := filterFieldDef.Directives.ForName("sqlRelation")
+	if d == nil {
+		return fmt.Errorf("missing directive sqlRelation")
+	}
+	fb, err := buildFilterInput(e.builder, parseRelationDirective(d))
+	if err != nil {
+		return err
+	}
+
+	if err := builders.BuildFilter(&fb, filterFieldDef, values); err != nil {
+		return err
+	}
+
+	e.ExpressionList = e.Append(goqu.Func("exists", fb.builder))
 	return nil
 }
 
-func (e *expressionsBuilder) Logical(f *ast.Field, logicalExp schema.LogicalOperator, values []interface{}) error {
+func (e *expressionsBuilder) Logical(f *ast.FieldDefinition, logicalExp schema.LogicalOperator, values []interface{}) error {
 
 	switch logicalExp {
 	case schema.LogicalOperatorOR, schema.LogicalOperatorAND:
@@ -77,4 +98,12 @@ func Eq(table exp.AliasedExpression, key string, value interface{}) goqu.Express
 
 func Neq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Neq(value)
+}
+
+func Like(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).Like(value)
+}
+
+func ILike(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).ILike(value)
 }

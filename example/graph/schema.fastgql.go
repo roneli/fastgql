@@ -9,21 +9,16 @@ import (
 	"fastgql/builders/sql"
 	"fastgql/example/graph/generated"
 	"fastgql/example/graph/model"
-	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
-func (r *queryResolver) Hero(ctx context.Context, episode *model.Episode, limit *int, offset *int, orderBy *model.CharacterOrdering, filter *model.CharacterFilterInput) ([]model.Character, error) {
-	panic(fmt.Errorf("interface support not implemented"))
-}
-
-func (r *queryResolver) Human(ctx context.Context, limit *int, offset *int, orderBy *model.HumanOrdering, filter *model.HumanFilterInput) ([]*model.Human, error) {
+func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
-	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	builder, _ := sql.NewBuilder(r.Cfg, fCtx.Field.Field)
 	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
 	if err != nil {
 		return nil, err
@@ -38,7 +33,7 @@ func (r *queryResolver) Human(ctx context.Context, limit *int, offset *int, orde
 		return nil, err
 	}
 
-	var data []*model.Human
+	var data []*model.Post
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
 	}
@@ -46,11 +41,11 @@ func (r *queryResolver) Human(ctx context.Context, limit *int, offset *int, orde
 
 }
 
-func (r *queryResolver) Droid(ctx context.Context, id string, filter *model.DroidFilterInput) (*model.Droid, error) {
+func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy *model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
-	builder, _ := sql.NewBuilder(fCtx.Field.Name)
+	builder, _ := sql.NewBuilder(r.Cfg, fCtx.Field.Field)
 	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
 	if err != nil {
 		return nil, err
@@ -65,7 +60,34 @@ func (r *queryResolver) Droid(ctx context.Context, id string, filter *model.Droi
 		return nil, err
 	}
 
-	var data *model.Droid
+	var data []*model.User
+	if err := pgxscan.ScanAll(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
+
+}
+
+func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error) {
+	opCtx := graphql.GetOperationContext(ctx)
+	fCtx := graphql.GetFieldContext(ctx)
+
+	builder, _ := sql.NewBuilder(r.Cfg, fCtx.Field.Field)
+	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
+	if err != nil {
+		return nil, err
+	}
+
+	q, args, err := builder.Query()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Sql.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var data []*model.Category
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
 	}

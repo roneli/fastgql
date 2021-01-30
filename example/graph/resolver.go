@@ -6,10 +6,15 @@ package graph
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
+	"fastgql/builders"
+	pgx "github.com/jackc/pgx/v4"
 )
 
-type Resolver struct{ Sql SqlRepo }
+type Resolver struct{
+	Cfg *builders.Config
+	Sql SqlRepo
+}
+
 type SqlRepo interface {
 	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
 }

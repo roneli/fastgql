@@ -8,12 +8,6 @@ import (
 	"strings"
 )
 
-type CollectedField struct {
-	// Original field definition
-	*ast.Field
-	Directives []string
-	Fields []CollectedField
-}
 
 func BuildQuery(builder QueryBuilder, f *ast.Field, variables map[string]interface{}) error {
 	err := BuildArguments(builder, f, variables)
@@ -63,9 +57,7 @@ func BuildFields(builder FieldBuilder, f *ast.Field, variables map[string]interf
 				} else if err := builder.OnSingleField(fragmentField, variables); err != nil {
 					return err
 				}
-
 			}
-
 		}
 		case *ast.InlineFragment: {
 			fmt.Print("inline fragment")
@@ -105,7 +97,7 @@ func BuildArguments(builder ArgumentsBuilder, f *ast.Field, variables map[string
 	}
 
 	filterArg := f.Arguments.ForName("filter")
-	if offsetArg != nil {
+	if filterArg != nil {
 		filter, err := filterArg.Value.Value(variables)
 		if err != nil {
 			return err
@@ -114,7 +106,7 @@ func BuildArguments(builder ArgumentsBuilder, f *ast.Field, variables map[string
 		if !ok {
 			return fmt.Errorf("invalid filter type")
 		}
-		if err := BuildFilter(builder, f, filterMap); err != nil {
+		if err := BuildFilter(builder, f.Definition, filterMap); err != nil {
 			return err
 		}
 	}
@@ -141,8 +133,11 @@ func BuildOrdering(builder OrderingBuilder, arg *ast.Argument, variables map[str
 	return builder.OrderBy(orderFields)
 }
 
-func BuildFilter(builder FilterBuilder, field *ast.Field, filter map[string]interface{}) error {
+func BuildFilter(builder FilterBuilder, field *ast.FieldDefinition, filter map[string]interface{}) error {
+
+	filterInputDef := builder.Config().Schema.Types[fmt.Sprintf("%sFilterInput", field.Type.Name())]
 	for k, v := range filter {
+		keyType := filterInputDef.Fields.ForName(k).Type
 		var err error
 		if k == string(schema.LogicalOperatorAND) || k == string(schema.LogicalOperatorOR) {
 			vv, ok  := v.([]interface{})
@@ -151,7 +146,7 @@ func BuildFilter(builder FilterBuilder, field *ast.Field, filter map[string]inte
 			}
 			err = builder.Logical(field, schema.LogicalOperator(k), vv)
 
-		} else if strings.HasSuffix(k, "BoolExp") {
+		} else if strings.HasSuffix(keyType.Name(), "FilterInput") {
 			kv, ok  := v.(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("fatal value of bool exp not map")
