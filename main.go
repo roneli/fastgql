@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fastgql/cmd"
+	"github.com/roneli/fastgql/cmd"
 )
 
 func main() {

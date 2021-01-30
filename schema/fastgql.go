@@ -2,15 +2,17 @@ package schema
 
 import (
 	"bytes"
-	"fastgql/codegen"
-	"fastgql/schema/augmenters"
 	"fmt"
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin/modelgen"
+	"github.com/roneli/fastgql/plugin/resolvergen"
+	"github.com/roneli/fastgql/schema/augmenters"
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/vektah/gqlparser/v2/formatter"
 )
+
+
 
 type FastGqlPlugin struct {}
 
@@ -65,7 +67,7 @@ func Generate(configPath string) error {
 	cfg.Sources = []*ast.Source{src}
 
 
-	err = api.Generate(cfg,  api.NoPlugins(), api.AddPlugin(modelgen.New()), api.AddPlugin(codegen.New()), api.AddPlugin(plugin))
+	err = api.Generate(cfg,  api.NoPlugins(), api.AddPlugin(modelgen.New()), api.AddPlugin(resolvergen.New()), api.AddPlugin(plugin))
 	if err != nil {
 		return err
 	}

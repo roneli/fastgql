@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fastgql/example/graph/model"
+	"github.com/roneli/fastgql/example/graph/model"
 	"strconv"
 	"sync"
 

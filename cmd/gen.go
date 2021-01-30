@@ -1,18 +1,16 @@
 package cmd
 
 import (
-	"fastgql/schema"
+	"github.com/roneli/fastgql/schema"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
 )
 
-var configPath string
-
 var generateCmd = &cobra.Command{
 	Use:   "generate",
-	Short: "Generate fake graphql server from SDL",
-	Long:  `Generate a fake graphql server from given SDL`,
+	Short: "generate a graphql server based on schema",
+	Long:  `Generate and augment a graphql server based on a schema`,
 	Run: func(cmd *cobra.Command, args []string) {
 		generateAPI()
 	},

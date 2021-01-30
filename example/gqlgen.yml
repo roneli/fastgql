@@ -2,7 +2,7 @@
 schema:
   - example/graph/*.graphql
 
-# Where should the generated server code go?
+# Where should the generated servergen code go?
 exec:
   filename: example/graph/generated/generated.go
   package: generated

@@ -6,8 +6,8 @@ package graph
 
 import (
 	"context"
-	"fastgql/builders"
-	pgx "github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4"
+	"github.com/roneli/fastgql/builders"
 )
 
 type Resolver struct{

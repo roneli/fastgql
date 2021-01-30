@@ -2,8 +2,8 @@ package rewrite
 
 import (
 	"bytes"
-	"fastgql/codegen/code"
 	"fmt"
+	"github.com/roneli/fastgql/codegen/code"
 	"go/ast"
 	"go/token"
 	"io/ioutil"

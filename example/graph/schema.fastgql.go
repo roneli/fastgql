@@ -5,10 +5,10 @@ package graph
 
 import (
 	"context"
-	"fastgql/builders"
-	"fastgql/builders/sql"
-	"fastgql/example/graph/generated"
-	"fastgql/example/graph/model"
+	"github.com/roneli/fastgql/builders"
+	"github.com/roneli/fastgql/builders/sql"
+	"github.com/roneli/fastgql/example/graph/generated"
+	"github.com/roneli/fastgql/example/graph/model"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/georgysavva/scany/pgxscan"

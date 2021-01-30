@@ -2,12 +2,12 @@ package sql
 
 import (
 	"errors"
-	"fastgql/builders"
-	"fastgql/schema"
 	"fmt"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/iancoleman/strcase"
+	"github.com/roneli/fastgql/builders"
+	"github.com/roneli/fastgql/schema"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 

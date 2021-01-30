@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"fastgql/builders"
-	"fastgql/example/graph"
-	"fastgql/example/graph/generated"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4"
-	requestid "github.com/thanhhh/gin-requestid"
+	"github.com/roneli/fastgql/builders"
+	"github.com/roneli/fastgql/example/graph"
+	"github.com/roneli/fastgql/example/graph/generated"
 )
 
 type MockRepo struct {}
@@ -54,7 +53,6 @@ func playgroundHandler() gin.HandlerFunc {
 func main() {
 	// Setting up Gin
 	r := gin.Default()
-	r.Use(requestid.RequestID())
 	r.POST("/query", graphqlHandler())
 	r.GET("/", playgroundHandler())
 	r.Run()

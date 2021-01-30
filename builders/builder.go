@@ -1,8 +1,8 @@
 package builders
 
 import (
-	"fastgql/internal"
-	"fastgql/schema"
+	"github.com/roneli/fastgql/internal"
+	"github.com/roneli/fastgql/schema"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 

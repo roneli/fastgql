@@ -1,4 +1,9 @@
-# Used if Object/Interface type name is different then the actual table name
+package schema
+
+
+// TODO: in go 1.16 use //go:embed
+
+const FastgqlSchema = `# Used if Object/Interface type name is different then the actual table name
 directive @tableName(name: String!) on OBJECT | INTERFACE
 
 # Generate filter input on an object
@@ -71,4 +76,5 @@ input BooleanListComparator {
     contains: [Boolean]
     contained: [Boolean]
     overlap: [Boolean]
-}
+}`
+
