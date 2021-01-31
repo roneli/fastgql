@@ -1,3 +1,7 @@
+{{ reserveImport "github.com/georgysavva/scany/pgxscan" }}
+{{ reserveImport "github.com/roneli/fastgql/builders" }}
+{{ reserveImport 	"github.com/roneli/fastgql/builders/sql" }}
+
 opCtx := graphql.GetOperationContext(ctx)
 fCtx := graphql.GetFieldContext(ctx)
 

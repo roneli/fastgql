@@ -156,7 +156,7 @@ func initConfig(configFilename string, pkgName string) error {
 
 func initFastgqlSchema() error {
 
-	if err := os.MkdirAll(filepath.Dir(schemaFilename), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir("graph/fastgql.graphql"), 0755); err != nil {
 		return fmt.Errorf("unable to create schema dir: " + err.Error())
 	}
 
@@ -167,15 +167,17 @@ func initFastgqlSchema() error {
 }
 
 func initSchema(schemaFilename string) error {
-	_, err := os.Stat(schemaFilename)
+
+	schemaFullPath := filepath.Join("graph", schemaFilename)
+	_, err := os.Stat(schemaFullPath)
 	if !os.IsNotExist(err) {
 		return nil
 	}
-	if err := os.MkdirAll(filepath.Dir(schemaFilename), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(schemaFullPath), 0755); err != nil {
 		return fmt.Errorf("unable to create schema dir: " + err.Error())
 	}
 
-	if err = ioutil.WriteFile(filepath.Join("graph", schemaFilename), []byte(strings.TrimSpace(schemaDefault)), 0644); err != nil {
+	if err = ioutil.WriteFile(schemaFullPath, []byte(strings.TrimSpace(schemaDefault)), 0644); err != nil {
 		return fmt.Errorf("unable to write schema file: " + err.Error())
 	}
 	return nil

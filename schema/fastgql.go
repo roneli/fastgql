@@ -2,7 +2,6 @@ package schema
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin/modelgen"
@@ -38,7 +37,6 @@ func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) *ast.Source {
 
 	var buf bytes.Buffer
 	formatter.NewFormatter(&buf).FormatSchema(schema)
-	fmt.Print(buf.String())
 	return &ast.Source{
 		Name:    "schema.graphql",
 		Input:   buf.String(),

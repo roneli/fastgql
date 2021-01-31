@@ -5,16 +5,17 @@ package graph
 
 import (
 	"context"
+
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/roneli/fastgql/builders"
 	"github.com/roneli/fastgql/builders/sql"
 	"github.com/roneli/fastgql/example/graph/generated"
 	"github.com/roneli/fastgql/example/graph/model"
-
-	"github.com/99designs/gqlgen/graphql"
-	"github.com/georgysavva/scany/pgxscan"
 )
 
 func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
+
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
@@ -42,6 +43,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 }
 
 func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy *model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
+
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
@@ -69,6 +71,7 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 }
 
 func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error) {
+
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 

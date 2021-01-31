@@ -13,6 +13,14 @@ type BooleanComparator struct {
 	Neq *bool `json:"neq"`
 }
 
+type BooleanListComparator struct {
+	Eq        []*bool `json:"eq"`
+	Neq       []*bool `json:"neq"`
+	Contains  []*bool `json:"contains"`
+	Contained []*bool `json:"contained"`
+	Overlap   []*bool `json:"overlap"`
+}
+
 type Category struct {
 	ID   int     `json:"id"`
 	Name *string `json:"name"`
@@ -51,11 +59,7 @@ type IntListComparator struct {
 	Neq       []*int `json:"neq"`
 	Contains  []*int `json:"contains"`
 	Contained []*int `json:"contained"`
-}
-
-type Operator struct {
-	Name OperatorTypes `json:"name"`
-	Type *string       `json:"type"`
+	Overlap   []*int `json:"overlap"`
 }
 
 type Post struct {
@@ -97,6 +101,14 @@ type StringComparator struct {
 	Prefix      *string   `json:"prefix"`
 }
 
+type StringListComparator struct {
+	Eq          []*string `json:"eq"`
+	Neq         []*string `json:"neq"`
+	Contains    []*string `json:"contains"`
+	ContainedBy []*string `json:"containedBy"`
+	Overlap     []*string `json:"overlap"`
+}
+
 type User struct {
 	ID    int     `json:"id"`
 	Name  string  `json:"name"`
@@ -121,59 +133,6 @@ type UserOrdering struct {
 	ID *OrderingTypes `json:"id"`
 	// Order User by name
 	Name *OrderingTypes `json:"name"`
-}
-
-type OperatorTypes string
-
-const (
-	OperatorTypesEq    OperatorTypes = "EQ"
-	OperatorTypesNeq   OperatorTypes = "NEQ"
-	OperatorTypesGt    OperatorTypes = "GT"
-	OperatorTypesLt    OperatorTypes = "LT"
-	OperatorTypesLte   OperatorTypes = "LTE"
-	OperatorTypesGte   OperatorTypes = "GTE"
-	OperatorTypesLike  OperatorTypes = "LIKE"
-	OperatorTypesIlike OperatorTypes = "ILIKE"
-)
-
-var AllOperatorTypes = []OperatorTypes{
-	OperatorTypesEq,
-	OperatorTypesNeq,
-	OperatorTypesGt,
-	OperatorTypesLt,
-	OperatorTypesLte,
-	OperatorTypesGte,
-	OperatorTypesLike,
-	OperatorTypesIlike,
-}
-
-func (e OperatorTypes) IsValid() bool {
-	switch e {
-	case OperatorTypesEq, OperatorTypesNeq, OperatorTypesGt, OperatorTypesLt, OperatorTypesLte, OperatorTypesGte, OperatorTypesLike, OperatorTypesIlike:
-		return true
-	}
-	return false
-}
-
-func (e OperatorTypes) String() string {
-	return string(e)
-}
-
-func (e *OperatorTypes) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = OperatorTypes(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid OperatorTypes", str)
-	}
-	return nil
-}
-
-func (e OperatorTypes) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type OrderingTypes string
