@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
-	"github.com/99designs/gqlgen/plugin/servergen"
 	"github.com/roneli/fastgql/codegen/code"
 	"github.com/roneli/fastgql/schema"
 	"github.com/spf13/cobra"
@@ -116,26 +114,12 @@ var initCmd = &cobra.Command{
 				return err
 			}
 		}
-		if err := schema.Generate(configFilename); err != nil{
+		if err := schema.Generate(configFilename, true); err != nil{
 			fmt.Fprintln(os.Stderr, "failed to load config", err.Error())
 			os.Exit(2)
 		}
-		GenerateGraphServer(serverFilename)
 		return nil
 	},
-}
-
-func GenerateGraphServer(serverFilename string) {
-	cfg, err := config.LoadConfigFromDefaultLocations()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-	}
-
-	if err := api.Generate(cfg, api.AddPlugin(servergen.New(serverFilename))); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-	}
-
-	fmt.Fprintf(os.Stdout, "Exec \"go run ./%s\" to start GraphQL servergen\n", serverFilename)
 }
 
 func configExists(configFilename string) bool {
@@ -176,7 +160,7 @@ func initFastgqlSchema() error {
 		return fmt.Errorf("unable to create schema dir: " + err.Error())
 	}
 
-	if err := ioutil.WriteFile("fastgql.graphql", []byte(strings.TrimSpace(schema.FastgqlSchema)), 0644); err != nil {
+	if err := ioutil.WriteFile("graph/fastgql.graphql", []byte(strings.TrimSpace(schema.FastgqlSchema)), 0644); err != nil {
 		return fmt.Errorf("unable to write schema file: " + err.Error())
 	}
 	return nil
@@ -191,7 +175,7 @@ func initSchema(schemaFilename string) error {
 		return fmt.Errorf("unable to create schema dir: " + err.Error())
 	}
 
-	if err = ioutil.WriteFile(schemaFilename, []byte(strings.TrimSpace(schemaDefault)), 0644); err != nil {
+	if err = ioutil.WriteFile(filepath.Join("graph", schemaFilename), []byte(strings.TrimSpace(schemaDefault)), 0644); err != nil {
 		return fmt.Errorf("unable to write schema file: " + err.Error())
 	}
 	return nil
