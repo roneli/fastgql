@@ -1,25 +1,4 @@
 
-input GenerateQueryParams {
-    get: Boolean
-    query: Boolean
-    password: Boolean
-    aggregate: Boolean
-}
-
-input GenerateMutationParams {
-    add: Boolean
-    update: Boolean
-    delete: Boolean
-}
-
-directive @generate(
-    query: GenerateQueryParams,
-    mutation: GenerateMutationParams,
-    subscription: Boolean) on OBJECT | INTERFACE
-
-
-
-
 # Used if Object/Interface type name is different then the actual table name
 directive @tableName(name: String!) on OBJECT | INTERFACE
 

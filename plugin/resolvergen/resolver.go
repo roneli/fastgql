@@ -1,13 +1,13 @@
-package codegen
+package resolvergen
 
 import (
 	"bytes"
-	"fastgql/codegen/rewrite"
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/codegen/templates"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/pkg/errors"
+	"github.com/roneli/fastgql/codegen/rewrite"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -160,14 +160,12 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 				//
 				// It serves as dependency injection for your app, add any dependencies you require here.`,
 			Template: `{{ reserveImport "context"  }}
-  					   {{ reserveImport "fastgql/builders" }}
-					   {{ reserveImport "github.com/jackc/pgx/v4" }}
-
-					   type {{.}} struct {cfg *builders.Config sql SqlRepo}
-
-  					   type SqlRepo interface {
-							Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
-						}`,
+{{ reserveImport "github.com/roneli/fastgql/builders" }}
+{{ reserveImport "github.com/jackc/pgx/v4/pgxpool"}}
+type {{.}} struct {
+	Cfg *builders.Config 
+	Sql *pgxpool.Pool
+}`,
 			Filename: data.Config.Resolver.Filename,
 			Data:     data.Config.Resolver.Type,
 			Packages: data.Config.Packages,

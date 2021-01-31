@@ -1,7 +1,7 @@
 package augmenters
 
 import (
-	"fastgql/gql"
+	"github.com/roneli/fastgql/gql"
 	"fmt"
 "github.com/spf13/cast"
 "github.com/vektah/gqlparser/v2/ast"

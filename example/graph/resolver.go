@@ -5,16 +5,11 @@ package graph
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 import (
-	"context"
-	"fastgql/builders"
-	pgx "github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/roneli/fastgql/builders"
 )
 
-type Resolver struct{
+type Resolver struct {
 	Cfg *builders.Config
-	Sql SqlRepo
-}
-
-type SqlRepo interface {
-	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
+	Sql *pgxpool.Pool
 }

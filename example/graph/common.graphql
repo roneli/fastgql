@@ -1,20 +1,3 @@
-
-enum OperatorTypes {
-    EQ
-    NEQ
-    GT
-    LT
-    LTE
-    GTE
-    LIKE
-    ILIKE
-}
-
-input Operator {
-    name: OperatorTypes!
-    type: String = None
-}
-
 # Used if Object/Interface type name is different then the actual table name
 directive @tableName(name: String!) on OBJECT | INTERFACE
 
@@ -39,4 +22,53 @@ enum _OrderingTypes {
     DESC
     ASC_NULL_FIRST
     DESC_NULL_FIRST
+}
+
+input StringComparator {
+    eq: String
+    neq: String
+    contains: [String]
+    not_contains: [String]
+    like: String
+    ilike: String
+    suffix: String
+    prefix: String
+}
+
+input StringListComparator {
+    eq: [String]
+    neq: [String]
+    contains: [String]
+    containedBy: [String]
+    overlap: [String]
+}
+
+input IntComparator {
+    eq: Int
+    neq: Int
+    gt: Int
+    gte: Int
+    lt: Int
+    lte: Int
+}
+
+input IntListComparator {
+    eq: [Int]
+    neq: [Int]
+    contains: [Int]
+    contained: [Int]
+    overlap: [Int]
+}
+
+input BooleanComparator {
+    eq: Boolean
+    neq: Boolean
+}
+
+input BooleanListComparator {
+    eq: [Boolean]
+    neq: [Boolean]
+    contains: [Boolean]
+    contained: [Boolean]
+    overlap: [Boolean]
 }

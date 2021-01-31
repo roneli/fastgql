@@ -1,8 +1,8 @@
 package builders
 
 import (
-	"fastgql/schema"
 	"fmt"
+	"github.com/roneli/fastgql/schema"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 	"strings"

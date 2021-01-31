@@ -2,11 +2,11 @@ package sql
 
 import (
 	"errors"
-	"fastgql/builders"
-	"fastgql/schema"
 	"fmt"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	"github.com/roneli/fastgql/builders"
+	"github.com/roneli/fastgql/schema"
 	// import the dialect
 	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 	"github.com/iancoleman/strcase"
