@@ -145,7 +145,8 @@ func BuildFilter(builder FilterBuilder, field *ast.FieldDefinition, filter map[s
 				return fmt.Errorf("fatal value of logical list exp not list")
 			}
 			err = builder.Logical(field, schema.LogicalOperator(k), vv)
-
+		} else if k == string(schema.LogicalOperatorNot) {
+			err = builder.Logical(field, schema.LogicalOperator(k), []interface{}{v})
 		} else if strings.HasSuffix(keyType.Name(), "FilterInput") {
 			kv, ok  := v.(map[string]interface{})
 			if !ok {

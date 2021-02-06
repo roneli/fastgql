@@ -1,4 +1,3 @@
-//go:generate go run github.com/roneli/fastgql generate -c ../gqlgen.yml
 package graph
 
 // This file will not be regenerated automatically.

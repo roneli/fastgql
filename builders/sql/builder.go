@@ -1,7 +1,6 @@
 package sql
 
 import (
-	"errors"
 	"fmt"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -42,6 +41,9 @@ var defaultOperators = map[string]Operator{
 	"neq": Neq,
 	"like": Like,
 	"ilike": ILike,
+	"notIn": NotIn,
+	"in": In,
+	"isNull": IsNull,
 }
 
 // NewBuilder is the entry point for creating builders
@@ -142,15 +144,16 @@ func (b *Builder) Filter(f *ast.FieldDefinition, key string, value map[string]in
 }
 
 func (b *Builder) Logical(f *ast.FieldDefinition, logicalExp schema.LogicalOperator, values []interface{}) error {
+
+	expList := newExpressionBuilder(b, logicalExp)
+	if err := expList.Logical(f, logicalExp, values); err != nil {
+		return err
+	}
 	switch logicalExp {
 	case schema.LogicalOperatorOR, schema.LogicalOperatorAND:
-		expList := newExpressionBuilder(b, logicalExp)
-		if err := expList.Logical(f, logicalExp, values); err != nil {
-			return err
-		}
 		b.builder = b.builder.Where(expList)
 	case schema.LogicalOperatorNot:
-		return errors.New("not implemented")
+		b.builder = b.builder.Where(goqu.Func("NOT", expList))
 	}
 	return nil
 }

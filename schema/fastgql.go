@@ -50,7 +50,6 @@ func Generate(configPath string, generateServer bool) error {
 	if err != nil {
 		return err
 	}
-
 	err = cfg.LoadSchema()
 	if err != nil {
 		return err

@@ -6,13 +6,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"sync"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/roneli/fastgql/example/graph/model"
+	"github.com/roneli/fastgql/example/graph/example/graph/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -39,7 +38,6 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	SkipGenerate func(ctx context.Context, obj interface{}, next graphql.Resolver, resolver *bool) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -255,7 +253,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var sources = []*ast.Source{
 	{Name: "schema.graphql", Input: `directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, recursive: Boolean = True) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
-directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @tableName(name: String!) on OBJECT | INTERFACE
 input BooleanComparator {
@@ -408,7 +405,7 @@ type Query @generateArguments {
 	orderBy: CategoryOrdering, """
 	Filter categories
 	"""
-	filter: CategoryFilterInput): [Category] @skipGenerate
+	filter: CategoryFilterInput): [Category]
 }
 input StringComparator {
 	eq: String
@@ -493,21 +490,6 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) dir_skipGenerate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["resolver"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("resolver"))
-		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["resolver"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -532,7 +514,7 @@ func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawA
 	var arg2 *model.CategoryOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -541,7 +523,7 @@ func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawA
 	var arg3 *model.CategoryFilterInput
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg3, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
+		arg3, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -556,7 +538,7 @@ func (ec *executionContext) field_Post_user_args(ctx context.Context, rawArgs ma
 	var arg0 *model.UserFilterInput
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg0, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		arg0, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -604,7 +586,7 @@ func (ec *executionContext) field_Query_categories_args(ctx context.Context, raw
 	var arg2 *model.CategoryOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -613,7 +595,7 @@ func (ec *executionContext) field_Query_categories_args(ctx context.Context, raw
 	var arg3 *model.CategoryFilterInput
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg3, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
+		arg3, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -646,7 +628,7 @@ func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs 
 	var arg2 *model.PostOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -655,7 +637,7 @@ func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs 
 	var arg3 *model.PostFilterInput
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg3, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
+		arg3, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -688,7 +670,7 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 	var arg2 *model.UserOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -697,7 +679,7 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 	var arg3 *model.UserFilterInput
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg3, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		arg3, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -730,7 +712,7 @@ func (ec *executionContext) field_User_posts_args(ctx context.Context, rawArgs m
 	var arg2 *model.PostOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -739,7 +721,7 @@ func (ec *executionContext) field_User_posts_args(ctx context.Context, rawArgs m
 	var arg3 *model.PostFilterInput
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg3, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
+		arg3, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -956,7 +938,7 @@ func (ec *executionContext) _Post_categories(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*model.Category)
 	fc.Result = res
-	return ec.marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx, field.Selections, res)
+	return ec.marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategory(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_user(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -995,7 +977,7 @@ func (ec *executionContext) _Post_user(ctx context.Context, field graphql.Collec
 	}
 	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1034,7 +1016,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*model.Post)
 	fc.Result = res
-	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1073,7 +1055,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*model.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_categories(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1100,32 +1082,8 @@ func (ec *executionContext) _Query_categories(ctx context.Context, field graphql
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Categories(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			resolver, err := ec.unmarshalOBoolean2ᚖbool(ctx, "True")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.SkipGenerate == nil {
-				return nil, errors.New("directive skipGenerate is not implemented")
-			}
-			return ec.directives.SkipGenerate(ctx, nil, directive0, resolver)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.([]*model.Category); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/roneli/fastgql/example/graph/model.Category`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Categories(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1136,7 +1094,7 @@ func (ec *executionContext) _Query_categories(ctx context.Context, field graphql
 	}
 	res := resTmp.([]*model.Category)
 	fc.Result = res
-	return ec.marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx, field.Selections, res)
+	return ec.marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategory(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1316,7 +1274,7 @@ func (ec *executionContext) _User_posts(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.([]*model.Post)
 	fc.Result = res
-	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2496,7 +2454,7 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			it.ID, err = ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2504,7 +2462,7 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2512,7 +2470,7 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			it.And, err = ec.unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			it.And, err = ec.unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2520,7 +2478,7 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			it.Or, err = ec.unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			it.Or, err = ec.unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2528,7 +2486,7 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			it.Not, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			it.Not, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2548,7 +2506,7 @@ func (ec *executionContext) unmarshalInputCategoryOrdering(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2556,7 +2514,7 @@ func (ec *executionContext) unmarshalInputCategoryOrdering(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2688,7 +2646,7 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			it.ID, err = ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2696,7 +2654,7 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2704,7 +2662,7 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categories"))
-			it.Categories, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			it.Categories, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2712,7 +2670,7 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
-			it.User, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			it.User, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2720,7 +2678,7 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			it.And, err = ec.unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			it.And, err = ec.unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2728,7 +2686,7 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			it.Or, err = ec.unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			it.Or, err = ec.unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2736,7 +2694,7 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			it.Not, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			it.Not, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2756,7 +2714,7 @@ func (ec *executionContext) unmarshalInputPostOrdering(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2764,7 +2722,7 @@ func (ec *executionContext) unmarshalInputPostOrdering(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2912,7 +2870,7 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			it.ID, err = ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2920,7 +2878,7 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2928,7 +2886,7 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("posts"))
-			it.Posts, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			it.Posts, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2936,7 +2894,7 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			it.And, err = ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			it.And, err = ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2944,7 +2902,7 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			it.Or, err = ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			it.Or, err = ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2952,7 +2910,7 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			it.Not, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			it.Not, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2972,7 +2930,7 @@ func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			it.ID, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2980,7 +2938,7 @@ func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3706,13 +3664,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) unmarshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐRelationType(ctx context.Context, v interface{}) (model.RelationType, error) {
+func (ec *executionContext) unmarshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐRelationType(ctx context.Context, v interface{}) (model.RelationType, error) {
 	var res model.RelationType
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐRelationType(ctx context.Context, sel ast.SelectionSet, v model.RelationType) graphql.Marshaler {
+func (ec *executionContext) marshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐRelationType(ctx context.Context, sel ast.SelectionSet, v model.RelationType) graphql.Marshaler {
 	return v
 }
 
@@ -3776,7 +3734,7 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
-func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v []*model.Category) graphql.Marshaler {
+func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v []*model.Category) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -3803,7 +3761,7 @@ func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastg
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOCategory2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx, sel, v[i])
+			ret[i] = ec.marshalOCategory2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategory(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3816,14 +3774,14 @@ func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastg
 	return ret
 }
 
-func (ec *executionContext) marshalOCategory2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v *model.Category) graphql.Marshaler {
+func (ec *executionContext) marshalOCategory2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v *model.Category) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Category(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v interface{}) ([]*model.CategoryFilterInput, error) {
+func (ec *executionContext) unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v interface{}) ([]*model.CategoryFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -3839,7 +3797,7 @@ func (ec *executionContext) unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋr
 	res := make([]*model.CategoryFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -3847,7 +3805,7 @@ func (ec *executionContext) unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋr
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v interface{}) (*model.CategoryFilterInput, error) {
+func (ec *executionContext) unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v interface{}) (*model.CategoryFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -3855,7 +3813,7 @@ func (ec *executionContext) unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋrone
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx context.Context, v interface{}) (*model.CategoryOrdering, error) {
+func (ec *executionContext) unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx context.Context, v interface{}) (*model.CategoryOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -3914,7 +3872,7 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return graphql.MarshalInt(*v)
 }
 
-func (ec *executionContext) unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx context.Context, v interface{}) (*model.IntComparator, error) {
+func (ec *executionContext) unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐIntComparator(ctx context.Context, v interface{}) (*model.IntComparator, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -3922,7 +3880,7 @@ func (ec *executionContext) unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋf
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -3949,7 +3907,7 @@ func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalOPost2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3962,14 +3920,14 @@ func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ret
 }
 
-func (ec *executionContext) marshalOPost2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalOPost2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Post(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v interface{}) ([]*model.PostFilterInput, error) {
+func (ec *executionContext) unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v interface{}) ([]*model.PostFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -3985,7 +3943,7 @@ func (ec *executionContext) unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋronel
 	res := make([]*model.PostFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -3993,7 +3951,7 @@ func (ec *executionContext) unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋronel
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v interface{}) (*model.PostFilterInput, error) {
+func (ec *executionContext) unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v interface{}) (*model.PostFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -4001,7 +3959,7 @@ func (ec *executionContext) unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneli�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx context.Context, v interface{}) (*model.PostOrdering, error) {
+func (ec *executionContext) unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx context.Context, v interface{}) (*model.PostOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -4069,7 +4027,7 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return graphql.MarshalString(*v)
 }
 
-func (ec *executionContext) unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx context.Context, v interface{}) (*model.StringComparator, error) {
+func (ec *executionContext) unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐStringComparator(ctx context.Context, v interface{}) (*model.StringComparator, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -4077,7 +4035,7 @@ func (ec *executionContext) unmarshalOStringComparator2ᚖgithubᚗcomᚋroneli�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -4104,7 +4062,7 @@ func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+			ret[i] = ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4117,14 +4075,14 @@ func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ret
 }
 
-func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) ([]*model.UserFilterInput, error) {
+func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) ([]*model.UserFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -4140,7 +4098,7 @@ func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋronel
 	res := make([]*model.UserFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -4148,7 +4106,7 @@ func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋronel
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) (*model.UserFilterInput, error) {
+func (ec *executionContext) unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) (*model.UserFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -4156,7 +4114,7 @@ func (ec *executionContext) unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneli�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx context.Context, v interface{}) (*model.UserOrdering, error) {
+func (ec *executionContext) unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx context.Context, v interface{}) (*model.UserOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -4164,7 +4122,7 @@ func (ec *executionContext) unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfa
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, v interface{}) (*model.OrderingTypes, error) {
+func (ec *executionContext) unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, v interface{}) (*model.OrderingTypes, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -4173,7 +4131,7 @@ func (ec *executionContext) unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, sel ast.SelectionSet, v *model.OrderingTypes) graphql.Marshaler {
+func (ec *executionContext) marshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋexampleᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, sel ast.SelectionSet, v *model.OrderingTypes) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

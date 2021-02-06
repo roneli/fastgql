@@ -24,3 +24,6 @@ enum _OrderingTypes {
     ASC_NULL_FIRST
     DESC_NULL_FIRST
 }
+
+# Tells fastgql to skip resolver generation on field
+directive @skipGenerate(resolver:Boolean = True) on FIELD_DEFINITION

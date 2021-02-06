@@ -8,6 +8,7 @@ import (
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/pkg/errors"
 	"github.com/roneli/fastgql/codegen/rewrite"
+	"github.com/spf13/cast"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,6 +20,8 @@ import (
 func New() plugin.Plugin {
 	return &Plugin{}
 }
+
+const defaultImpl = `panic(fmt.Errorf("not implemented"))`
 
 type Plugin struct{}
 
@@ -185,6 +188,18 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error){
 		buf.WriteString(`panic(fmt.Errorf("interface support not implemented"))`)
 		return buf, nil
 	}
+
+	if resolver.Implementation != "" && defaultImpl != resolver.Implementation {
+		buf.WriteString(resolver.Implementation)
+		return buf, nil
+	}
+	if d := resolver.Field.FieldDefinition.Directives.ForName("skipGenerate"); d != nil {
+		if v := d.Definition.Arguments.ForName("resolver"); v != nil  && cast.ToBool(v.DefaultValue.Raw){
+			buf.WriteString(`panic(fmt.Errorf("not implemented"))`)
+			return buf, nil
+		}
+	}
+
 	t := template.New("").Funcs(templates.Funcs())
 	fileName := resolveName("sql.tpl", 0)
 

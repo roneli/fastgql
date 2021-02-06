@@ -17,6 +17,8 @@ enum _relationType {
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!,
     references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 
+directive @skipGenerate(resolver:Boolean = True) on FIELD_DEFINITION
+
 enum _OrderingTypes {
     ASC
     DESC

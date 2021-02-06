@@ -1,13 +1,13 @@
 package sql
 
 import (
-	"errors"
 	"fmt"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/iancoleman/strcase"
 	"github.com/roneli/fastgql/builders"
 	"github.com/roneli/fastgql/schema"
+	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -69,22 +69,16 @@ func (e *expressionsBuilder) Filter(f *ast.FieldDefinition, key string, values m
 }
 
 func (e *expressionsBuilder) Logical(f *ast.FieldDefinition, logicalExp schema.LogicalOperator, values []interface{}) error {
-
-	switch logicalExp {
-	case schema.LogicalOperatorOR, schema.LogicalOperatorAND:
-		expList := newExpressionBuilder(e.builder, logicalExp)
-		for _, value := range values {
-			v, ok := value.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("failed cast value %s", value)
-			}
-			if err := builders.BuildFilter(expList, f, v); err != nil {
-				return err
-			}
-			e.ExpressionList = expList
+	expList := newExpressionBuilder(e.builder, logicalExp)
+	for _, value := range values {
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed cast value %s", value)
 		}
-	case schema.LogicalOperatorNot:
-		return errors.New("not implemented")
+		if err := builders.BuildFilter(expList, f, v); err != nil {
+			return err
+		}
+		e.ExpressionList = expList
 	}
 	return nil
 }
@@ -106,4 +100,20 @@ func Like(table exp.AliasedExpression, key string, value interface{}) goqu.Expre
 
 func ILike(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).ILike(value)
+}
+
+func In(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).In(value)
+}
+
+func NotIn(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).NotIn(value)
+}
+
+func IsNull(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	if cast.ToBool(value) {
+		return table.Col(key).IsNull()
+	} else {
+		return table.Col(key).IsNotNull()
+	}
 }
