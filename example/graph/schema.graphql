@@ -22,6 +22,6 @@ type Category @generateFilterInput(name: "CategoryFilterInput"){
 type Query @generateArguments {
   posts: [Post]
   users: [User]
-  categories: [Category]
+  categories: [Category] @skipGenerate
 }
 

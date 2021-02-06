@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -38,6 +39,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	SkipGenerate func(ctx context.Context, obj interface{}, next graphql.Resolver, resolver *bool) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -253,6 +255,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var sources = []*ast.Source{
 	{Name: "schema.graphql", Input: `directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, recursive: Boolean = True) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
+directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @tableName(name: String!) on OBJECT | INTERFACE
 input BooleanComparator {
@@ -405,7 +408,7 @@ type Query @generateArguments {
 	orderBy: CategoryOrdering, """
 	Filter categories
 	"""
-	filter: CategoryFilterInput): [Category]
+	filter: CategoryFilterInput): [Category] @skipGenerate
 }
 input StringComparator {
 	eq: String
@@ -489,6 +492,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_skipGenerate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *bool
+	if tmp, ok := rawArgs["resolver"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("resolver"))
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["resolver"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -1082,8 +1100,32 @@ func (ec *executionContext) _Query_categories(ctx context.Context, field graphql
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Categories(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Categories(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			resolver, err := ec.unmarshalOBoolean2ᚖbool(ctx, "True")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.SkipGenerate == nil {
+				return nil, errors.New("directive skipGenerate is not implemented")
+			}
+			return ec.directives.SkipGenerate(ctx, nil, directive0, resolver)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.Category); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/roneli/fastgql/example/graph/model.Category`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)

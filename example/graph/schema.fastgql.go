@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/georgysavva/scany/pgxscan"
@@ -15,7 +16,6 @@ import (
 )
 
 func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
-
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
@@ -39,11 +39,9 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 		return nil, err
 	}
 	return data, nil
-
 }
 
 func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy *model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
-
 	opCtx := graphql.GetOperationContext(ctx)
 	fCtx := graphql.GetFieldContext(ctx)
 
@@ -67,35 +65,10 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 		return nil, err
 	}
 	return data, nil
-
 }
 
 func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error) {
-
-	opCtx := graphql.GetOperationContext(ctx)
-	fCtx := graphql.GetFieldContext(ctx)
-
-	builder, _ := sql.NewBuilder(r.Cfg, fCtx.Field.Field)
-	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
-	if err != nil {
-		return nil, err
-	}
-
-	q, args, err := builder.Query()
-	if err != nil {
-		return nil, err
-	}
-	rows, err := r.Sql.Query(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	var data []*model.Category
-	if err := pgxscan.ScanAll(&data, rows); err != nil {
-		return nil, err
-	}
-	return data, nil
-
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Query returns generated.QueryResolver implementation.
