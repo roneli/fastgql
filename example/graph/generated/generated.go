@@ -49,29 +49,29 @@ type ComplexityRoot struct {
 	}
 
 	Post struct {
-		Categories func(childComplexity int, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) int
+		Categories func(childComplexity int, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) int
 		ID         func(childComplexity int) int
 		Name       func(childComplexity int) int
 		User       func(childComplexity int, filter *model.UserFilterInput) int
 	}
 
 	Query struct {
-		Categories func(childComplexity int, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) int
-		Posts      func(childComplexity int, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) int
-		Users      func(childComplexity int, limit *int, offset *int, orderBy *model.UserOrdering, filter *model.UserFilterInput) int
+		Categories func(childComplexity int, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) int
+		Posts      func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
+		Users      func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
 	}
 
 	User struct {
 		ID    func(childComplexity int) int
 		Name  func(childComplexity int) int
-		Posts func(childComplexity int, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) int
+		Posts func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
 	}
 }
 
 type QueryResolver interface {
-	Posts(ctx context.Context, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error)
-	Users(ctx context.Context, limit *int, offset *int, orderBy *model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
-	Categories(ctx context.Context, limit *int, offset *int, orderBy *model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error)
+	Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error)
+	Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
+	Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error)
 }
 
 type executableSchema struct {
@@ -113,7 +113,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Post.Categories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput)), true
+		return e.complexity.Post.Categories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput)), true
 
 	case "Post.id":
 		if e.complexity.Post.ID == nil {
@@ -151,7 +151,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Categories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput)), true
+		return e.complexity.Query.Categories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput)), true
 
 	case "Query.posts":
 		if e.complexity.Query.Posts == nil {
@@ -163,7 +163,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
+		return e.complexity.Query.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -175,7 +175,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Users(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.UserOrdering), args["filter"].(*model.UserFilterInput)), true
+		return e.complexity.Query.Users(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UserOrdering), args["filter"].(*model.UserFilterInput)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -201,7 +201,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.User.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
+		return e.complexity.User.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
 
 	}
 	return 0, false
@@ -329,7 +329,7 @@ type Post @generateFilterInput(name: "PostFilterInput") {
 	offset: Int = 0, """
 	Ordering for Category
 	"""
-	orderBy: CategoryOrdering, """
+	orderBy: [CategoryOrdering], """
 	Filter categories
 	"""
 	filter: CategoryFilterInput): [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
@@ -379,7 +379,7 @@ type Query @generateArguments {
 	offset: Int = 0, """
 	Ordering for Post
 	"""
-	orderBy: PostOrdering, """
+	orderBy: [PostOrdering], """
 	Filter posts
 	"""
 	filter: PostFilterInput): [Post]
@@ -392,7 +392,7 @@ type Query @generateArguments {
 	offset: Int = 0, """
 	Ordering for User
 	"""
-	orderBy: UserOrdering, """
+	orderBy: [UserOrdering], """
 	Filter users
 	"""
 	filter: UserFilterInput): [User]
@@ -405,7 +405,7 @@ type Query @generateArguments {
 	offset: Int = 0, """
 	Ordering for Category
 	"""
-	orderBy: CategoryOrdering, """
+	orderBy: [CategoryOrdering], """
 	Filter categories
 	"""
 	filter: CategoryFilterInput): [Category] @skipGenerate
@@ -439,7 +439,7 @@ type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user")
 	offset: Int = 0, """
 	Ordering for Post
 	"""
-	orderBy: PostOrdering, """
+	orderBy: [PostOrdering], """
 	Filter posts
 	"""
 	filter: PostFilterInput): [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
@@ -529,10 +529,10 @@ func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawA
 		}
 	}
 	args["offset"] = arg1
-	var arg2 *model.CategoryOrdering
+	var arg2 []*model.CategoryOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -601,10 +601,10 @@ func (ec *executionContext) field_Query_categories_args(ctx context.Context, raw
 		}
 	}
 	args["offset"] = arg1
-	var arg2 *model.CategoryOrdering
+	var arg2 []*model.CategoryOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -643,10 +643,10 @@ func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["offset"] = arg1
-	var arg2 *model.PostOrdering
+	var arg2 []*model.PostOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -685,10 +685,10 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["offset"] = arg1
-	var arg2 *model.UserOrdering
+	var arg2 []*model.UserOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOUserOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -727,10 +727,10 @@ func (ec *executionContext) field_User_posts_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["offset"] = arg1
-	var arg2 *model.PostOrdering
+	var arg2 []*model.PostOrdering
 	if tmp, ok := rawArgs["orderBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg2, err = ec.unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
+		arg2, err = ec.unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1023,7 +1023,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Posts(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.PostOrdering), args["filter"].(*model.PostFilterInput))
+		return ec.resolvers.Query().Posts(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.PostOrdering), args["filter"].(*model.PostFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1062,7 +1062,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Users(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.UserOrdering), args["filter"].(*model.UserFilterInput))
+		return ec.resolvers.Query().Users(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UserOrdering), args["filter"].(*model.UserFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1102,7 +1102,7 @@ func (ec *executionContext) _Query_categories(ctx context.Context, field graphql
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Categories(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].(*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput))
+			return ec.resolvers.Query().Categories(rctx, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.CategoryOrdering), args["filter"].(*model.CategoryFilterInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			resolver, err := ec.unmarshalOBoolean2ᚖbool(ctx, "True")
@@ -3855,6 +3855,30 @@ func (ec *executionContext) unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋrone
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx context.Context, v interface{}) ([]*model.CategoryOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.CategoryOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCategoryOrdering(ctx context.Context, v interface{}) (*model.CategoryOrdering, error) {
 	if v == nil {
 		return nil, nil
@@ -3999,6 +4023,30 @@ func (ec *executionContext) unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneli�
 	}
 	res, err := ec.unmarshalInputPostFilterInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx context.Context, v interface{}) ([]*model.PostOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.PostOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostOrdering(ctx context.Context, v interface{}) (*model.PostOrdering, error) {
@@ -4154,6 +4202,30 @@ func (ec *executionContext) unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneli�
 	}
 	res, err := ec.unmarshalInputUserFilterInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUserOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx context.Context, v interface{}) ([]*model.UserOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.UserOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐUserOrdering(ctx context.Context, v interface{}) (*model.UserOrdering, error) {

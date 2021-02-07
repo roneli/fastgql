@@ -118,11 +118,25 @@ func BuildOrdering(builder OrderingBuilder, arg *ast.Argument, variables map[str
 	if err != nil {
 		return err
 	}
-	argMap, ok := value.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid value type")
+	switch orderings := value.(type) {
+	case map[string]interface{}:
+		return builder.OrderBy(buildOrderingHelper(orderings))
+	case []interface{}:
+		var orderFields []OrderField
+		for _, o := range orderings {
+			argMap, ok := o.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("invalid value type")
+			}
+			orderFields = append(orderFields, buildOrderingHelper(argMap)...)
+		}
+		return builder.OrderBy(orderFields)
+	default:
+		panic(fmt.Sprintf("unknown ordering type %v", orderings))
 	}
+}
 
+func buildOrderingHelper(argMap map[string]interface{}) []OrderField {
 	orderFields := make([]OrderField, len(argMap))
 	for k, v := range argMap {
 		orderFields = append(orderFields, OrderField{
@@ -130,7 +144,7 @@ func BuildOrdering(builder OrderingBuilder, arg *ast.Argument, variables map[str
 			Type: OrderingTypes(cast.ToString(v)),
 		})
 	}
-	return builder.OrderBy(orderFields)
+	return orderFields
 }
 
 func BuildFilter(builder FilterBuilder, field *ast.FieldDefinition, filter map[string]interface{}) error {
