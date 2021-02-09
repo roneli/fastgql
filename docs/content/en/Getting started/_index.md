@@ -24,7 +24,7 @@ Create a directory for your project, and initialise it as a Go Module:
 $ mkdir fastgql-example
 $ cd fastgql-example 
 $ go mod init github.com/[username]/fastgql-example
-$ go get github.com/ronel/fastgql
+$ go get github.com/roneli/fastgql
 ```
 
 ## Building the server

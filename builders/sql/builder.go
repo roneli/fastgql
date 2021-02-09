@@ -58,6 +58,13 @@ func (b Builder) Config() *builders.Config{
 }
 
 func (b Builder) Query() (string, []interface{}, error) {
+	b.builder = b.Select()
+	query, args, err := b.builder.WithDialect("postgres").Prepared(true).ToSQL()
+	fmt.Println(query, args)
+	return query, args ,err
+}
+
+func (b *Builder) Select() *goqu.SelectDataset {
 	for i, c := range b.columns {
 		if i == 0 {
 			b.builder = b.builder.Select(goqu.T(c.tableName).Col(c.name).As(c.name))
@@ -65,9 +72,7 @@ func (b Builder) Query() (string, []interface{}, error) {
 			b.builder = b.builder.SelectAppend(goqu.T(c.tableName).Col(c.name).As(c.name))
 		}
 	}
-	query, args, err := b.builder.WithDialect("postgres").Prepared(true).ToSQL()
-	fmt.Println(query, args)
-	return query, args ,err
+	return b.builder
 }
 
 func (b *Builder) OnSingleField(f *ast.Field, variables map[string]interface{}) error {
@@ -102,13 +107,13 @@ func (b *Builder) OrderBy(orderFields []builders.OrderField) error {
 	for _, o := range orderFields {
 		switch o.Type {
 		case builders.OrderingTypesAsc:
-			b.builder = b.builder.OrderAppend(b.table.Col(strcase.ToSnake(o.Key)).Asc().NullsLast())
+			b.builder = b.builder.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Asc().NullsLast())
 		case builders.OrderingTypesAscNull:
-			b.builder = b.builder.OrderAppend(b.table.Col(strcase.ToSnake(o.Key)).Asc().NullsFirst())
+			b.builder = b.builder.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Asc().NullsFirst())
 		case builders.OrderingTypesDesc:
-			b.builder = b.builder.OrderAppend(b.table.Col(strcase.ToSnake(o.Key)).Desc().NullsLast())
+			b.builder = b.builder.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Desc().NullsLast())
 		case builders.OrderingTypesDescNull:
-			b.builder = b.builder.OrderAppend(b.table.Col(strcase.ToSnake(o.Key)).Desc().NullsFirst())
+			b.builder = b.builder.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Desc().NullsFirst())
 		}
 	}
 	return nil
@@ -202,17 +207,32 @@ func (b *Builder) buildRelationQuery(rel relation, f *ast.Field, variables map[s
 		)
 		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: relBuilder.name})
 	case ManyToMany:
-		m2mTableName := GenerateTableName(6)
-		m2mQuery := goqu.From(goqu.T(rel.manyToManyTable).As(m2mTableName)).Select(
-			goqu.COALESCE(goqu.Func("jsonb_agg", relBuilder.table.Col(f.Name)), goqu.L("'[]'::jsonb")).As(f.Name)).As(m2mTableName)
+
+		relBuilder, _ := b.createInnerBuilder(rel.referenceTable)
+		if err := builders.BuildFields(&relBuilder, f, variables);  err != nil {
+			return err
+		}
 		// Join the referenced table to the m2mQuery
-		m2mQuery = m2mQuery.LeftJoin(goqu.Lateral(relBuilder.builder.Select(buildJsonObject(relBuilder.columns, f.Name)).
-			As(relBuilder.name).Where(buildCrossCondition(m2mTableName, rel.manyToManyReferences, relBuilder.name, rel.references))),
-			goqu.On(goqu.L("true")),
-		)
-		// Finally join the m2m table with the main query
-		b.builder = b.builder.LeftJoin(goqu.Lateral(m2mQuery.Where(buildCrossCondition(b.name, rel.fields, m2mTableName, rel.manyToManyFields))), goqu.On(goqu.L("true")))
-		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: m2mTableName})
+		m2mBuilder, _ := relBuilder.createInnerBuilder(rel.manyToManyTable)
+		// pass relBuilder columns to m2mBuilder since we are left joining relBuilder selection
+		m2mBuilder.columns = relBuilder.columns
+		// Build arguments on m2m table after it was joined with relation table
+		if err := builders.BuildArguments(&m2mBuilder, f, variables); err != nil {
+			return err
+		}
+		// Join m2mBuilder with the relBuilder
+		m2mBuilder.builder = m2mBuilder.builder.LeftJoin(
+			goqu.Lateral(relBuilder.Select().Where(buildCrossCondition(relBuilder.name, rel.references, m2mBuilder.name, rel.manyToManyReferences))).As(relBuilder.name),
+			goqu.On(goqu.L("true")))
+		// Add cross condition from parent builder (current Builder instance)
+		m2mBuilder.builder = m2mBuilder.builder.Where(buildCrossCondition(b.name, rel.fields, m2mBuilder.name, rel.manyToManyFields)).As(relBuilder.name)
+
+		// Finally aggregate relation query and join the m2m table with the main query
+		aggTableName := GenerateTableName(6)
+		aggQuery := goqu.From(m2mBuilder.Select()).As(aggTableName).Select(
+			goqu.COALESCE(goqu.Func("jsonb_agg", buildJsonObject(relBuilder.columns, "")), goqu.L("'[]'::jsonb")).As(f.Name)).As(aggTableName)
+		b.builder = b.builder.CrossJoin(goqu.Lateral(aggQuery))
+		b.columns = append(b.columns, column{name: f.Name, alias: "", tableName: aggTableName})
 	}
 	return nil
 }
