@@ -3,4 +3,5 @@
 
 docs/node_modules/*
 docs/resources/*
+docs/public/*
 docs/themes/docsy/*
