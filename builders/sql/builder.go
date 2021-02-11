@@ -2,10 +2,12 @@ package sql
 
 import (
 	"fmt"
+
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/roneli/fastgql/builders"
 	"github.com/roneli/fastgql/schema"
+
 	// import the dialect
 	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 	"github.com/iancoleman/strcase"
@@ -13,12 +15,10 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-
-
 type column struct {
-	name string
+	name      string
 	tableName string
-	alias string
+	alias     string
 }
 
 type Builder struct {
@@ -37,12 +37,12 @@ type Builder struct {
 }
 
 var defaultOperators = map[string]Operator{
-	"eq": Eq,
-	"neq": Neq,
-	"like": Like,
-	"ilike": ILike,
-	"notIn": NotIn,
-	"in": In,
+	"eq":     Eq,
+	"neq":    Neq,
+	"like":   Like,
+	"ilike":  ILike,
+	"notIn":  NotIn,
+	"in":     In,
 	"isNull": IsNull,
 }
 
@@ -53,7 +53,7 @@ func NewBuilder(cfg *builders.Config, field *ast.Field) (Builder, error) {
 	return Builder{cfg, defaultOperators, goqu.From(table), genName, table, nil}, nil
 }
 
-func (b Builder) Config() *builders.Config{
+func (b Builder) Config() *builders.Config {
 	return b.config
 }
 
@@ -61,7 +61,7 @@ func (b Builder) Query() (string, []interface{}, error) {
 	b.builder = b.Select()
 	query, args, err := b.builder.WithDialect("postgres").Prepared(true).ToSQL()
 	fmt.Println(query, args)
-	return query, args ,err
+	return query, args, err
 }
 
 func (b *Builder) Select() *goqu.SelectDataset {
@@ -183,7 +183,7 @@ func (b *Builder) createInnerBuilder(tableName string) (Builder, error) {
 
 func (b *Builder) buildRelationQuery(rel relation, f *ast.Field, variables map[string]interface{}) error {
 	relBuilder, _ := b.createInnerBuilder(rel.referenceTable)
-	if err := builders.BuildFields(&relBuilder, f, variables);  err != nil {
+	if err := builders.BuildFields(&relBuilder, f, variables); err != nil {
 		return err
 	}
 	if err := builders.BuildArguments(&relBuilder, f, variables); err != nil {
@@ -209,7 +209,7 @@ func (b *Builder) buildRelationQuery(rel relation, f *ast.Field, variables map[s
 	case ManyToMany:
 
 		relBuilder, _ := b.createInnerBuilder(rel.referenceTable)
-		if err := builders.BuildFields(&relBuilder, f, variables);  err != nil {
+		if err := builders.BuildFields(&relBuilder, f, variables); err != nil {
 			return err
 		}
 		// Join the referenced table to the m2mQuery
@@ -237,7 +237,6 @@ func (b *Builder) buildRelationQuery(rel relation, f *ast.Field, variables map[s
 	return nil
 }
 
-
 // ====================================================================================================================
 //      											Helper Functions
 // ====================================================================================================================
@@ -249,7 +248,7 @@ func buildJsonAgg(columns []column, alias string) exp.Expression {
 }
 
 func buildJsonObject(columns []column, alias string) exp.Expression {
-	var args []interface{}
+	args := make([]interface{}, len(columns)*2)
 	for _, c := range columns {
 		args = append(args, goqu.L(fmt.Sprintf("'%s'", c.name)), goqu.I(fmt.Sprintf("%s.%s", c.tableName, c.name)))
 	}

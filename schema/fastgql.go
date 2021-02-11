@@ -2,6 +2,7 @@ package schema
 
 import (
 	"bytes"
+
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin/modelgen"
@@ -12,9 +13,7 @@ import (
 	"github.com/vektah/gqlparser/v2/formatter"
 )
 
-
-
-type FastGqlPlugin struct {}
+type FastGqlPlugin struct{}
 
 func (f FastGqlPlugin) Name() string {
 	return "fastGQLPlugin"
@@ -44,7 +43,6 @@ func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) *ast.Source {
 	}
 }
 
-
 func Generate(configPath string, generateServer bool) error {
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
@@ -65,10 +63,10 @@ func Generate(configPath string, generateServer bool) error {
 	cfg.Sources = []*ast.Source{src}
 
 	if generateServer {
-		err = api.Generate(cfg,  api.NoPlugins(), api.AddPlugin(modelgen.New()), api.AddPlugin(resolvergen.New()),
+		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(modelgen.New()), api.AddPlugin(resolvergen.New()),
 			api.AddPlugin(plugin), api.AddPlugin(servergen.New("server.go")))
 	} else {
-		err = api.Generate(cfg,  api.NoPlugins(), api.AddPlugin(modelgen.New()), api.AddPlugin(resolvergen.New()), api.AddPlugin(plugin))
+		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(modelgen.New()), api.AddPlugin(resolvergen.New()), api.AddPlugin(plugin))
 	}
 
 	if err != nil {

@@ -2,12 +2,12 @@ package builders
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/roneli/fastgql/schema"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
-	"strings"
 )
-
 
 func BuildQuery(builder QueryBuilder, f *ast.Field, variables map[string]interface{}) error {
 	err := BuildArguments(builder, f, variables)
@@ -44,24 +44,26 @@ func BuildFields(builder FieldBuilder, f *ast.Field, variables map[string]interf
 				return err
 			}
 
-		case *ast.FragmentSpread: {
-			for _, s := range field.Definition.SelectionSet {
-				fragmentField, ok := s.(*ast.Field)
-				if !ok {
-					return fmt.Errorf("expected type of selection field got %s", s)
-				}
-				if fragmentField.SelectionSet != nil {
-					if err := builder.OnSelectionField(fragmentField, variables);  err != nil {
+		case *ast.FragmentSpread:
+			{
+				for _, s := range field.Definition.SelectionSet {
+					fragmentField, ok := s.(*ast.Field)
+					if !ok {
+						return fmt.Errorf("expected type of selection field got %s", s)
+					}
+					if fragmentField.SelectionSet != nil {
+						if err := builder.OnSelectionField(fragmentField, variables); err != nil {
+							return err
+						}
+					} else if err := builder.OnSingleField(fragmentField, variables); err != nil {
 						return err
 					}
-				} else if err := builder.OnSingleField(fragmentField, variables); err != nil {
-					return err
 				}
 			}
-		}
-		case *ast.InlineFragment: {
-			fmt.Print("inline fragment")
-		}
+		case *ast.InlineFragment:
+			{
+				fmt.Print("inline fragment")
+			}
 		}
 	}
 	return nil
@@ -153,27 +155,28 @@ func BuildFilter(builder FilterBuilder, field *ast.FieldDefinition, filter map[s
 	for k, v := range filter {
 		keyType := filterInputDef.Fields.ForName(k).Type
 		var err error
-		if k == string(schema.LogicalOperatorAND) || k == string(schema.LogicalOperatorOR) {
-			vv, ok  := v.([]interface{})
+		switch {
+		case k == string(schema.LogicalOperatorAND) || k == string(schema.LogicalOperatorOR):
+			vv, ok := v.([]interface{})
 			if !ok {
 				return fmt.Errorf("fatal value of logical list exp not list")
 			}
 			err = builder.Logical(field, schema.LogicalOperator(k), vv)
-		} else if k == string(schema.LogicalOperatorNot) {
+		case k == string(schema.LogicalOperatorNot):
 			err = builder.Logical(field, schema.LogicalOperator(k), []interface{}{v})
-		} else if strings.HasSuffix(keyType.Name(), "FilterInput") {
-			kv, ok  := v.(map[string]interface{})
+		case strings.HasSuffix(keyType.Name(), "FilterInput"):
+			kv, ok := v.(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("fatal value of bool exp not map")
 			}
 			err = builder.Filter(field, k, kv)
-		} else {
-			opMap, ok  := v.(map[string]interface{})
+		default:
+			opMap, ok := v.(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("fatal value of key not map")
 			}
 			for op, value := range opMap {
-				err = builder.Operation(k, op ,value)
+				err = builder.Operation(k, op, value)
 			}
 		}
 		if err != nil {

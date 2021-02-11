@@ -1,13 +1,14 @@
 package augmenters
 
 import (
+	"strings"
+
 	"github.com/roneli/fastgql/gql"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
-	"strings"
 )
 
-type Pagination struct {}
+type Pagination struct{}
 
 func (p Pagination) Name() string {
 	return "generateArguments"
@@ -49,10 +50,10 @@ func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, recursive 
 				Type:         &ast.Type{NamedType: "Int"},
 			},
 			&ast.ArgumentDefinition{
-				Description: "Offset",
-				Name: "offset",
+				Description:  "Offset",
+				Name:         "offset",
 				DefaultValue: &ast.Value{Raw: "0", Kind: ast.IntValue},
-				Type: &ast.Type{NamedType: "Int"},
+				Type:         &ast.Type{NamedType: "Int"},
 			},
 		)
 		if !recursive {

@@ -2,6 +2,7 @@ package sql
 
 import (
 	"fmt"
+
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/iancoleman/strcase"
@@ -17,7 +18,7 @@ type expressionsBuilder struct {
 	builder *Builder
 }
 
-func newExpressionBuilder(b *Builder, logicalType schema.LogicalOperator) *expressionsBuilder{
+func newExpressionBuilder(b *Builder, logicalType schema.LogicalOperator) *expressionsBuilder {
 	switch logicalType {
 	case schema.LogicalOperatorOR:
 		return &expressionsBuilder{
@@ -31,7 +32,6 @@ func newExpressionBuilder(b *Builder, logicalType schema.LogicalOperator) *expre
 		}
 	}
 }
-
 
 func (e *expressionsBuilder) Config() *builders.Config {
 	return e.builder.Config()
@@ -84,7 +84,6 @@ func (e *expressionsBuilder) Logical(f *ast.FieldDefinition, logicalExp schema.L
 }
 
 type Operator func(table exp.AliasedExpression, key string, value interface{}) goqu.Expression
-
 
 func Eq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Eq(value)

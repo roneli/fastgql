@@ -1,20 +1,20 @@
 package augmenters
 
 import (
-	"github.com/roneli/fastgql/gql"
 	"fmt"
-"github.com/spf13/cast"
-"github.com/vektah/gqlparser/v2/ast"
 	"strings"
-)
 
+	"github.com/roneli/fastgql/gql"
+	"github.com/spf13/cast"
+	"github.com/vektah/gqlparser/v2/ast"
+)
 
 type createdInputDef struct {
 	object *ast.Definition
-	input *ast.Definition
+	input  *ast.Definition
 }
 
-type FilterInput struct {}
+type FilterInput struct{}
 
 func (f FilterInput) Name() string {
 	return "generateFilterInput"
@@ -32,7 +32,7 @@ func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, obje
 
 	for _, f := range object.Fields {
 		fieldType := gql.GetType(f.Type)
-		def, ok  := s.Types[fieldType.Name()]
+		def, ok := s.Types[fieldType.Name()]
 		if !ok {
 			continue
 		}
@@ -53,13 +53,13 @@ func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, obje
 		}
 
 		input.Fields = append(input.Fields, &ast.FieldDefinition{
-			Name: fmt.Sprintf("%s", f.Name),
+			Name: f.Name,
 			Type: &ast.Type{NamedType: fieldDef.Name},
 		})
 	}
 	input.Fields = append(input.Fields, []*ast.FieldDefinition{
 		{
-			Name: "AND",
+			Name:        "AND",
 			Description: "Logical AND of FilterInput",
 			Type: &ast.Type{
 				Elem: &ast.Type{
@@ -68,7 +68,7 @@ func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, obje
 			},
 		},
 		{
-			Name: "OR",
+			Name:        "OR",
 			Description: "Logical OR of FilterInput",
 			Type: &ast.Type{
 				Elem: &ast.Type{
@@ -77,7 +77,7 @@ func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, obje
 			},
 		},
 		{
-			Name: "NOT",
+			Name:        "NOT",
 			Description: "Logical NOT of FilterInput",
 			Type: &ast.Type{
 				NamedType: input.Name,
@@ -85,7 +85,6 @@ func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, obje
 		},
 	}...)
 }
-
 
 // initInputs initialize all filter inputs before adding fields to avoid recursive reference
 func (f FilterInput) initInputs(s *ast.Schema) []*createdInputDef {
@@ -109,8 +108,7 @@ func (f FilterInput) initInputs(s *ast.Schema) []*createdInputDef {
 	return defs
 }
 
-
-type FilterArguments struct {}
+type FilterArguments struct{}
 
 func (fa FilterArguments) Name() string {
 	return "generateArguments"
@@ -137,19 +135,19 @@ func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, recursiv
 		if strings.HasPrefix(f.Name, "__") {
 			continue
 		}
-		input, ok:= s.Types[fmt.Sprintf("%sFilterInput", f.Type.Name())]
+		input, ok := s.Types[fmt.Sprintf("%sFilterInput", f.Type.Name())]
 		if !ok {
 			continue
 		}
 
-		if f.Arguments.ForName("filter") != nil{
+		if f.Arguments.ForName("filter") != nil {
 			continue
 		}
 
 		f.Arguments = append(f.Arguments,
 			&ast.ArgumentDefinition{Description: fmt.Sprintf("Filter %s", f.Name),
-				Name:         "filter",
-				Type:         &ast.Type{NamedType: input.Name},
+				Name: "filter",
+				Type: &ast.Type{NamedType: input.Name},
 			},
 		)
 		if !recursive {

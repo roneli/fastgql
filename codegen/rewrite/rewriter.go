@@ -3,13 +3,14 @@ package rewrite
 import (
 	"bytes"
 	"fmt"
-	"github.com/roneli/fastgql/codegen/code"
 	"go/ast"
 	"go/token"
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/roneli/fastgql/codegen/code"
 
 	"golang.org/x/tools/go/packages"
 )

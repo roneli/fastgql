@@ -10,5 +10,3 @@ type Augmenter interface {
 
 	Augment(s *ast.Schema)
 }
-
-

@@ -23,15 +23,3 @@ func GetDirectiveValue(d *ast.Directive, name string) interface{} {
 	v, _ := arg.Value.Value(nil)
 	return v
 }
-
-func SelectionSetForName(selSet ast.SelectionSet, name string) *ast.Field {
-	for _, s := range selSet {
-		switch field := s.(type) {
-		case *ast.Field:
-			if field.Name == name {
-				return field
-			}
-		}
-	}
-	return nil
-}

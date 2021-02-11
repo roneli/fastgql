@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"github.com/roneli/fastgql/schema"
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/roneli/fastgql/schema"
+	"github.com/spf13/cobra"
 )
 
 var generateCmd = &cobra.Command{
@@ -17,7 +18,7 @@ var generateCmd = &cobra.Command{
 }
 
 func generateAPI() {
-	if err := schema.Generate(configPath, false); err != nil{
+	if err := schema.Generate(configPath, false); err != nil {
 		fmt.Fprintln(os.Stderr, "failed to load config", err.Error())
 		os.Exit(2)
 	}

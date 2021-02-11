@@ -2,14 +2,14 @@ package augmenters
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/roneli/fastgql/gql"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
-	"strings"
 )
 
-
-type Ordering struct {}
+type Ordering struct{}
 
 func (o Ordering) Name() string {
 	return "generateArguments"
@@ -59,8 +59,8 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool
 		f.Arguments = append(f.Arguments,
 			&ast.ArgumentDefinition{
 				Description: orderDef.Description,
-				Name: "orderBy",
-				Type: &ast.Type{Elem: &ast.Type{NamedType: orderDef.Name}},
+				Name:        "orderBy",
+				Type:        &ast.Type{Elem: &ast.Type{NamedType: orderDef.Name}},
 			},
 		)
 
@@ -103,4 +103,3 @@ func (o Ordering) buildOrderingEnum(s *ast.Schema, obj *ast.Definition) *ast.Def
 	s.Types[orderInputDef.Name] = orderInputDef
 	return orderInputDef
 }
-
