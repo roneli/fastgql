@@ -41,7 +41,7 @@ We also have a couple of  [examples](https://github.com/roneli/fastgql/tree/mast
 If you think you've found a bug, or something isn't behaving the way you think it should, please raise an [issue](https://github.com/roneli/fastgql/issues) on GitHub.
 
 ## Contributing
-Feel free to open Pull-Request for small fixes and changes. For bigger changes and new providers please open an [issue](https://github.com/roneli/fastgql/issues) first to prevent double work and discuss relevant stuff.
+Feel free to open Pull-Request for small fixes and changes. For bigger changes and new builders please open an [issue](https://github.com/roneli/fastgql/issues) first to prevent double work and discuss relevant stuff.
 
 ## Roadmap
 
