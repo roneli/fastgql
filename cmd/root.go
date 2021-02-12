@@ -2,19 +2,20 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 var (
-	verbose bool
-	configPath string
+	verbose        bool
+	configPath     string
 	configFilename string
 	schemaFilename string
 	serverFilename string
 
 	rootCmd = &cobra.Command{
-		Use: "fastgql",
+		Use:   "fastgql",
 		Short: "Blazing fast, instant realtime & extendable GraphQL APIs powered by gqlgen",
 	}
 )

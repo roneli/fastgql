@@ -8,11 +8,10 @@ import (
 
 type (
 
-
 	// Config is the basic level of data passed to a builder when it's created
 	Config struct {
-		Schema *ast.Schema
-		Logger internal.Logger
+		Schema   *ast.Schema
+		Logger   internal.Logger
 		LogLevel internal.LogLevel
 	}
 
@@ -76,7 +75,6 @@ type (
 		FieldBuilder
 		Query() (string, []interface{}, error)
 	}
-
 )
 
 const (

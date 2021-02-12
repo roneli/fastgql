@@ -2,6 +2,13 @@ package resolvergen
 
 import (
 	"bytes"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"text/template"
+
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/codegen/templates"
@@ -9,12 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/roneli/fastgql/codegen/rewrite"
 	"github.com/spf13/cast"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"text/template"
 )
 
 func New() plugin.Plugin {
@@ -144,7 +145,7 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 			Data:     resolverBuild,
 			Packages: data.Config.Packages,
 			Funcs: map[string]interface{}{
-				"renderResolver": func (resolver interface{}) (*bytes.Buffer, error){
+				"renderResolver": func(resolver interface{}) (*bytes.Buffer, error) {
 					r := resolver.(*Resolver)
 					return m.renderResolver(r)
 				},
@@ -180,8 +181,7 @@ type {{.}} struct {
 	return nil
 }
 
-
-func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error){
+func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 
 	buf := &bytes.Buffer{}
 	if resolver.Field.TypeReference.Definition.IsAbstractType() {
@@ -194,7 +194,7 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error){
 		return buf, nil
 	}
 	if d := resolver.Field.FieldDefinition.Directives.ForName("skipGenerate"); d != nil {
-		if v := d.Definition.Arguments.ForName("resolver"); v != nil  && cast.ToBool(v.DefaultValue.Raw){
+		if v := d.Definition.Arguments.ForName("resolver"); v != nil && cast.ToBool(v.DefaultValue.Raw) {
 			buf.WriteString(`panic(fmt.Errorf("not implemented"))`)
 			return buf, nil
 		}
@@ -212,7 +212,6 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error){
 	if err != nil {
 		panic(err)
 	}
-
 
 	return buf, t.Execute(buf, resolver)
 }
@@ -238,7 +237,7 @@ type ResolverBuild struct {
 
 type File struct {
 	// These are separated because the type definition of the resolver object may live in a different file from the
-	//resolver method implementations, for example when extending a type in a different graphql schema file
+	// resolver method implementations, for example when extending a type in a different graphql schema file
 	Objects         []*codegen.Object
 	Resolvers       []*Resolver
 	imports         []rewrite.Import

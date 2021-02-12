@@ -4,17 +4,17 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/99designs/gqlgen/codegen/config"
-	"github.com/roneli/fastgql/codegen/code"
-	"github.com/roneli/fastgql/schema"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
-)
 
+	"github.com/99designs/gqlgen/codegen/config"
+	"github.com/roneli/fastgql/codegen/code"
+	"github.com/roneli/fastgql/schema"
+	"github.com/spf13/cobra"
+)
 
 var configTemplate = template.Must(template.New("name").Parse(
 	`# Where are all the schema files located? globs are supported eg  src/**/*.graphqls
@@ -115,7 +115,7 @@ var initCmd = &cobra.Command{
 				return err
 			}
 		}
-		if err := schema.Generate(configFilename, true); err != nil{
+		if err := schema.Generate(configFilename, true); err != nil {
 			fmt.Fprintln(os.Stderr, "failed to load config", err.Error())
 			os.Exit(2)
 		}

@@ -1,6 +1,5 @@
 package schema
 
-
 // TODO: in go 1.16 use //go:embed
 
 const FastgqlSchema = `# Used if Object/Interface type name is different then the actual table name
@@ -79,4 +78,3 @@ input BooleanListComparator {
     contained: [Boolean]
     overlap: [Boolean]
 }`
-

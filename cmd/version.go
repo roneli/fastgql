@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/roneli/fastgql/schema"
 	"github.com/spf13/cobra"
 )
-
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
