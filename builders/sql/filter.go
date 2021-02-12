@@ -93,6 +93,22 @@ func Neq(table exp.AliasedExpression, key string, value interface{}) goqu.Expres
 	return table.Col(key).Neq(value)
 }
 
+func Gt(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).Gt(value)
+}
+
+func Gte(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).Gte(value)
+}
+
+func Lte(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).Lte(value)
+}
+
+func Lt(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).Lt(value)
+}
+
 func Like(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Like(value)
 }
