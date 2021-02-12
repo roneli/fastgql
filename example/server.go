@@ -38,7 +38,6 @@ func main() {
 	resolver.Cfg = &builders.Config{Schema: executableSchema.Schema()}
 
 	srv := handler.NewDefaultServer(executableSchema)
-
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
 

@@ -253,8 +253,9 @@ func buildJsonAgg(columns []column, alias string) exp.Expression {
 
 func buildJsonObject(columns []column, alias string) exp.Expression {
 	args := make([]interface{}, len(columns)*2)
-	for _, c := range columns {
-		args = append(args, goqu.L(fmt.Sprintf("'%s'", c.name)), goqu.I(fmt.Sprintf("%s.%s", c.tableName, c.name)))
+	for i, c := range columns {
+		args[i] = goqu.L(fmt.Sprintf("'%s'", c.name))
+		args[i+1] =  goqu.I(fmt.Sprintf("%s.%s", c.tableName, c.name))
 	}
 	buildJsonObj := goqu.Func("jsonb_build_object", args...)
 	if alias != "" {
