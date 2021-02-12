@@ -44,10 +44,10 @@ var defaultOperators = map[string]Operator{
 	"notIn":  NotIn,
 	"in":     In,
 	"isNull": IsNull,
-	"gt": Gt,
-	"gte": Gte,
-	"lte": Lte,
-	"lt": Lt,
+	"gt":     Gt,
+	"gte":    Gte,
+	"lte":    Lte,
+	"lt":     Lt,
 }
 
 // NewBuilder is the entry point for creating builders
