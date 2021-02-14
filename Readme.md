@@ -1,6 +1,6 @@
 
 
-![fastgql](./docs/assets/icons/logo.svg)
+![fastgql](./docs/assets/icons/logo_dark.svg)
 
 
 <div style="align-content: center ">
