@@ -1,4 +1,3 @@
-
 # Used if Object/Interface type name is different then the actual table name
 directive @tableName(name: String!) on OBJECT | INTERFACE
 
@@ -6,7 +5,7 @@ directive @tableName(name: String!) on OBJECT | INTERFACE
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 
 # Generate arguments for a given field or all object fields
-directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True) on OBJECT
+directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, recursive: Boolean = True) on OBJECT
 
 
 enum _relationType {
@@ -18,6 +17,8 @@ enum _relationType {
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!,
     references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 
+directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
+
 enum _OrderingTypes {
     ASC
     DESC
@@ -25,5 +26,55 @@ enum _OrderingTypes {
     DESC_NULL_FIRST
 }
 
-# Tells fastgql to skip resolver generation on field
-directive @skipGenerate(resolver:Boolean = True) on FIELD_DEFINITION
+type _AggregateResult {
+    count: Int!
+}
+
+input StringComparator {
+    eq: String
+    neq: String
+    contains: [String]
+    not_contains: [String]
+    like: String
+    ilike: String
+    suffix: String
+    prefix: String
+}
+
+input StringListComparator {
+    eq: [String]
+    neq: [String]
+    contains: [String]
+    containedBy: [String]
+    overlap: [String]
+}
+
+input IntComparator {
+    eq: Int
+    neq: Int
+    gt: Int
+    gte: Int
+    lt: Int
+    lte: Int
+}
+
+input IntListComparator {
+    eq: [Int]
+    neq: [Int]
+    contains: [Int]
+    contained: [Int]
+    overlap: [Int]
+}
+
+input BooleanComparator {
+    eq: Boolean
+    neq: Boolean
+}
+
+input BooleanListComparator {
+    eq: [Boolean]
+    neq: [Boolean]
+    contains: [Boolean]
+    contained: [Boolean]
+    overlap: [Boolean]
+}

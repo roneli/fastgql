@@ -1,138 +1,54 @@
 package builders
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	"github.com/roneli/fastgql/schema"
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-func BuildQuery(builder QueryBuilder, f *ast.Field, variables map[string]interface{}) error {
-	err := BuildArguments(builder, f, variables)
-	if err != nil {
-		return err
-	}
-	return BuildFields(builder, f, variables)
+type fieldType string
+
+const (
+	TypeScalar    fieldType = "Scalar"
+	TypeRelation  fieldType = "Relation"
+	TypeAggregate fieldType = "Aggregate"
+	TypeObject    fieldType = "Object"
+)
+
+type Field struct {
+	*ast.Field
+	Selections []Field
+	FieldType  fieldType
+	Arguments  map[string]interface{}
 }
 
-// BuildFields allows for a Builder to collect fields and get called
-func BuildFields(builder FieldBuilder, f *ast.Field, variables map[string]interface{}) error {
-
-	for _, field := range f.SelectionSet {
-		switch field := field.(type) {
-		case *ast.Field:
-			// Auto skip fields that start with with underscore "_"
-			if strings.HasPrefix(field.Name, "_") {
-				continue
-			}
-			// Check if collected field should be skipped by directive
-			if d := field.Directives.ForName("skip"); d != nil {
-				args := d.ArgumentMap(variables)
-				if shouldSkip := args["skip"]; shouldSkip != nil {
-					continue
-				}
-			}
-			var err error
-			if field.SelectionSet != nil {
-				err = builder.OnSelectionField(field, variables)
-			} else {
-				err = builder.OnSingleField(field, variables)
-			}
-			if err != nil {
-				return err
-			}
-
-		case *ast.FragmentSpread:
-			{
-				for _, s := range field.Definition.SelectionSet {
-					fragmentField, ok := s.(*ast.Field)
-					if !ok {
-						return fmt.Errorf("expected type of selection field got %s", s)
-					}
-					if fragmentField.SelectionSet != nil {
-						if err := builder.OnSelectionField(fragmentField, variables); err != nil {
-							return err
-						}
-					} else if err := builder.OnSingleField(fragmentField, variables); err != nil {
-						return err
-					}
-				}
-			}
-		case *ast.InlineFragment:
-			{
-				fmt.Print("inline fragment")
-			}
-		}
+func (f Field) GetTypeName() string {
+	typeName := f.Definition.Type.Name()
+	if strings.HasSuffix(f.Name, "Aggregate") {
+		originalFieldName := strings.Split(f.Name, "Aggregate")[0][1:]
+		typeName = f.ObjectDefinition.Fields.ForName(originalFieldName).Type.Name()
 	}
-	return nil
+	return typeName
 }
 
-func BuildArguments(builder ArgumentsBuilder, f *ast.Field, variables map[string]interface{}) error {
-	limitArg := f.Arguments.ForName("limit")
-	if limitArg != nil {
-		limit, err := limitArg.Value.Value(variables)
-		if err != nil {
-			return err
-		}
-		if err := builder.Limit(cast.ToUint(limit)); err != nil {
-			return err
-		}
-	}
-	offsetArg := f.Arguments.ForName("offset")
-	if offsetArg != nil {
-		offset, err := offsetArg.Value.Value(variables)
-		if err != nil {
-			return err
-		}
-		if err := builder.Offset(cast.ToUint(offset)); err != nil {
-			return err
-		}
-	}
-
-	orderingArg := f.Arguments.ForName("orderBy")
-	if orderingArg != nil {
-		if err := BuildOrdering(builder, orderingArg, variables); err != nil {
-			return err
-		}
-	}
-
-	filterArg := f.Arguments.ForName("filter")
-	if filterArg != nil {
-		filter, err := filterArg.Value.Value(variables)
-		if err != nil {
-			return err
-		}
-		filterMap, ok := filter.(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("invalid filter type")
-		}
-		if err := BuildFilter(builder, f.Definition, filterMap); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func BuildOrdering(builder OrderingBuilder, arg *ast.Argument, variables map[string]interface{}) error {
-	value, err := arg.Value.Value(variables)
-	if err != nil {
-		return err
-	}
-	switch orderings := value.(type) {
+func CollectOrdering(ordering interface{}) ([]OrderField, error) {
+	switch orderings := ordering.(type) {
 	case map[string]interface{}:
-		return builder.OrderBy(buildOrderingHelper(orderings))
+		return buildOrderingHelper(orderings), nil
 	case []interface{}:
 		var orderFields []OrderField
 		for _, o := range orderings {
 			argMap, ok := o.(map[string]interface{})
 			if !ok {
-				return fmt.Errorf("invalid value type")
+				return nil, fmt.Errorf("invalid value type")
 			}
 			orderFields = append(orderFields, buildOrderingHelper(argMap)...)
 		}
-		return builder.OrderBy(orderFields)
+		return orderFields, nil
 	default:
 		panic(fmt.Sprintf("unknown ordering type %v", orderings))
 	}
@@ -149,39 +65,120 @@ func buildOrderingHelper(argMap map[string]interface{}) []OrderField {
 	return orderFields
 }
 
-func BuildFilter(builder FilterBuilder, field *ast.FieldDefinition, filter map[string]interface{}) error {
+func CollectFields(ctx context.Context) Field {
+	resCtx := graphql.GetFieldContext(ctx)
+	return Field{
+		resCtx.Field.Field,
+		collectFields(graphql.GetOperationContext(ctx), resCtx.Field.Selections, map[string]bool{}),
+		TypeObject,
+		resCtx.Field.ArgumentMap(graphql.GetOperationContext(ctx).Variables),
+	}
+}
 
-	filterInputDef := builder.Config().Schema.Types[fmt.Sprintf("%sFilterInput", field.Type.Name())]
-	for k, v := range filter {
-		keyType := filterInputDef.Fields.ForName(k).Type
-		var err error
-		switch {
-		case k == string(schema.LogicalOperatorAND) || k == string(schema.LogicalOperatorOR):
-			vv, ok := v.([]interface{})
-			if !ok {
-				return fmt.Errorf("fatal value of logical list exp not list")
+func collectFields(reqCtx *graphql.OperationContext, selSet ast.SelectionSet, visited map[string]bool) []Field {
+	groupedFields := make([]Field, 0, len(selSet))
+
+	for _, sel := range selSet {
+		switch sel := sel.(type) {
+		case *ast.Field:
+			if !shouldIncludeNode(sel.Directives, reqCtx.Variables) {
+				continue
 			}
-			err = builder.Logical(field, schema.LogicalOperator(k), vv)
-		case k == string(schema.LogicalOperatorNot):
-			err = builder.Logical(field, schema.LogicalOperator(k), []interface{}{v})
-		case strings.HasSuffix(keyType.Name(), "FilterInput"):
-			kv, ok := v.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("fatal value of bool exp not map")
+			f := getOrCreateAndAppendField(&groupedFields, sel.Alias, sel.ObjectDefinition, func() Field {
+				return collectField(reqCtx, sel)
+			})
+			f.Selections = append(f.Selections, collectFields(reqCtx, sel.SelectionSet, map[string]bool{})...)
+		case *ast.InlineFragment:
+			if !shouldIncludeNode(sel.Directives, reqCtx.Variables) {
+				continue
 			}
-			err = builder.Filter(field, k, kv)
+			for _, childField := range collectFields(reqCtx, sel.SelectionSet, visited) {
+				f := getOrCreateAndAppendField(&groupedFields, childField.Name, childField.ObjectDefinition, func() Field { return childField })
+				f.Selections = append(f.Selections, childField.Selections...)
+			}
+
+		case *ast.FragmentSpread:
+			if !shouldIncludeNode(sel.Directives, reqCtx.Variables) {
+				continue
+			}
+			fragmentName := sel.Name
+			if _, seen := visited[fragmentName]; seen {
+				continue
+			}
+			visited[fragmentName] = true
+
+			fragment := reqCtx.Doc.Fragments.ForName(fragmentName)
+			if fragment == nil {
+				// should never happen, validator has already run
+				panic(fmt.Errorf("missing fragment %s", fragmentName))
+			}
+
+			for _, childField := range collectFields(reqCtx, fragment.SelectionSet, visited) {
+				f := getOrCreateAndAppendField(&groupedFields, childField.Name, childField.ObjectDefinition, func() Field { return childField })
+				f.Selections = append(f.Selections, childField.Selections...)
+			}
 		default:
-			opMap, ok := v.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("fatal value of key not map")
-			}
-			for op, value := range opMap {
-				err = builder.Operation(k, op, value)
-			}
-		}
-		if err != nil {
-			return err
+			panic(fmt.Errorf("unsupported %T", sel))
 		}
 	}
-	return nil
+
+	return groupedFields
+}
+
+func collectField(reqCtx *graphql.OperationContext, f *ast.Field) Field {
+	if strings.HasSuffix(f.Name, "Aggregate") {
+		return Field{f, nil, TypeAggregate, f.ArgumentMap(reqCtx.Variables)}
+	}
+	// check if relational object
+	if d := f.Definition.Directives.ForName("sqlRelation"); d != nil {
+		return Field{f, nil, TypeRelation, f.ArgumentMap(reqCtx.Variables)}
+	}
+	return Field{f, nil, TypeScalar, f.ArgumentMap(reqCtx.Variables)}
+}
+
+func getOrCreateAndAppendField(c *[]Field, name string, objectDefinition *ast.Definition, creator func() Field) *Field {
+	for i, cf := range *c {
+		if cf.Alias == name && (cf.ObjectDefinition == objectDefinition || (cf.ObjectDefinition != nil && objectDefinition != nil && cf.ObjectDefinition.Name == objectDefinition.Name)) {
+			return &(*c)[i]
+		}
+	}
+
+	f := creator()
+
+	*c = append(*c, f)
+	return &(*c)[len(*c)-1]
+}
+
+func shouldIncludeNode(directives ast.DirectiveList, variables map[string]interface{}) bool {
+	if len(directives) == 0 {
+		return true
+	}
+
+	skip, include := false, true
+
+	if d := directives.ForName("skip"); d != nil {
+		skip = resolveIfArgument(d, variables)
+	}
+
+	if d := directives.ForName("include"); d != nil {
+		include = resolveIfArgument(d, variables)
+	}
+
+	return !skip && include
+}
+
+func resolveIfArgument(d *ast.Directive, variables map[string]interface{}) bool {
+	arg := d.Arguments.ForName("if")
+	if arg == nil {
+		panic(fmt.Sprintf("%s: argument 'if' not defined", d.Name))
+	}
+	value, err := arg.Value.Value(variables)
+	if err != nil {
+		panic(err)
+	}
+	ret, ok := value.(bool)
+	if !ok {
+		panic(fmt.Sprintf("%s: argument 'if' is not a boolean", d.Name))
+	}
+	return ret
 }

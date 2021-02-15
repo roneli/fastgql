@@ -110,13 +110,13 @@ func (f FilterInput) initInputs(s *ast.Schema) []*createdInputDef {
 
 type FilterArguments struct{}
 
-func (fa FilterArguments) Name() string {
-	return "generateArguments"
+func (fa FilterArguments) DirectiveName() string {
+	return "generate"
 }
 
 func (fa FilterArguments) Augment(s *ast.Schema) error {
 	for _, v := range s.Types {
-		d := v.Directives.ForName(fa.Name())
+		d := v.Directives.ForName(fa.DirectiveName())
 		if d == nil {
 			continue
 		}
@@ -132,10 +132,23 @@ func (fa FilterArguments) Augment(s *ast.Schema) error {
 
 func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
+		// Skip "special" field types such as type name etc'
 		if strings.HasPrefix(f.Name, "__") {
 			continue
 		}
-		input, ok := s.Types[fmt.Sprintf("%sFilterInput", f.Type.Name())]
+		var typeName string
+		if strings.HasSuffix(f.Name, "Aggregate") {
+			fieldName := strings.Split(f.Name, "Aggregate")[0][1:]
+			fieldDef := obj.Fields.ForName(fieldName)
+			if fieldDef == nil {
+				continue
+			}
+			typeName = fmt.Sprintf("%sFilterInput", fieldDef.Type.Name())
+		} else {
+			typeName = fmt.Sprintf("%sFilterInput", f.Type.Name())
+		}
+
+		input, ok := s.Types[typeName]
 		if !ok {
 			continue
 		}
