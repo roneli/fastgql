@@ -1,6 +1,8 @@
 package sql
 
 import (
+	"strings"
+
 	"github.com/roneli/fastgql/gql"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -57,4 +59,12 @@ func getTableName(schema *ast.Schema, f *ast.FieldDefinition) string {
 		return d.Arguments.ForName("name").Value.Raw
 	}
 	return f.Name
+}
+
+// getTableName returns the field's type table name in the database, if no directive is defined, type name is presumed
+// as the table's name
+func getAggregateTableName(schema *ast.Schema, field *ast.Field) string {
+	fieldName := strings.Split(field.Name, "Aggregate")[0][1:]
+	nonAggField := field.ObjectDefinition.Fields.ForName(fieldName)
+	return getTableName(schema, nonAggField)
 }

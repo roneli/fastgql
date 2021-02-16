@@ -11,13 +11,13 @@ import (
 
 type Ordering struct{}
 
-func (o Ordering) Name() string {
-	return "generateArguments"
+func (o Ordering) DirectiveName() string {
+	return "generate"
 }
 
 func (o Ordering) Augment(s *ast.Schema) error {
 	for _, v := range s.Types {
-		d := v.Directives.ForName(o.Name())
+		d := v.Directives.ForName(o.DirectiveName())
 		if d == nil {
 			continue
 		}

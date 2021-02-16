@@ -7,25 +7,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/99designs/gqlgen/graphql"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/roneli/fastgql/builders"
 	"github.com/roneli/fastgql/builders/sql"
 	"github.com/roneli/fastgql/example/graph/generated"
 	"github.com/roneli/fastgql/example/graph/model"
 )
 
 func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
-	opCtx := graphql.GetOperationContext(ctx)
-	fCtx := graphql.GetFieldContext(ctx)
-
-	builder, _ := sql.NewBuilder(r.Cfg, fCtx.Field.Field)
-	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
-	if err != nil {
-		return nil, err
-	}
-
-	q, args, err := builder.Query()
+	builder := sql.Builder{Schema: r.Cfg.Schema}
+	q, args, err := builder.Query(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +25,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 	}
 
 	var data []*model.Post
+
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
 	}
@@ -42,16 +33,8 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 }
 
 func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
-	opCtx := graphql.GetOperationContext(ctx)
-	fCtx := graphql.GetFieldContext(ctx)
-
-	builder, _ := sql.NewBuilder(r.Cfg, fCtx.Field.Field)
-	err := builders.BuildQuery(&builder, fCtx.Field.Field, opCtx.Variables)
-	if err != nil {
-		return nil, err
-	}
-
-	q, args, err := builder.Query()
+	builder := sql.Builder{Schema: r.Cfg.Schema}
+	q, args, err := builder.Query(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +44,7 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 	}
 
 	var data []*model.User
+
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
 	}
@@ -69,6 +53,63 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 
 func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.AggregateResult, error) {
+	builder := sql.Builder{Schema: r.Cfg.Schema}
+	q, args, err := builder.Aggregate(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Sql.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var data *model.AggregateResult
+
+	if err := pgxscan.ScanOne(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.AggregateResult, error) {
+	builder := sql.Builder{Schema: r.Cfg.Schema}
+	q, args, err := builder.Aggregate(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Sql.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var data *model.AggregateResult
+
+	if err := pgxscan.ScanOne(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.AggregateResult, error) {
+	builder := sql.Builder{Schema: r.Cfg.Schema}
+	q, args, err := builder.Aggregate(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Sql.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var data *model.AggregateResult
+
+	if err := pgxscan.ScanOne(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // Query returns generated.QueryResolver implementation.

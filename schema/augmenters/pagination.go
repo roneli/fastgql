@@ -10,13 +10,13 @@ import (
 
 type Pagination struct{}
 
-func (p Pagination) Name() string {
-	return "generateArguments"
+func (p Pagination) DirectiveName() string {
+	return "generate"
 }
 
 func (p Pagination) Augment(s *ast.Schema) error {
 	for _, v := range s.Types {
-		d := v.Directives.ForName(p.Name())
+		d := v.Directives.ForName(p.DirectiveName())
 		if d == nil {
 			continue
 		}

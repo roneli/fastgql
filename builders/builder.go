@@ -1,8 +1,11 @@
 package builders
 
 import (
+	"context"
+	"math/rand"
+	"unsafe"
+
 	"github.com/roneli/fastgql/internal"
-	"github.com/roneli/fastgql/schema"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -15,24 +18,6 @@ type (
 		LogLevel internal.LogLevel
 	}
 
-	Builder interface {
-		Config() *Config
-	}
-
-	// FieldBuilder allows to call collect field to go over fields requested in a query
-	FieldBuilder interface {
-		Builder
-		OnSingleField(f *ast.Field, variables map[string]interface{}) error
-		OnSelectionField(f *ast.Field, variables map[string]interface{}) error
-	}
-
-	// PaginationBuilder allows to add pagination based on pagination arguments passed in a query
-	PaginationBuilder interface {
-		Builder
-		Limit(limit uint) error
-		Offset(offset uint) error
-	}
-
 	OrderingTypes string
 
 	OrderField struct {
@@ -40,40 +25,14 @@ type (
 		Type OrderingTypes
 	}
 
-	OrderingBuilder interface {
-		OrderBy([]OrderField) error
-	}
-
-	// FilterBuilder allow builders to support condition building
-	FilterBuilder interface {
-		Builder
-		// Operation is called when a simple operator is found
-		Operation(name, op string, value interface{}) error
-		// Filter is called when the operation is a BoolExp
-		Filter(f *ast.FieldDefinition, key string, value map[string]interface{}) error
-		// Logical is called when the operation is AND, OR, NOT
-		Logical(f *ast.FieldDefinition, logicalExp schema.LogicalOperator, values []interface{}) error
-	}
-
-	// ArgumentsBuilder allows Builders to build arguments supported by FastGQL
-	ArgumentsBuilder interface {
-		PaginationBuilder
-		FilterBuilder
-		OrderingBuilder
-	}
-
 	// ArgumentsBuilder allows Builders to build aggregate queries on _XYZAggregate fields
 	AggregateBuilder interface {
-		FieldBuilder
-		FilterBuilder
-		Aggregate(f *ast.Field) error
+		Aggregate(ctx context.Context) (string, []interface{}, error)
 	}
 
 	// QueryBuilder supports building a full query from a given GraphQL query
 	QueryBuilder interface {
-		ArgumentsBuilder
-		FieldBuilder
-		Query() (string, []interface{}, error)
+		Query(ctx context.Context) (string, []interface{}, error)
 	}
 )
 
@@ -82,4 +41,28 @@ const (
 	OrderingTypesDesc     OrderingTypes = "DESC"
 	OrderingTypesAscNull  OrderingTypes = "ASC_NULL_FIRST"
 	OrderingTypesDescNull OrderingTypes = "DESC_NULL_FIRST"
+
+	// GenerateTableName configuration
+	letterBytes   = "abcdefghijklmnopqrstuvwxyz"
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
+
+func GenerateTableName(n int) string {
+	b := make([]byte, n)
+	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = rand.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return *(*string)(unsafe.Pointer(&b))
+}

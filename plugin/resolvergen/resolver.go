@@ -199,8 +199,9 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 			return buf, nil
 		}
 	}
-
-	t := template.New("").Funcs(templates.Funcs())
+	baseFuncs := templates.Funcs()
+	baseFuncs["hasSuffix"] = strings.HasSuffix
+	t := template.New("").Funcs(baseFuncs)
 	fileName := resolveName("sql.tpl", 0)
 
 	b, err := ioutil.ReadFile(fileName)

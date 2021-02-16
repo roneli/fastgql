@@ -7,7 +7,7 @@ description: >
 weight: 5
 ---
 
-You can sort your query results using the `orderby` . The sort argument can be used to sort nested queries too.
+We can sort our query results using the `orderby` . The sort argument can be used to sort nested queries too.
 
 The value of sort argument should be an array containing the name of fields to sort the results by.
 

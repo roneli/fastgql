@@ -9,7 +9,8 @@ directive @tableName(name: String!) on OBJECT | INTERFACE
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 
 # Generate arguments for a given field or all object fields
-directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, recursive: Boolean = True) on OBJECT
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on OBJECT
+
 
 
 enum _relationType {
@@ -28,6 +29,10 @@ enum _OrderingTypes {
     DESC
     ASC_NULL_FIRST
     DESC_NULL_FIRST
+}
+
+type _AggregateResult {
+    count: Int!
 }
 
 input StringComparator {

@@ -67,6 +67,8 @@ type Post struct {
 	Name       *string     `json:"name"`
 	Categories []*Category `json:"categories"`
 	User       *User       `json:"user"`
+	// categories Aggregate
+	CategoriesAggregate *AggregateResult `json:"_categoriesAggregate"`
 }
 
 type PostFilterInput struct {
@@ -113,6 +115,8 @@ type User struct {
 	ID    int     `json:"id"`
 	Name  string  `json:"name"`
 	Posts []*Post `json:"posts"`
+	// posts Aggregate
+	PostsAggregate *AggregateResult `json:"_postsAggregate"`
 }
 
 type UserFilterInput struct {
@@ -133,6 +137,10 @@ type UserOrdering struct {
 	ID *OrderingTypes `json:"id"`
 	// Order User by name
 	Name *OrderingTypes `json:"name"`
+}
+
+type AggregateResult struct {
+	Count int `json:"count"`
 }
 
 type OrderingTypes string
