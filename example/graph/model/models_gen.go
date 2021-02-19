@@ -9,138 +9,138 @@ import (
 )
 
 type BooleanComparator struct {
-	Eq  *bool `json:"eq"`
-	Neq *bool `json:"neq"`
+	Eq  *bool `json:"eq" db:"eq"`
+	Neq *bool `json:"neq" db:"neq"`
 }
 
 type BooleanListComparator struct {
-	Eq        []*bool `json:"eq"`
-	Neq       []*bool `json:"neq"`
-	Contains  []*bool `json:"contains"`
-	Contained []*bool `json:"contained"`
-	Overlap   []*bool `json:"overlap"`
+	Eq        []*bool `json:"eq" db:"eq"`
+	Neq       []*bool `json:"neq" db:"neq"`
+	Contains  []*bool `json:"contains" db:"contains"`
+	Contained []*bool `json:"contained" db:"contained"`
+	Overlap   []*bool `json:"overlap" db:"overlap"`
 }
 
 type Category struct {
-	ID   int     `json:"id"`
-	Name *string `json:"name"`
+	ID   int     `json:"id" db:"id"`
+	Name *string `json:"name" db:"name"`
 }
 
 type CategoryFilterInput struct {
-	ID   *IntComparator    `json:"id"`
-	Name *StringComparator `json:"name"`
+	ID   *IntComparator    `json:"id" db:"id"`
+	Name *StringComparator `json:"name" db:"name"`
 	// Logical AND of FilterInput
-	And []*CategoryFilterInput `json:"AND"`
+	And []*CategoryFilterInput `json:"AND" db:"AND"`
 	// Logical OR of FilterInput
-	Or []*CategoryFilterInput `json:"OR"`
+	Or []*CategoryFilterInput `json:"OR" db:"OR"`
 	// Logical NOT of FilterInput
-	Not *CategoryFilterInput `json:"NOT"`
+	Not *CategoryFilterInput `json:"NOT" db:"NOT"`
 }
 
 // Ordering for Category
 type CategoryOrdering struct {
 	// Order Category by id
-	ID *OrderingTypes `json:"id"`
+	ID *OrderingTypes `json:"id" db:"id"`
 	// Order Category by name
-	Name *OrderingTypes `json:"name"`
+	Name *OrderingTypes `json:"name" db:"name"`
 }
 
 type IntComparator struct {
-	Eq  *int `json:"eq"`
-	Neq *int `json:"neq"`
-	Gt  *int `json:"gt"`
-	Gte *int `json:"gte"`
-	Lt  *int `json:"lt"`
-	Lte *int `json:"lte"`
+	Eq  *int `json:"eq" db:"eq"`
+	Neq *int `json:"neq" db:"neq"`
+	Gt  *int `json:"gt" db:"gt"`
+	Gte *int `json:"gte" db:"gte"`
+	Lt  *int `json:"lt" db:"lt"`
+	Lte *int `json:"lte" db:"lte"`
 }
 
 type IntListComparator struct {
-	Eq        []*int `json:"eq"`
-	Neq       []*int `json:"neq"`
-	Contains  []*int `json:"contains"`
-	Contained []*int `json:"contained"`
-	Overlap   []*int `json:"overlap"`
+	Eq        []*int `json:"eq" db:"eq"`
+	Neq       []*int `json:"neq" db:"neq"`
+	Contains  []*int `json:"contains" db:"contains"`
+	Contained []*int `json:"contained" db:"contained"`
+	Overlap   []*int `json:"overlap" db:"overlap"`
 }
 
 type Post struct {
-	ID         int         `json:"id"`
-	Name       *string     `json:"name"`
-	Categories []*Category `json:"categories"`
-	User       *User       `json:"user"`
+	ID         int         `json:"id" db:"id"`
+	Name       *string     `json:"name" db:"name"`
+	Categories []*Category `json:"categories" db:"categories"`
+	User       *User       `json:"user" db:"user"`
 	// categories Aggregate
-	CategoriesAggregate *AggregateResult `json:"_categoriesAggregate"`
+	CategoriesAggregate *AggregateResult `json:"_categoriesAggregate" db:"_categoriesAggregate"`
 }
 
 type PostFilterInput struct {
-	ID         *IntComparator       `json:"id"`
-	Name       *StringComparator    `json:"name"`
-	Categories *CategoryFilterInput `json:"categories"`
-	User       *UserFilterInput     `json:"user"`
+	ID         *IntComparator       `json:"id" db:"id"`
+	Name       *StringComparator    `json:"name" db:"name"`
+	Categories *CategoryFilterInput `json:"categories" db:"categories"`
+	User       *UserFilterInput     `json:"user" db:"user"`
 	// Logical AND of FilterInput
-	And []*PostFilterInput `json:"AND"`
+	And []*PostFilterInput `json:"AND" db:"AND"`
 	// Logical OR of FilterInput
-	Or []*PostFilterInput `json:"OR"`
+	Or []*PostFilterInput `json:"OR" db:"OR"`
 	// Logical NOT of FilterInput
-	Not *PostFilterInput `json:"NOT"`
+	Not *PostFilterInput `json:"NOT" db:"NOT"`
 }
 
 // Ordering for Post
 type PostOrdering struct {
 	// Order Post by id
-	ID *OrderingTypes `json:"id"`
+	ID *OrderingTypes `json:"id" db:"id"`
 	// Order Post by name
-	Name *OrderingTypes `json:"name"`
+	Name *OrderingTypes `json:"name" db:"name"`
 }
 
 type StringComparator struct {
-	Eq          *string   `json:"eq"`
-	Neq         *string   `json:"neq"`
-	Contains    []*string `json:"contains"`
-	NotContains []*string `json:"not_contains"`
-	Like        *string   `json:"like"`
-	Ilike       *string   `json:"ilike"`
-	Suffix      *string   `json:"suffix"`
-	Prefix      *string   `json:"prefix"`
+	Eq          *string   `json:"eq" db:"eq"`
+	Neq         *string   `json:"neq" db:"neq"`
+	Contains    []*string `json:"contains" db:"contains"`
+	NotContains []*string `json:"not_contains" db:"not_contains"`
+	Like        *string   `json:"like" db:"like"`
+	Ilike       *string   `json:"ilike" db:"ilike"`
+	Suffix      *string   `json:"suffix" db:"suffix"`
+	Prefix      *string   `json:"prefix" db:"prefix"`
 }
 
 type StringListComparator struct {
-	Eq          []*string `json:"eq"`
-	Neq         []*string `json:"neq"`
-	Contains    []*string `json:"contains"`
-	ContainedBy []*string `json:"containedBy"`
-	Overlap     []*string `json:"overlap"`
+	Eq          []*string `json:"eq" db:"eq"`
+	Neq         []*string `json:"neq" db:"neq"`
+	Contains    []*string `json:"contains" db:"contains"`
+	ContainedBy []*string `json:"containedBy" db:"containedBy"`
+	Overlap     []*string `json:"overlap" db:"overlap"`
 }
 
 type User struct {
-	ID    int     `json:"id"`
-	Name  string  `json:"name"`
-	Posts []*Post `json:"posts"`
+	ID    int     `json:"id" db:"id"`
+	Name  string  `json:"name" db:"name"`
+	Posts []*Post `json:"posts" db:"posts"`
 	// posts Aggregate
-	PostsAggregate *AggregateResult `json:"_postsAggregate"`
+	PostsAggregate *AggregateResult `json:"_postsAggregate" db:"_postsAggregate"`
 }
 
 type UserFilterInput struct {
-	ID    *IntComparator    `json:"id"`
-	Name  *StringComparator `json:"name"`
-	Posts *PostFilterInput  `json:"posts"`
+	ID    *IntComparator    `json:"id" db:"id"`
+	Name  *StringComparator `json:"name" db:"name"`
+	Posts *PostFilterInput  `json:"posts" db:"posts"`
 	// Logical AND of FilterInput
-	And []*UserFilterInput `json:"AND"`
+	And []*UserFilterInput `json:"AND" db:"AND"`
 	// Logical OR of FilterInput
-	Or []*UserFilterInput `json:"OR"`
+	Or []*UserFilterInput `json:"OR" db:"OR"`
 	// Logical NOT of FilterInput
-	Not *UserFilterInput `json:"NOT"`
+	Not *UserFilterInput `json:"NOT" db:"NOT"`
 }
 
 // Ordering for User
 type UserOrdering struct {
 	// Order User by id
-	ID *OrderingTypes `json:"id"`
+	ID *OrderingTypes `json:"id" db:"id"`
 	// Order User by name
-	Name *OrderingTypes `json:"name"`
+	Name *OrderingTypes `json:"name" db:"name"`
 }
 
 type AggregateResult struct {
-	Count int `json:"count"`
+	Count int `json:"count" db:"count"`
 }
 
 type OrderingTypes string
