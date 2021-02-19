@@ -5,7 +5,8 @@ import (
 	"math/rand"
 	"unsafe"
 
-	"github.com/roneli/fastgql/internal"
+	"github.com/roneli/fastgql/log"
+
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -13,9 +14,8 @@ type (
 
 	// Config is the basic level of data passed to a builder when it's created
 	Config struct {
-		Schema   *ast.Schema
-		Logger   internal.Logger
-		LogLevel internal.LogLevel
+		Schema *ast.Schema
+		Logger log.Logger
 	}
 
 	OrderingTypes string

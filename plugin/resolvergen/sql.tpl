@@ -2,7 +2,7 @@
 {{ reserveImport "github.com/roneli/fastgql/builders" }}
 {{ reserveImport 	"github.com/roneli/fastgql/builders/sql" }}
 
-builder := sql.Builder{Schema: r.Cfg.Schema}
+builder := sql.NewBuilder(r.Cfg)
 {{ if hasSuffix .Field.Name "Aggregate" }} q, args, err := builder.Aggregate(ctx) {{else}} q, args, err := builder.Query(ctx) {{end}}
 if err != nil {
     return nil, err

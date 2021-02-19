@@ -80,10 +80,10 @@ type Category @generateFilterInput(name: "CategoryFilterInput"){
   name: String
 }
 
-type Query @generateArguments {
+type Query @generate {
   posts: [Post]
   users: [User]
-  categories: [Category]
+  categories: [Category] @skipGenerate
 }
 ```
 
