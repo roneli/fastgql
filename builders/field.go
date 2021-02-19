@@ -55,7 +55,7 @@ func CollectOrdering(ordering interface{}) ([]OrderField, error) {
 }
 
 func buildOrderingHelper(argMap map[string]interface{}) []OrderField {
-	orderFields := make([]OrderField, len(argMap))
+	orderFields := make([]OrderField, 0)
 	for k, v := range argMap {
 		orderFields = append(orderFields, OrderField{
 			Key:  k,

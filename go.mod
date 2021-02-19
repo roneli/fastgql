@@ -10,6 +10,7 @@ require (
 	github.com/iancoleman/strcase v0.1.3
 	github.com/jackc/pgx/v4 v4.10.1
 	github.com/pkg/errors v0.9.1
+	github.com/rs/zerolog v1.15.0
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.5.1

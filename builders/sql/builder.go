@@ -9,22 +9,31 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
 	"github.com/roneli/fastgql/builders"
+	"github.com/roneli/fastgql/log"
 	"github.com/roneli/fastgql/schema"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 
-	// import the dialect
 	"strings"
-
+	// import the dialect
 	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 )
 
-type Builder struct {
+type builder struct {
 	Schema    *ast.Schema
+	Logger    log.Logger
 	Operators map[string]Operator
 }
 
-func (b Builder) Query(ctx context.Context) (string, []interface{}, error) {
+func NewBuilder(config *builders.Config) builder {
+	var l log.Logger = log.NullLogger{}
+	if config.Logger != nil {
+		l = config.Logger
+	}
+	return builder{Schema: config.Schema, Logger: l, Operators: defaultOperators}
+}
+
+func (b builder) Query(ctx context.Context) (string, []interface{}, error) {
 	field := builders.CollectFields(ctx)
 	query, err := b.buildQuery(getTableName(b.Schema, field.Definition), field)
 	if err != nil {
@@ -33,7 +42,7 @@ func (b Builder) Query(ctx context.Context) (string, []interface{}, error) {
 	return query.SelectRow().ToSQL()
 }
 
-func (b Builder) Aggregate(ctx context.Context) (string, []interface{}, error) {
+func (b builder) Aggregate(ctx context.Context) (string, []interface{}, error) {
 	field := builders.CollectFields(ctx)
 	query, err := b.buildAggregate(getAggregateTableName(b.Schema, field.Field), field)
 	if err != nil {
@@ -42,8 +51,9 @@ func (b Builder) Aggregate(ctx context.Context) (string, []interface{}, error) {
 	return query.ToSQL()
 }
 
-func (b Builder) buildQuery(tableName string, field builders.Field) (*queryHelper, error) {
+func (b builder) buildQuery(tableName string, field builders.Field) (*queryHelper, error) {
 
+	b.Logger.Debug("building query", map[string]interface{}{"table": tableName})
 	tableAlias := builders.GenerateTableName(6)
 	table := goqu.T(tableName).As(tableAlias)
 	query := queryHelper{goqu.From(table), table, tableAlias, nil}
@@ -52,8 +62,10 @@ func (b Builder) buildQuery(tableName string, field builders.Field) (*queryHelpe
 	for _, childField := range field.Selections {
 		switch childField.FieldType {
 		case builders.TypeScalar:
+			b.Logger.Debug("adding field", map[string]interface{}{"table": tableName, "fieldName": childField.Name})
 			query.selects = append(query.selects, column{table: query.alias, name: childField.Name, alias: ""})
 		case builders.TypeRelation:
+			b.Logger.Debug("adding relation field", map[string]interface{}{"table": tableName, "fieldName": childField.Name})
 			if err := b.buildRelation(&query, childField); err != nil {
 				return nil, fmt.Errorf("failed to build relation for %s", childField.Name)
 			}
@@ -65,6 +77,7 @@ func (b Builder) buildQuery(tableName string, field builders.Field) (*queryHelpe
 			//query.selects = append(query.selects, column{table: query.alias, name: childField.Name, alias: ""})
 
 		default:
+			b.Logger.Error("unknown field type", map[string]interface{}{"table": tableName, "fieldName": childField.Name, "fieldType": childField.FieldType})
 			panic("unknown field type")
 		}
 	}
@@ -77,7 +90,8 @@ func (b Builder) buildQuery(tableName string, field builders.Field) (*queryHelpe
 	return &query, nil
 }
 
-func (b Builder) buildAggregate(tableName string, field builders.Field) (*queryHelper, error) {
+func (b builder) buildAggregate(tableName string, field builders.Field) (*queryHelper, error) {
+	b.Logger.Debug("building aggregate", map[string]interface{}{"table": tableName})
 	tableAlias := builders.GenerateTableName(6)
 	table := goqu.T(tableName).As(tableAlias)
 	query := &queryHelper{goqu.From(table), table, tableAlias, nil}
@@ -96,7 +110,7 @@ func (b Builder) buildAggregate(tableName string, field builders.Field) (*queryH
 	return query, nil
 }
 
-func (b Builder) buildOrdering(query *queryHelper, field builders.Field) {
+func (b builder) buildOrdering(query *queryHelper, field builders.Field) {
 	orderBy, ok := field.Arguments["orderBy"]
 	if !ok {
 		return
@@ -104,6 +118,7 @@ func (b Builder) buildOrdering(query *queryHelper, field builders.Field) {
 	orderFields, _ := builders.CollectOrdering(orderBy)
 
 	for _, o := range orderFields {
+		b.Logger.Debug("adding ordering", map[string]interface{}{"table": query.TableName(), "field": o.Key, "orderType": o.Type})
 		switch o.Type {
 		case builders.OrderingTypesAsc:
 			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Asc().NullsLast())
@@ -117,18 +132,20 @@ func (b Builder) buildOrdering(query *queryHelper, field builders.Field) {
 	}
 }
 
-func (b Builder) buildPagination(query *queryHelper, field builders.Field) {
+func (b builder) buildPagination(query *queryHelper, field builders.Field) {
 
 	if limit, ok := field.Arguments["limit"]; ok {
+		b.Logger.Debug("adding pagination limit", map[string]interface{}{"table": query.TableName(), "limit": limit})
 		query.SelectDataset = query.Limit(cast.ToUint(limit))
 	}
-	if limit, ok := field.Arguments["offset"]; ok {
-		query.SelectDataset = query.Offset(cast.ToUint(limit))
+	if offset, ok := field.Arguments["offset"]; ok {
+		b.Logger.Debug("adding pagination offset", map[string]interface{}{"table": query.TableName(), "offset": offset})
+		query.SelectDataset = query.Offset(cast.ToUint(offset))
 	}
 
 }
 
-func (b Builder) buildFiltering(query *queryHelper, field builders.Field) error {
+func (b builder) buildFiltering(query *queryHelper, field builders.Field) error {
 	filterArg, ok := field.Arguments["filter"]
 	if !ok {
 		return nil
@@ -142,7 +159,7 @@ func (b Builder) buildFiltering(query *queryHelper, field builders.Field) error 
 	return nil
 }
 
-func (b Builder) buildFilterLogicalExp(query *queryHelper, field builders.Field, filtersList []interface{}, logicalType exp.ExpressionListType) (goqu.Expression, error) {
+func (b builder) buildFilterLogicalExp(query *queryHelper, field builders.Field, filtersList []interface{}, logicalType exp.ExpressionListType) (goqu.Expression, error) {
 
 	expBuilder := exp.NewExpressionList(logicalType)
 	for _, filterValue := range filtersList {
@@ -159,7 +176,7 @@ func (b Builder) buildFilterLogicalExp(query *queryHelper, field builders.Field,
 	return expBuilder, nil
 }
 
-func (b Builder) buildFilterExp(query *queryHelper, field builders.Field, filters map[string]interface{}) (goqu.Expression, error) {
+func (b builder) buildFilterExp(query *queryHelper, field builders.Field, filters map[string]interface{}) (goqu.Expression, error) {
 	filterInputDef := b.Schema.Types[fmt.Sprintf("%sFilterInput", field.GetTypeName())]
 	expBuilder := exp.NewExpressionList(exp.AndType)
 	for k, v := range filters {
@@ -219,15 +236,15 @@ func (b Builder) buildFilterExp(query *queryHelper, field builders.Field, filter
 	return expBuilder, nil
 }
 
-func (b Builder) Operation(table exp.AliasedExpression, fieldName, operatorName string, value interface{}) (goqu.Expression, error) {
-	opFunc, ok := defaultOperators[operatorName]
+func (b builder) Operation(table exp.AliasedExpression, fieldName, operatorName string, value interface{}) (goqu.Expression, error) {
+	opFunc, ok := b.Operators[operatorName]
 	if !ok {
 		return nil, fmt.Errorf("key operator %s not supported", operatorName)
 	}
 	return opFunc(table, strcase.ToSnake(fieldName), value), nil
 }
 
-func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) error {
+func (b builder) buildRelation(parentQuery *queryHelper, rf builders.Field) error {
 
 	relationQuery, err := b.buildQuery(rf.Field.Name, rf)
 	if err != nil {
@@ -262,7 +279,7 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 			goqu.Lateral(relationQuery.SelectRow().Where(buildCrossCondition(relationQuery.alias, rel.references, m2mTableAlias, rel.manyToManyReferences))).As(relationQuery.alias),
 			goqu.On(goqu.L("true")))
 
-		// Add cross condition from parent builder (current Builder instance)
+		// Add cross condition from parent builder (current builder instance)
 		m2mQuery.SelectDataset = m2mQuery.Where(buildCrossCondition(parentQuery.alias, rel.fields, m2mTableAlias, rel.manyToManyFields)).As(relationQuery.alias)
 
 		// Finally aggregate relation query and join the m2m table with the main query
@@ -275,7 +292,7 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 	return nil
 }
 
-func (b Builder) buildFilterQuery(parentQuery *queryHelper, rf builders.Field, rel relation, filters map[string]interface{}) (*queryHelper, error) {
+func (b builder) buildFilterQuery(parentQuery *queryHelper, rf builders.Field, rel relation, filters map[string]interface{}) (*queryHelper, error) {
 
 	tableAlias := builders.GenerateTableName(6)
 	table := goqu.T(rel.referenceTable).As(tableAlias)

@@ -24,6 +24,10 @@ type queryHelper struct {
 	selects []column
 }
 
+func (q queryHelper) TableName() string {
+	return q.table.Aliased().(exp.IdentifierExpression).GetTable()
+}
+
 func (q queryHelper) SelectRow() *goqu.SelectDataset {
 	for i, c := range q.selects {
 		if i == 0 {

@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
-	"log"
+	"github.com/roneli/fastgql/log/adapters"
+	"github.com/rs/zerolog/log"
+
 	"net/http"
 	"os"
 
@@ -35,12 +37,18 @@ func main() {
 	}
 	resolver := &graph.Resolver{Sql: pool}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
-	resolver.Cfg = &builders.Config{Schema: executableSchema.Schema()}
+	// Set configuration
 
+	// Create a new instance of the logger. You can have any number of instances.
+	resolver.Cfg = &builders.Config{Schema: executableSchema.Schema(), Logger: adapters.NewZerologAdapter(log.Logger)}
 	srv := handler.NewDefaultServer(executableSchema)
+
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	err = http.ListenAndServe(":"+port, nil)
+	if err != nil {
+		log.Fatal().Err(err)
+	}
 }

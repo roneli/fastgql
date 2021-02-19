@@ -18,7 +18,7 @@ These directives are commonly used to tell *fastgql* what parts of the schema we
 
 We have three augmentation directives:
 - [@generateFilterInput]({{< ref "#generatefilterinput" >}})
-- [@generateArguments]({{< ref "#generateArguments" >}})
+- [@generate]({{< ref "#generate" >}})
 - [@skipGenerate]({{< ref "#generatefilterinput" >}})
 
 ### @generateFilterInput
@@ -42,27 +42,27 @@ type Category @generateFilterInput(name: "CategoryFilterInput"){
   name: String
 }
 
-type Query @generateArguments {
+type Query @generate {
     categories: [Category]
 }
 ```
 
 This also works for objects that contain fields of objects, see [Object filters](/queries/filter/#object-filters)
 
-### @generateArguments
+### @generate
 
-The `@generateArguments` tells the augmenter on which `OBJECT ` to generate arguments i.e filter, pagination and ordering.
-By default, all arguments are created and are recursive, this means that args are generated from the Top level all until exhausted (no object fields aren't augmented)
+The `@generate` tells the augmenter on which `OBJECT ` to generate arguments i.e filter, pagination and ordering, aggregation.
+By default, all arguments created, and are recursive, this means that args are generated from the Top level all until exhausted (no object fields aren't augmented)
 
 ```graphql
 # Generate arguments for a given field or all object fields
-directive @generateArguments(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, recursive: Boolean = True) on OBJECT
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on OBJECT
 ```
 
 **Example**: The following example adds arguments to all fields in Query and does the same for each field type.
 
 ```graphql
-type Query @generateArguments {
+type Query @generate {
   posts: [Post]
   users: [User]
   categories: [Category] @skipGenerate
@@ -84,7 +84,7 @@ directive @skipGenerate(resolver:Boolean = True) on FIELD_DEFINITION
 
 ```graphql
 
-type Query @generateArguments {
+type Query @generate {
     posts: [Post]
     users: [User]
     categories: [Category] @skipGenerate

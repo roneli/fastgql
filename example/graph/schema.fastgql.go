@@ -14,7 +14,7 @@ import (
 )
 
 func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
-	builder := sql.Builder{Schema: r.Cfg.Schema}
+	builder := sql.NewBuilder(r.Cfg)
 	q, args, err := builder.Query(ctx)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 }
 
 func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
-	builder := sql.Builder{Schema: r.Cfg.Schema}
+	builder := sql.NewBuilder(r.Cfg)
 	q, args, err := builder.Query(ctx)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int,
 }
 
 func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.AggregateResult, error) {
-	builder := sql.Builder{Schema: r.Cfg.Schema}
+	builder := sql.NewBuilder(r.Cfg)
 	q, args, err := builder.Aggregate(ctx)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFi
 }
 
 func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.AggregateResult, error) {
-	builder := sql.Builder{Schema: r.Cfg.Schema}
+	builder := sql.NewBuilder(r.Cfg)
 	q, args, err := builder.Aggregate(ctx)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFi
 }
 
 func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.AggregateResult, error) {
-	builder := sql.Builder{Schema: r.Cfg.Schema}
+	builder := sql.NewBuilder(r.Cfg)
 	q, args, err := builder.Aggregate(ctx)
 	if err != nil {
 		return nil, err
