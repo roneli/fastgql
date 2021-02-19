@@ -6,6 +6,7 @@ import (
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin/modelgen"
+	"github.com/roneli/fastgql/plugin"
 	"github.com/roneli/fastgql/plugin/resolvergen"
 	"github.com/roneli/fastgql/plugin/servergen"
 	"github.com/roneli/fastgql/schema/augmenters"
@@ -53,8 +54,8 @@ func Generate(configPath string, generateServer bool) error {
 	if err != nil {
 		return err
 	}
-	plugin := FastGqlPlugin{}
-	src := plugin.CreateAugmented(cfg.Schema)
+	fgqlPlugin := FastGqlPlugin{}
+	src := fgqlPlugin.CreateAugmented(cfg.Schema)
 
 	// Load config again
 	cfg, err = config.LoadConfig(configPath)
@@ -63,11 +64,16 @@ func Generate(configPath string, generateServer bool) error {
 	}
 	cfg.Sources = []*ast.Source{src}
 
+	// Attaching the mutation function onto modelgen plugin
+	modelgenPlugin := modelgen.Plugin{
+		MutateHook: plugin.MutateHook,
+	}
+
 	if generateServer {
-		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(modelgen.New()), api.AddPlugin(resolvergen.New()),
-			api.AddPlugin(plugin), api.AddPlugin(servergen.New("server.go")))
+		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(resolvergen.New()),
+			api.AddPlugin(fgqlPlugin), api.AddPlugin(servergen.New("server.go")))
 	} else {
-		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(modelgen.New()), api.AddPlugin(resolvergen.New()), api.AddPlugin(plugin))
+		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(resolvergen.New()), api.AddPlugin(fgqlPlugin))
 	}
 
 	if err != nil {
