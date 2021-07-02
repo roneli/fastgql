@@ -7,7 +7,7 @@ builder := sql.NewBuilder(r.Cfg)
 if err != nil {
     return nil, err
 }
-rows, err := r.Sql.Query(ctx, q, args...)
+rows, err := r.Executor.Query(ctx, q, args...)
 if err != nil {
     return nil, err
 }

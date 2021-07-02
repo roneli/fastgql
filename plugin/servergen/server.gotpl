@@ -27,7 +27,7 @@ func main() {
         panic(err)
     }
     defer pool.Close()
-    resolver :=  &{{ lookupImport .ResolverPackageName}}.Resolver{Sql: pool}
+    resolver :=  &{{ lookupImport .ResolverPackageName}}.Resolver{Executor: pool}
     executableSchema := {{ lookupImport .ExecPackageName }}.NewExecutableSchema({{ lookupImport .ExecPackageName}}.Config{Resolvers:resolver})
     resolver.Cfg = &builders.Config{Schema: executableSchema.Schema()}
 
