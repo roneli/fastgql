@@ -1,7 +1,9 @@
+//go:generate go run github.com/roneli/fastgql generate -c gqlgen.yml
 package main
 
 import (
 	"context"
+
 	"github.com/roneli/fastgql/log/adapters"
 	"github.com/rs/zerolog/log"
 
@@ -35,7 +37,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	resolver := &graph.Resolver{Sql: pool}
+	resolver := &graph.Resolver{Executor: pool}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
 	// Set configuration
 

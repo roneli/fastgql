@@ -19,13 +19,11 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.Sql.Query(ctx, q, args...)
+	rows, err := r.Executor.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
-
 	var data []*model.Post
-
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
 	}
@@ -38,13 +36,11 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.Sql.Query(ctx, q, args...)
+	rows, err := r.Executor.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
-
 	var data []*model.User
-
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
 	}
@@ -61,13 +57,11 @@ func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFi
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.Sql.Query(ctx, q, args...)
+	rows, err := r.Executor.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
-
 	var data *model.AggregateResult
-
 	if err := pgxscan.ScanOne(&data, rows); err != nil {
 		return nil, err
 	}
@@ -80,13 +74,11 @@ func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFi
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.Sql.Query(ctx, q, args...)
+	rows, err := r.Executor.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
-
 	var data *model.AggregateResult
-
 	if err := pgxscan.ScanOne(&data, rows); err != nil {
 		return nil, err
 	}
@@ -99,13 +91,11 @@ func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.C
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.Sql.Query(ctx, q, args...)
+	rows, err := r.Executor.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
-
 	var data *model.AggregateResult
-
 	if err := pgxscan.ScanOne(&data, rows); err != nil {
 		return nil, err
 	}

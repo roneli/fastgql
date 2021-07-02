@@ -165,10 +165,10 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 				// It serves as dependency injection for your app, add any dependencies you require here.`,
 			Template: `{{ reserveImport "context"  }}
 {{ reserveImport "github.com/roneli/fastgql/builders" }}
-{{ reserveImport "github.com/jackc/pgx/v4/pgxpool"}}
+{{ reserveImport "github.com/roneli/fastgql/execution" }}
 type {{.}} struct {
 	Cfg *builders.Config 
-	Sql *pgxpool.Pool
+	Executor execution.Querier
 }`,
 			Filename: data.Config.Resolver.Filename,
 			Data:     data.Config.Resolver.Type,
@@ -182,17 +182,22 @@ type {{.}} struct {
 }
 
 func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
-
 	buf := &bytes.Buffer{}
+	if resolver.Implementation != "" && defaultImpl != resolver.Implementation {
+		buf.WriteString(resolver.Implementation)
+		return buf, nil
+	}
+
 	if resolver.Field.TypeReference.Definition.IsAbstractType() {
 		buf.WriteString(`panic(fmt.Errorf("interface support not implemented"))`)
 		return buf, nil
 	}
 
-	if resolver.Implementation != "" && defaultImpl != resolver.Implementation {
-		buf.WriteString(resolver.Implementation)
+	if resolver.Field.TypeReference.Definition.IsLeafType() || resolver.Field.TypeReference.Definition.IsInputType() {
+		buf.WriteString(`panic(fmt.Errorf("not implemented"))`)
 		return buf, nil
 	}
+
 	if d := resolver.Field.FieldDefinition.Directives.ForName("skipGenerate"); d != nil {
 		if v := d.Definition.Arguments.ForName("resolver"); v != nil && cast.ToBool(v.DefaultValue.Raw) {
 			buf.WriteString(`panic(fmt.Errorf("not implemented"))`)
