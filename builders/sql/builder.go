@@ -222,7 +222,8 @@ func (b Builder) buildFilterExp(query *queryHelper, field builders.Field, filter
 			if d == nil {
 				return nil, fmt.Errorf("missing directive sqlRelation")
 			}
-			fq, err := b.buildFilterQuery(query, field, parseRelationDirective(d), kv)
+			innerField := field.ForName(k)
+			fq, err := b.buildFilterQuery(query, innerField, parseRelationDirective(d), kv)
 			if err != nil {
 				return nil, err
 			}

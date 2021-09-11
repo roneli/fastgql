@@ -26,6 +26,15 @@ type Field struct {
 	Arguments  map[string]interface{}
 }
 
+func (f Field) ForName(name string) Field {
+	for _, s := range f.Selections {
+		if s.Name == name {
+			return s
+		}
+	}
+	return f
+}
+
 func (f Field) GetTypeName() string {
 	typeName := f.Definition.Type.Name()
 	if strings.HasSuffix(f.Name, "Aggregate") {
