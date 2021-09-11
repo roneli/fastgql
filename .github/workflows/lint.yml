@@ -1,14 +1,13 @@
-name: Lint
-on: [pull_request]
+name: golangci-lint
+on: [ push, pull_request ]
 
 jobs:
-  lint:
+  golangci:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
-        with: { go-version: 1.17 }
-      - run: go mod download
-      - run: .github/workflows/check-fmt.sh
-      - run: .github/workflows/check-linting.sh
-      - run: .github/workflows/check-generate.sh
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.42.1
