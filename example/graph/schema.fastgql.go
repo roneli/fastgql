@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/roneli/fastgql/builders"
 	"github.com/roneli/fastgql/builders/sql"
 	"github.com/roneli/fastgql/example/graph/generated"
 	"github.com/roneli/fastgql/example/graph/model"
@@ -15,7 +16,7 @@ import (
 
 func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
 	builder := sql.NewBuilder(r.Cfg)
-	q, args, err := builder.Query(ctx)
+	q, args, err := builder.Query(builders.CollectFields(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +33,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 
 func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
 	builder := sql.NewBuilder(r.Cfg)
-	q, args, err := builder.Query(ctx)
+	q, args, err := builder.Query(builders.CollectFields(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int,
 
 func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.AggregateResult, error) {
 	builder := sql.NewBuilder(r.Cfg)
-	q, args, err := builder.Aggregate(ctx)
+	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +71,7 @@ func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFi
 
 func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.AggregateResult, error) {
 	builder := sql.NewBuilder(r.Cfg)
-	q, args, err := builder.Aggregate(ctx)
+	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFi
 
 func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.AggregateResult, error) {
 	builder := sql.NewBuilder(r.Cfg)
-	q, args, err := builder.Aggregate(ctx)
+	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
 	if err != nil {
 		return nil, err
 	}

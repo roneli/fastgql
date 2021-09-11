@@ -45,10 +45,13 @@ func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) *ast.Source {
 	}
 }
 
-func Generate(configPath string, generateServer bool) error {
+func Generate(configPath string, generateServer bool, sources ...*ast.Source) error {
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		return err
+	}
+	if sources != nil {
+		cfg.Sources = append(cfg.Sources, sources...)
 	}
 	err = cfg.LoadSchema()
 	if err != nil {

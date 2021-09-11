@@ -15,14 +15,14 @@ func TestImportPathForDir(t *testing.T) {
 
 	require.NoError(t, err)
 
-	assert.Equal(t, "github.com/99designs/gqlgen/internal/code", ImportPathForDir(wd))
-	assert.Equal(t, "github.com/99designs/gqlgen/api", ImportPathForDir(filepath.Join(wd, "..", "..", "api")))
+	assert.Equal(t, "github.com/roneli/fastgql/codegen/code", ImportPathForDir(wd))
+	assert.Equal(t, "github.com/roneli/fastgql/api", ImportPathForDir(filepath.Join(wd, "..", "..", "api")))
 
 	// doesnt contain go code, but should still give a valid import path
-	assert.Equal(t, "github.com/99designs/gqlgen/docs", ImportPathForDir(filepath.Join(wd, "..", "..", "docs")))
+	assert.Equal(t, "github.com/roneli/fastgql/docs", ImportPathForDir(filepath.Join(wd, "..", "..", "docs")))
 
 	// directory does not exist
-	assert.Equal(t, "github.com/99designs/gqlgen/dos", ImportPathForDir(filepath.Join(wd, "..", "..", "dos")))
+	assert.Equal(t, "github.com/roneli/fastgql/dos", ImportPathForDir(filepath.Join(wd, "..", "..", "dos")))
 
 	// out of module
 	assert.Equal(t, "", ImportPathForDir(filepath.Join(wd, "..", "..", "..")))
@@ -40,6 +40,6 @@ func TestNameForDir(t *testing.T) {
 
 	assert.Equal(t, "tmp", NameForDir("/tmp"))
 	assert.Equal(t, "code", NameForDir(wd))
-	assert.Equal(t, "internal", NameForDir(wd+"/.."))
+	assert.Equal(t, "codegen", NameForDir(wd+"/.."))
 	assert.Equal(t, "main", NameForDir(wd+"/../.."))
 }

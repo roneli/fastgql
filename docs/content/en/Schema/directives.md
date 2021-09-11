@@ -105,16 +105,17 @@ The `@tablename` directive is used to define the name of the table of the graphq
 
 By default, the table name is the name of type, we use this directive when the table name is different from the object typename.
 
+If our table resides in a schema that isn't the one set as the default we need to add the schema argument. 
 ```graphql
-# Used if Object/Interface type name is different then the actual table name
-directive @tableName(name: String!) on OBJECT | INTERFACE
+# Used if Object/Interface type name is different then the actual table name or if the table resides in a schema other than default path.
+directive @tableName(name: String!, schema: String) on OBJECT | INTERFACE
 ```
 
 **Example:** 
 
 ```graphql
 
-type User @tableName(name: "users"){
+type User @tableName(name: "users", schema: "app"){
     id: Int
     name: String
 }

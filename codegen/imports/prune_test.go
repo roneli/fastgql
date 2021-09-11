@@ -5,7 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/99designs/gqlgen/internal/code"
+	"github.com/roneli/fastgql/codegen/code"
+
 	"github.com/stretchr/testify/require"
 )
 

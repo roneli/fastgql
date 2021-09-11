@@ -1,9 +1,32 @@
-package schema
+type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user", schema: "app"){
+    id: Int!
+    name: String!
+    posts: [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
+}
 
-// TODO: in go 1.16 use //go:embed
+type Post @generateFilterInput(name: "PostFilterInput") {
+    id: Int!
+    name: String
+    categories: [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"]
+        manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+    user: User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
+}
 
-const FastgqlSchema = `# Used if Object/Interface type name is different then the actual table name
-directive @tableName(name: String!, schema: String) on OBJECT | INTERFACE
+
+type Category @generateFilterInput(name: "CategoryFilterInput"){
+    id: Int!
+    name: String
+}
+
+type Query @generate {
+    posts: [Post]
+    users: [User]
+    categories: [Category] @skipGenerate
+}
+
+
+# Used if Object/Interface type name is different then the actual table name
+directive @tableName(name: String!) on OBJECT | INTERFACE
 
 # Generate filter input on an object
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
@@ -82,4 +105,4 @@ input BooleanListComparator {
     contains: [Boolean]
     contained: [Boolean]
     overlap: [Boolean]
-}`
+}

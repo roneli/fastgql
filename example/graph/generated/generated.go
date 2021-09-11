@@ -401,30 +401,42 @@ input IntListComparator {
 type Post @generateFilterInput(name: "PostFilterInput") {
 	id: Int!
 	name: String
-	categories("""
-	Limit
-	"""
-	limit: Int = 100, """
-	Offset
-	"""
-	offset: Int = 0, """
-	Ordering for Category
-	"""
-	orderBy: [CategoryOrdering], """
-	Filter categories
-	"""
-	filter: CategoryFilterInput): [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-	user("""
-	Filter user
-	"""
-	filter: UserFilterInput): User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering]
+	,
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput
+	): [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user(
+		"""
+		Filter user
+		"""
+		filter: UserFilterInput
+	): User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
 	"""
 	categories Aggregate
 	"""
-	_categoriesAggregate("""
-	Filter _categoriesAggregate
-	"""
-	filter: CategoryFilterInput): _AggregateResult!
+	_categoriesAggregate(
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput
+	): _AggregateResult!
 }
 input PostFilterInput {
 	id: IntComparator
@@ -458,66 +470,96 @@ input PostOrdering {
 	name: _OrderingTypes
 }
 type Query @generate {
-	posts("""
-	Limit
-	"""
-	limit: Int = 100, """
-	Offset
-	"""
-	offset: Int = 0, """
-	Ordering for Post
-	"""
-	orderBy: [PostOrdering], """
-	Filter posts
-	"""
-	filter: PostFilterInput): [Post]
-	users("""
-	Limit
-	"""
-	limit: Int = 100, """
-	Offset
-	"""
-	offset: Int = 0, """
-	Ordering for User
-	"""
-	orderBy: [UserOrdering], """
-	Filter users
-	"""
-	filter: UserFilterInput): [User]
-	categories("""
-	Limit
-	"""
-	limit: Int = 100, """
-	Offset
-	"""
-	offset: Int = 0, """
-	Ordering for Category
-	"""
-	orderBy: [CategoryOrdering], """
-	Filter categories
-	"""
-	filter: CategoryFilterInput): [Category] @skipGenerate
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering]
+	,
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput
+	): [Post]
+	users(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering]
+	,
+		"""
+		Filter users
+		"""
+		filter: UserFilterInput
+	): [User]
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering]
+	,
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput
+	): [Category] @skipGenerate
 	"""
 	posts Aggregate
 	"""
-	_postsAggregate("""
-	Filter _postsAggregate
-	"""
-	filter: PostFilterInput): _AggregateResult!
+	_postsAggregate(
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput
+	): _AggregateResult!
 	"""
 	users Aggregate
 	"""
-	_usersAggregate("""
-	Filter _usersAggregate
-	"""
-	filter: UserFilterInput): _AggregateResult!
+	_usersAggregate(
+		"""
+		Filter _usersAggregate
+		"""
+		filter: UserFilterInput
+	): _AggregateResult!
 	"""
 	categories Aggregate
 	"""
-	_categoriesAggregate("""
-	Filter _categoriesAggregate
-	"""
-	filter: CategoryFilterInput): _AggregateResult!
+	_categoriesAggregate(
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput
+	): _AggregateResult!
 }
 input StringComparator {
 	eq: String
@@ -539,26 +581,36 @@ input StringListComparator {
 type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user") {
 	id: Int!
 	name: String!
-	posts("""
-	Limit
-	"""
-	limit: Int = 100, """
-	Offset
-	"""
-	offset: Int = 0, """
-	Ordering for Post
-	"""
-	orderBy: [PostOrdering], """
-	Filter posts
-	"""
-	filter: PostFilterInput): [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering]
+	,
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput
+	): [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
 	"""
 	posts Aggregate
 	"""
-	_postsAggregate("""
-	Filter _postsAggregate
-	"""
-	filter: PostFilterInput): _AggregateResult!
+	_postsAggregate(
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput
+	): _AggregateResult!
 }
 input UserFilterInput {
 	id: IntComparator
@@ -1946,6 +1998,41 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) ___Directive_isRepeatable(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "__Directive",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsRepeatable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql.CollectedField, obj *introspection.EnumValue) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2898,7 +2985,10 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 func (ec *executionContext) unmarshalInputBooleanComparator(ctx context.Context, obj interface{}) (model.BooleanComparator, error) {
 	var it model.BooleanComparator
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -2926,7 +3016,10 @@ func (ec *executionContext) unmarshalInputBooleanComparator(ctx context.Context,
 
 func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Context, obj interface{}) (model.BooleanListComparator, error) {
 	var it model.BooleanListComparator
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -2978,7 +3071,10 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 
 func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Context, obj interface{}) (model.CategoryFilterInput, error) {
 	var it model.CategoryFilterInput
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3030,7 +3126,10 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 
 func (ec *executionContext) unmarshalInputCategoryOrdering(ctx context.Context, obj interface{}) (model.CategoryOrdering, error) {
 	var it model.CategoryOrdering
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3058,7 +3157,10 @@ func (ec *executionContext) unmarshalInputCategoryOrdering(ctx context.Context, 
 
 func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj interface{}) (model.IntComparator, error) {
 	var it model.IntComparator
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3118,7 +3220,10 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 
 func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context, obj interface{}) (model.IntListComparator, error) {
 	var it model.IntListComparator
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3170,7 +3275,10 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 
 func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, obj interface{}) (model.PostFilterInput, error) {
 	var it model.PostFilterInput
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3238,7 +3346,10 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 
 func (ec *executionContext) unmarshalInputPostOrdering(ctx context.Context, obj interface{}) (model.PostOrdering, error) {
 	var it model.PostOrdering
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3266,7 +3377,10 @@ func (ec *executionContext) unmarshalInputPostOrdering(ctx context.Context, obj 
 
 func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, obj interface{}) (model.StringComparator, error) {
 	var it model.StringComparator
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3342,7 +3456,10 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 
 func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Context, obj interface{}) (model.StringListComparator, error) {
 	var it model.StringListComparator
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3394,7 +3511,10 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 
 func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, obj interface{}) (model.UserFilterInput, error) {
 	var it model.UserFilterInput
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3454,7 +3574,10 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 
 func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj interface{}) (model.UserOrdering, error) {
 	var it model.UserOrdering
-	var asMap = obj.(map[string]interface{})
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
 
 	for k, v := range asMap {
 		switch k {
@@ -3754,6 +3877,11 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "isRepeatable":
+			out.Values[i] = ec.___Directive_isRepeatable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4043,6 +4171,12 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
 	}
 
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -4098,6 +4232,13 @@ func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgq
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -4171,6 +4312,13 @@ func (ec *executionContext) marshalN__DirectiveLocation2ᚕstringᚄ(ctx context
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -4220,6 +4368,13 @@ func (ec *executionContext) marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋg
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -4261,6 +4416,13 @@ func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgen�
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -4396,6 +4558,7 @@ func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastg
 
 	}
 	wg.Wait()
+
 	return ret
 }
 
@@ -4566,6 +4729,7 @@ func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 
 	}
 	wg.Wait()
+
 	return ret
 }
 
@@ -4745,6 +4909,7 @@ func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 
 	}
 	wg.Wait()
+
 	return ret
 }
 
@@ -4872,6 +5037,13 @@ func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgq
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -4912,6 +5084,13 @@ func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋ99designsᚋgqlgen
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -4952,6 +5131,13 @@ func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋg
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -4999,6 +5185,13 @@ func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgen�
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 

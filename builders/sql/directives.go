@@ -3,6 +3,9 @@ package sql
 import (
 	"strings"
 
+	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
+
 	"github.com/roneli/fastgql/gql"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -27,6 +30,19 @@ type relation struct {
 	manyToManyFields     []string
 }
 
+type tableDefinition struct {
+	name   string
+	schema string
+}
+
+func (t tableDefinition) TableExpression() exp.IdentifierExpression {
+	tbl := goqu.T(t.name)
+	if t.schema != "" {
+		return tbl.Schema(t.schema)
+	}
+	return tbl
+}
+
 /*
 parseRelationDirective parses the sqlRelation directive to connect graphQL Objects with SQL relations, this directive
 is also important for creating relational filters.
@@ -47,23 +63,40 @@ func parseRelationDirective(d *ast.Directive) relation {
 	}
 }
 
-// getTableName returns the field's type table name in the database, if no directive is defined, type name is presumed
-// as the table's name
-func getTableName(schema *ast.Schema, f *ast.FieldDefinition) string {
+// getTableName returns the field's type tableDefinition name in the database, if no directive is defined, type name is presumed
+// as the tableDefinition's name
+func getTableName(schema *ast.Schema, f *ast.FieldDefinition) tableDefinition {
 	objType, ok := schema.Types[f.Type.Name()]
 	if !ok {
-		return f.Name
+		return tableDefinition{
+			name:   f.Name,
+			schema: "",
+		}
 	}
 	d := objType.Directives.ForName("tableName")
-	if d != nil {
-		return d.Arguments.ForName("name").Value.Raw
+	if d == nil {
+		return tableDefinition{
+			name:   f.Name,
+			schema: "",
+		}
 	}
-	return f.Name
+	name := d.Arguments.ForName("name").Value.Raw
+	schemaValue := d.Arguments.ForName("schema")
+	if schemaValue == nil {
+		return tableDefinition{
+			name:   name,
+			schema: "",
+		}
+	}
+	return tableDefinition{
+		name:   name,
+		schema: schemaValue.Value.Raw,
+	}
 }
 
-// getTableName returns the field's type table name in the database, if no directive is defined, type name is presumed
-// as the table's name
-func getAggregateTableName(schema *ast.Schema, field *ast.Field) string {
+// getTableName returns the field's type tableDefinition name in the database, if no directive is defined, type name is presumed
+// as the tableDefinition's name
+func getAggregateTableName(schema *ast.Schema, field *ast.Field) tableDefinition {
 	fieldName := strings.Split(field.Name, "Aggregate")[0][1:]
 	nonAggField := field.ObjectDefinition.Fields.ForName(fieldName)
 	return getTableName(schema, nonAggField)
