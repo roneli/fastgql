@@ -4,6 +4,8 @@ package main
 import (
 	"context"
 
+	"github.com/99designs/gqlgen/graphql/playground"
+
 	"github.com/roneli/fastgql/log/adapters"
 	"github.com/rs/zerolog/log"
 
@@ -11,7 +13,6 @@ import (
 	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/roneli/fastgql/builders"
 	"github.com/roneli/fastgql/example/graph"

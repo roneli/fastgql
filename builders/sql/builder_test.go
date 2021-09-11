@@ -74,6 +74,20 @@ func TestBuilder_Query(t *testing.T) {
 			ExpectedSQL:       `SELECT "sq0"."name" AS "name", "sq1"."posts" AS "posts" FROM "app"."user" AS "sq0" LEFT JOIN LATERAL (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq1"."name")), '[]'::jsonb) AS "posts" FROM "posts" AS "sq1" WHERE (("sq1"."name" LIKE $1) AND sq0.id = sq1.user_id) LIMIT $2) AS "sq1" ON true WHERE exists((SELECT 1 FROM "posts" AS "sq2" INNER JOIN "user" AS "sq3" ON sq0.id = sq2.user_id WHERE exists((SELECT 1 FROM "categories" AS "sq4" INNER JOIN "posts_to_categories" AS "sq5" ON (sq2.id = sq5.post_id AND sq5.category_id = sq4.id) WHERE ("sq4"."name" = $3))))) LIMIT $4`,
 			ExpectedArguments: []interface{}{int64(5), int64(100), "%po%", "IT"},
 		},
+		{
+			Name:       "field_name_different_than_table_name",
+			SchemaFile: "testdata/schema_simple.graphql",
+			GraphQLQuery: `query {
+							  users(limit: 5) {
+								name
+								someOtherName {
+								  name
+								}
+							  }
+							}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", "sq1"."someOtherName" AS "someOtherName" FROM "app"."user" AS "sq0" LEFT JOIN LATERAL (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq1"."name")), '[]'::jsonb) AS "someOtherName" FROM "posts" AS "sq1" WHERE sq0.id = sq1.user_id LIMIT $1) AS "sq1" ON true LIMIT $2`,
+			ExpectedArguments: []interface{}{int64(5), int64(100)},
+		},
 	}
 	_ = os.Chdir("/testdata")
 	fs := afero.NewOsFs()
