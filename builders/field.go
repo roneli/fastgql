@@ -67,38 +67,48 @@ func buildOrderingHelper(argMap map[string]interface{}) []OrderField {
 
 func CollectFields(ctx context.Context) Field {
 	resCtx := graphql.GetFieldContext(ctx)
+	opCtx := graphql.GetOperationContext(ctx)
 	return Field{
 		resCtx.Field.Field,
-		collectFields(graphql.GetOperationContext(ctx), resCtx.Field.Selections, map[string]bool{}),
+		collectFields(opCtx.Doc, resCtx.Field.Selections, opCtx.Variables, make(map[string]bool, 0)),
 		TypeObject,
 		resCtx.Field.ArgumentMap(graphql.GetOperationContext(ctx).Variables),
 	}
 }
 
-func collectFields(reqCtx *graphql.OperationContext, selSet ast.SelectionSet, visited map[string]bool) []Field {
+func CollectFromQuery(field *ast.Field, doc *ast.QueryDocument, variables map[string]interface{}, arguments map[string]interface{}) Field {
+	return Field{
+		Field:      field,
+		Selections: collectFields(doc, field.SelectionSet, variables, make(map[string]bool, 0)),
+		FieldType:  TypeObject,
+		Arguments:  arguments,
+	}
+}
+
+func collectFields(doc *ast.QueryDocument, selSet ast.SelectionSet, variables map[string]interface{}, visited map[string]bool) []Field {
 	groupedFields := make([]Field, 0, len(selSet))
 
 	for _, sel := range selSet {
 		switch sel := sel.(type) {
 		case *ast.Field:
-			if !shouldIncludeNode(sel.Directives, reqCtx.Variables) {
+			if !shouldIncludeNode(sel.Directives, variables) {
 				continue
 			}
 			f := getOrCreateAndAppendField(&groupedFields, sel.Alias, sel.ObjectDefinition, func() Field {
-				return collectField(reqCtx, sel)
+				return collectField(sel, variables)
 			})
-			f.Selections = append(f.Selections, collectFields(reqCtx, sel.SelectionSet, map[string]bool{})...)
+			f.Selections = append(f.Selections, collectFields(doc, sel.SelectionSet, variables, map[string]bool{})...)
 		case *ast.InlineFragment:
-			if !shouldIncludeNode(sel.Directives, reqCtx.Variables) {
+			if !shouldIncludeNode(sel.Directives, variables) {
 				continue
 			}
-			for _, childField := range collectFields(reqCtx, sel.SelectionSet, visited) {
+			for _, childField := range collectFields(doc, sel.SelectionSet, variables, visited) {
 				f := getOrCreateAndAppendField(&groupedFields, childField.Name, childField.ObjectDefinition, func() Field { return childField })
 				f.Selections = append(f.Selections, childField.Selections...)
 			}
 
 		case *ast.FragmentSpread:
-			if !shouldIncludeNode(sel.Directives, reqCtx.Variables) {
+			if !shouldIncludeNode(sel.Directives, variables) {
 				continue
 			}
 			fragmentName := sel.Name
@@ -107,13 +117,13 @@ func collectFields(reqCtx *graphql.OperationContext, selSet ast.SelectionSet, vi
 			}
 			visited[fragmentName] = true
 
-			fragment := reqCtx.Doc.Fragments.ForName(fragmentName)
+			fragment := doc.Fragments.ForName(fragmentName)
 			if fragment == nil {
 				// should never happen, validator has already run
 				panic(fmt.Errorf("missing fragment %s", fragmentName))
 			}
 
-			for _, childField := range collectFields(reqCtx, fragment.SelectionSet, visited) {
+			for _, childField := range collectFields(doc, fragment.SelectionSet, variables, visited) {
 				f := getOrCreateAndAppendField(&groupedFields, childField.Name, childField.ObjectDefinition, func() Field { return childField })
 				f.Selections = append(f.Selections, childField.Selections...)
 			}
@@ -125,15 +135,17 @@ func collectFields(reqCtx *graphql.OperationContext, selSet ast.SelectionSet, vi
 	return groupedFields
 }
 
-func collectField(reqCtx *graphql.OperationContext, f *ast.Field) Field {
+func collectField(f *ast.Field, variables map[string]interface{}) Field {
 	if strings.HasSuffix(f.Name, "Aggregate") {
-		return Field{f, nil, TypeAggregate, f.ArgumentMap(reqCtx.Variables)}
+		return Field{f, nil, TypeAggregate, resolveArguments(f, variables)}
 	}
 	// check if relational object
-	if d := f.Definition.Directives.ForName("sqlRelation"); d != nil {
-		return Field{f, nil, TypeRelation, f.ArgumentMap(reqCtx.Variables)}
+	if f.Definition != nil {
+		if d := f.Definition.Directives.ForName("sqlRelation"); d != nil {
+			return Field{f, nil, TypeRelation, resolveArguments(f, variables)}
+		}
 	}
-	return Field{f, nil, TypeScalar, f.ArgumentMap(reqCtx.Variables)}
+	return Field{f, nil, TypeScalar, resolveArguments(f, variables)}
 }
 
 func getOrCreateAndAppendField(c *[]Field, name string, objectDefinition *ast.Definition, creator func() Field) *Field {
@@ -181,4 +193,12 @@ func resolveIfArgument(d *ast.Directive, variables map[string]interface{}) bool 
 		panic(fmt.Sprintf("%s: argument 'if' is not a boolean", d.Name))
 	}
 	return ret
+}
+
+func resolveArguments(f *ast.Field, variables map[string]interface{}) map[string]interface{} {
+	if f.Definition == nil {
+		return variables
+	}
+	return f.ArgumentMap(variables)
+
 }

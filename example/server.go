@@ -20,7 +20,7 @@ import (
 
 const defaultPort = "8080"
 
-const defaultPGConnection = "postgresql://localhost/postgres?user=postgres"
+const defaultPGConnection = "postgresql://localhost/main?user=postgres&password=password"
 
 func main() {
 	port := os.Getenv("PORT")

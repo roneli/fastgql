@@ -1,7 +1,6 @@
 package builders
 
 import (
-	"context"
 	"math/rand"
 	"unsafe"
 
@@ -14,8 +13,9 @@ type (
 
 	// Config is the basic level of data passed to a builder when it's created
 	Config struct {
-		Schema *ast.Schema
-		Logger log.Logger
+		Schema             *ast.Schema
+		Logger             log.Logger
+		TableNameGenerator TableNameGenerator
 	}
 
 	OrderingTypes string
@@ -25,14 +25,18 @@ type (
 		Type OrderingTypes
 	}
 
-	// ArgumentsBuilder allows Builders to build aggregate queries on _XYZAggregate fields
+	// AggregateBuilder allows Builders to build aggregate queries on _XYZAggregate fields
 	AggregateBuilder interface {
-		Aggregate(ctx context.Context) (string, []interface{}, error)
+		Aggregate(field Field) (string, []interface{}, error)
 	}
 
 	// QueryBuilder supports building a full query from a given GraphQL query
 	QueryBuilder interface {
-		Query(ctx context.Context) (string, []interface{}, error)
+		Query(field Field) (string, []interface{}, error)
+	}
+
+	TableNameGenerator interface {
+		Generate(n int) string
 	}
 )
 

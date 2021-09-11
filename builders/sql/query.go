@@ -48,7 +48,7 @@ func (q queryHelper) SelectJson(alias string) *goqu.SelectDataset {
 }
 
 func (q queryHelper) SelectJsonAgg(alias string) *goqu.SelectDataset {
-	return q.Select(q.buildJsonAgg(alias)).As(alias).WithDialect("postgres").Prepared(true)
+	return q.Select(q.buildJsonAgg(alias).As(alias)).As(alias).WithDialect("postgres").Prepared(true)
 }
 
 func (q queryHelper) SelectOne() *goqu.SelectDataset {
