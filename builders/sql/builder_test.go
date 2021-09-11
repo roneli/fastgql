@@ -84,11 +84,12 @@ func TestBuilder_Query(t *testing.T) {
 				TableNameGenerator: &TestTableNameGenerator{},
 			})
 			doc, err := parser.ParseQuery(&ast.Source{Input: testCase.GraphQLQuery})
+			assert.Nil(t, err)
 			errs := validator.Validate(augmentedSchema, doc)
 			assert.Nil(t, errs)
 			def := doc.Operations.ForName("")
 			sel := def.SelectionSet[0].(*ast.Field)
-			field := builders.CollectFromQuery(sel, doc, make(map[string]interface{}, 0), sel.ArgumentMap(nil))
+			field := builders.CollectFromQuery(sel, doc, make(map[string]interface{}), sel.ArgumentMap(nil))
 			query, args, err := builder.Query(field)
 			assert.Nil(t, err)
 			if testCase.ExpectedArguments == nil {

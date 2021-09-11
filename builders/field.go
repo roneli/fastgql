@@ -70,7 +70,7 @@ func CollectFields(ctx context.Context) Field {
 	opCtx := graphql.GetOperationContext(ctx)
 	return Field{
 		resCtx.Field.Field,
-		collectFields(opCtx.Doc, resCtx.Field.Selections, opCtx.Variables, make(map[string]bool, 0)),
+		collectFields(opCtx.Doc, resCtx.Field.Selections, opCtx.Variables, make(map[string]bool)),
 		TypeObject,
 		resCtx.Field.ArgumentMap(graphql.GetOperationContext(ctx).Variables),
 	}
@@ -79,7 +79,7 @@ func CollectFields(ctx context.Context) Field {
 func CollectFromQuery(field *ast.Field, doc *ast.QueryDocument, variables map[string]interface{}, arguments map[string]interface{}) Field {
 	return Field{
 		Field:      field,
-		Selections: collectFields(doc, field.SelectionSet, variables, make(map[string]bool, 0)),
+		Selections: collectFields(doc, field.SelectionSet, variables, make(map[string]bool)),
 		FieldType:  TypeObject,
 		Arguments:  arguments,
 	}
