@@ -2,15 +2,9 @@ name: tests
 on:
   push:
     branches:
-<<<<<<< HEAD
       - master
   pull_request:
     branches: [ master ]
-=======
-      - main
-  pull_request:
-    branches: [ main ]
->>>>>>> 64c5198 (Add tests support schema & upgrades gqlgen)
 
 jobs:
   unitests:
