@@ -76,7 +76,7 @@ func getTableName(schema *ast.Schema, f *ast.FieldDefinition) tableDefinition {
 	d := objType.Directives.ForName("tableName")
 	if d == nil {
 		return tableDefinition{
-			name:   f.Name,
+			name:   strings.ToLower(objType.Name),
 			schema: "",
 		}
 	}

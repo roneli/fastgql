@@ -254,7 +254,7 @@ func (b Builder) Operation(table exp.AliasedExpression, fieldName, operatorName 
 }
 
 func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) error {
-	relationQuery, err := b.buildQuery(tableDefinition{name: rf.Field.Name}, rf)
+	relationQuery, err := b.buildQuery(getTableName(b.Schema, rf.Definition), rf)
 	if err != nil {
 		return errors.Wrap(err, "failed building relation")
 	}

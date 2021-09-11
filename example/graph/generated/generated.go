@@ -68,10 +68,10 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		ID             func(childComplexity int) int
-		Name           func(childComplexity int) int
-		Posts          func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
-		PostsAggregate func(childComplexity int, filter *model.PostFilterInput) int
+		Blabla          func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
+		BlablaAggregate func(childComplexity int, filter *model.PostFilterInput) int
+		ID              func(childComplexity int) int
+		Name            func(childComplexity int) int
 	}
 
 	AggregateResult struct {
@@ -239,6 +239,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.UsersAggregate(childComplexity, args["filter"].(*model.UserFilterInput)), true
 
+	case "User.blabla":
+		if e.complexity.User.Blabla == nil {
+			break
+		}
+
+		args, err := ec.field_User_blabla_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Blabla(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
+
+	case "User._blablaAggregate":
+		if e.complexity.User.BlablaAggregate == nil {
+			break
+		}
+
+		args, err := ec.field_User__blablaAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.BlablaAggregate(childComplexity, args["filter"].(*model.PostFilterInput)), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -252,30 +276,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.Name(childComplexity), true
-
-	case "User.posts":
-		if e.complexity.User.Posts == nil {
-			break
-		}
-
-		args, err := ec.field_User_posts_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.User.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
-
-	case "User._postsAggregate":
-		if e.complexity.User.PostsAggregate == nil {
-			break
-		}
-
-		args, err := ec.field_User__postsAggregate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.User.PostsAggregate(childComplexity, args["filter"].(*model.PostFilterInput)), true
 
 	case "_AggregateResult.count":
 		if e.complexity.AggregateResult.Count == nil {
@@ -398,7 +398,7 @@ input IntListComparator {
 	contained: [Int]
 	overlap: [Int]
 }
-type Post @generateFilterInput(name: "PostFilterInput") {
+type Post @generateFilterInput(name: "PostFilterInput") @tableName(name: "posts") {
 	id: Int!
 	name: String
 	categories(
@@ -581,7 +581,7 @@ input StringListComparator {
 type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user") {
 	id: Int!
 	name: String!
-	posts(
+	blabla(
 		"""
 		Limit
 		"""
@@ -598,16 +598,16 @@ type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user")
 		orderBy: [PostOrdering]
 	,
 		"""
-		Filter posts
+		Filter blabla
 		"""
 		filter: PostFilterInput
 	): [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
 	"""
-	posts Aggregate
+	blabla Aggregate
 	"""
-	_postsAggregate(
+	_blablaAggregate(
 		"""
-		Filter _postsAggregate
+		Filter _blablaAggregate
 		"""
 		filter: PostFilterInput
 	): _AggregateResult!
@@ -615,7 +615,7 @@ type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user")
 input UserFilterInput {
 	id: IntComparator
 	name: StringComparator
-	posts: PostFilterInput
+	blabla: PostFilterInput
 	"""
 	Logical AND of FilterInput
 	"""
@@ -988,7 +988,7 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
-func (ec *executionContext) field_User__postsAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_User__blablaAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *model.PostFilterInput
@@ -1003,7 +1003,7 @@ func (ec *executionContext) field_User__postsAggregate_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_User_posts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_User_blabla_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -1745,7 +1745,7 @@ func (ec *executionContext) _User_name(ctx context.Context, field graphql.Collec
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_posts(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_blabla(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1762,7 +1762,7 @@ func (ec *executionContext) _User_posts(ctx context.Context, field graphql.Colle
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_User_posts_args(ctx, rawArgs)
+	args, err := ec.field_User_blabla_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1770,7 +1770,7 @@ func (ec *executionContext) _User_posts(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Posts, nil
+		return obj.Blabla, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1784,7 +1784,7 @@ func (ec *executionContext) _User_posts(ctx context.Context, field graphql.Colle
 	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User__postsAggregate(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User__blablaAggregate(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1801,7 +1801,7 @@ func (ec *executionContext) _User__postsAggregate(ctx context.Context, field gra
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_User__postsAggregate_args(ctx, rawArgs)
+	args, err := ec.field_User__blablaAggregate_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1809,7 +1809,7 @@ func (ec *executionContext) _User__postsAggregate(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PostsAggregate, nil
+		return obj.BlablaAggregate, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3534,11 +3534,11 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "posts":
+		case "blabla":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("posts"))
-			it.Posts, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("blabla"))
+			it.Blabla, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3804,10 +3804,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "posts":
-			out.Values[i] = ec._User_posts(ctx, field, obj)
-		case "_postsAggregate":
-			out.Values[i] = ec._User__postsAggregate(ctx, field, obj)
+		case "blabla":
+			out.Values[i] = ec._User_blabla(ctx, field, obj)
+		case "_blablaAggregate":
+			out.Values[i] = ec._User__blablaAggregate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

@@ -112,17 +112,17 @@ type StringListComparator struct {
 }
 
 type User struct {
-	ID    int     `json:"id" db:"id"`
-	Name  string  `json:"name" db:"name"`
-	Posts []*Post `json:"posts" db:"posts"`
-	// posts Aggregate
-	PostsAggregate *AggregateResult `json:"_postsAggregate" db:"_postsAggregate"`
+	ID     int     `json:"id" db:"id"`
+	Name   string  `json:"name" db:"name"`
+	Blabla []*Post `json:"blabla" db:"blabla"`
+	// blabla Aggregate
+	BlablaAggregate *AggregateResult `json:"_blablaAggregate" db:"_blablaAggregate"`
 }
 
 type UserFilterInput struct {
-	ID    *IntComparator    `json:"id" db:"id"`
-	Name  *StringComparator `json:"name" db:"name"`
-	Posts *PostFilterInput  `json:"posts" db:"posts"`
+	ID     *IntComparator    `json:"id" db:"id"`
+	Name   *StringComparator `json:"name" db:"name"`
+	Blabla *PostFilterInput  `json:"blabla" db:"blabla"`
 	// Logical AND of FilterInput
 	And []*UserFilterInput `json:"AND" db:"AND"`
 	// Logical OR of FilterInput
