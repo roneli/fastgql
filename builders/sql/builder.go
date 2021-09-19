@@ -14,13 +14,13 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 
 	"strings"
-	// import the dialect
+	// import the pg dialect
 	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 )
 
 type defaultTableNameGenerator struct{}
 
-func (tb defaultTableNameGenerator) Generate(n int) string {
+func (tb defaultTableNameGenerator) Generate(_ int) string {
 	return builders.GenerateTableName(6)
 }
 
@@ -28,7 +28,7 @@ type Builder struct {
 	Schema             *ast.Schema
 	Logger             log.Logger
 	TableNameGenerator builders.TableNameGenerator
-	Operators          map[string]Operator
+	Operators          map[string]builders.Operator
 }
 
 func NewBuilder(config *builders.Config) Builder {
@@ -40,7 +40,14 @@ func NewBuilder(config *builders.Config) Builder {
 	if config.TableNameGenerator != nil {
 		tableNameGenerator = config.TableNameGenerator
 	}
-	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: defaultOperators}
+	operators := make(map[string]builders.Operator)
+	for k, v := range defaultOperators {
+		operators[k] = v
+	}
+	for k, v := range config.CustomOperators {
+		operators[k] = v
+	}
+	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: operators}
 }
 
 func (b Builder) Query(field builders.Field) (string, []interface{}, error) {

@@ -41,8 +41,6 @@ func main() {
 	resolver := &graph.Resolver{Executor: pool}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
 	// Set configuration
-
-	// Create a new instance of the logger. You can have any number of instances.
 	resolver.Cfg = &builders.Config{Schema: executableSchema.Schema(), Logger: adapters.NewZerologAdapter(log.Logger)}
 	srv := handler.NewDefaultServer(executableSchema)
 

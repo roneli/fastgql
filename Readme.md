@@ -45,8 +45,7 @@ Feel free to open Pull-Request for small fixes and changes. For bigger changes a
 
 ## Roadmap
 
-- aggregate queries
+- More tests
 - configurable database connections
-- tests
 - Support multiple database (mongodb, cockroachDB, neo4j)
 - full CRUD creation
