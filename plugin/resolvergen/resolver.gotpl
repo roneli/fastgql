@@ -22,7 +22,6 @@
 	func (r *{{lcFirst $resolver.Object.Name}}{{ucFirst $.ResolverType}}) {{$resolver.Field.GoFieldName}}{{ $resolver.Field.ShortResolverDeclaration }} {
 		{{ renderResolver $resolver}}
 	}
-
 {{ end }}
 
 {{ range $object := .Objects -}}

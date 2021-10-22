@@ -4,6 +4,9 @@ import (
 	"math/rand"
 	"unsafe"
 
+	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
+
 	"github.com/roneli/fastgql/log"
 
 	"github.com/vektah/gqlparser/v2/ast"
@@ -16,6 +19,8 @@ type (
 		Schema             *ast.Schema
 		Logger             log.Logger
 		TableNameGenerator TableNameGenerator
+		// CustomOperators are user defined operators, can also be used to override existing default operators.
+		CustomOperators map[string]Operator
 	}
 
 	OrderingTypes string
@@ -24,6 +29,11 @@ type (
 		Key  string
 		Type OrderingTypes
 	}
+
+	// Operator gets called on filters expressions written in graphql. Users can define new operators in the graphql
+	// schema, and define operator functions for those operators based on the operator name given.
+	// Operators are added by "key" to comparator Input types, and get called with expected value.
+	Operator func(table exp.AliasedExpression, key string, value interface{}) goqu.Expression
 
 	// AggregateBuilder allows Builders to build aggregate queries on _XYZAggregate fields
 	AggregateBuilder interface {

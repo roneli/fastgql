@@ -3,10 +3,11 @@ package sql
 import (
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	"github.com/roneli/fastgql/builders"
 	"github.com/spf13/cast"
 )
 
-var defaultOperators = map[string]Operator{
+var defaultOperators = map[string]builders.Operator{
 	"eq":     Eq,
 	"neq":    Neq,
 	"like":   Like,
@@ -19,8 +20,6 @@ var defaultOperators = map[string]Operator{
 	"lte":    Lte,
 	"lt":     Lt,
 }
-
-type Operator func(table exp.AliasedExpression, key string, value interface{}) goqu.Expression
 
 func Eq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Eq(value)
