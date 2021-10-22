@@ -3,6 +3,8 @@ package sql
 import (
 	"strings"
 
+	"github.com/jinzhu/inflection"
+
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 
@@ -100,4 +102,35 @@ func getAggregateTableName(schema *ast.Schema, field *ast.Field) tableDefinition
 	fieldName := strings.Split(field.Name, "Aggregate")[0][1:]
 	nonAggField := field.ObjectDefinition.Fields.ForName(fieldName)
 	return getTableName(schema, nonAggField)
+}
+
+func getCreateTableName(schema *ast.Schema, field *ast.Field) tableDefinition {
+	fieldName := strings.Split(field.Name, "create")[1]
+
+	objType, ok := schema.Types[inflection.Singular(fieldName)]
+	if !ok {
+		return tableDefinition{
+			name:   fieldName,
+			schema: "",
+		}
+	}
+	d := objType.Directives.ForName("tableName")
+	if d == nil {
+		return tableDefinition{
+			name:   strings.ToLower(objType.Name),
+			schema: "",
+		}
+	}
+	name := d.Arguments.ForName("name").Value.Raw
+	schemaValue := d.Arguments.ForName("schema")
+	if schemaValue == nil {
+		return tableDefinition{
+			name:   name,
+			schema: "",
+		}
+	}
+	return tableDefinition{
+		name:   name,
+		schema: schemaValue.Value.Raw,
+	}
 }

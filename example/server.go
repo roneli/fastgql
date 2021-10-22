@@ -19,7 +19,7 @@ import (
 	"github.com/roneli/fastgql/example/graph/generated"
 )
 
-const defaultPort = "8080"
+const defaultPort = "8081"
 
 const defaultPGConnection = "postgresql://localhost/main?user=postgres&password=password"
 

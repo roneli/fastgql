@@ -43,6 +43,35 @@ func NewBuilder(config *builders.Config) Builder {
 	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: defaultOperators}
 }
 
+func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
+
+	input, ok := field.Arguments["inputs"]
+	if !ok {
+		return "", nil, errors.New("missing input argument for create")
+	}
+	tableDef := getCreateTableName(b.Schema, field.Field)
+	kv, ok := input.(map[string]interface{})
+	if !ok {
+		return "", nil, errors.New("input values expected map")
+	}
+	insert, err := b.buildInsert(tableDef, kv)
+	if err != nil {
+		return "", nil, err
+	}
+	dataField := field.ForName(tableDef.name)
+	queryHelper, err := b.buildQuery(tableDefinition{
+		name:   strcase.ToSnake(field.Name),
+		schema: "",
+	}, dataField)
+	if err != nil {
+		return "", nil, errors.New("input values expected map")
+	}
+	withTable := goqu.T(strcase.ToSnake(field.Name))
+
+	sql, args, err := goqu.From(withTable).With(withTable.GetTable(), insert).Select(queryHelper.SelectJsonAgg(dataField.Name), goqu.Select(goqu.L("1").As("rows_affected"))).ToSQL()
+	return sql, args, err
+}
+
 func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 	query, err := b.buildQuery(getTableName(b.Schema, field.Definition), field)
 	if err != nil {
@@ -50,7 +79,6 @@ func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 	}
 	q, args, err := query.SelectRow().ToSQL()
 	b.Logger.Debug("created query", map[string]interface{}{"query": q, "args": args, "err": err})
-	fmt.Println(q)
 	return q, args, err
 }
 
@@ -60,6 +88,13 @@ func (b Builder) Aggregate(field builders.Field) (string, []interface{}, error) 
 		return "", nil, err
 	}
 	return query.ToSQL()
+}
+
+func (b Builder) buildInsert(tableDef tableDefinition, kv map[string]interface{}) (*goqu.InsertDataset, error) {
+	b.Logger.Debug("building insert", map[string]interface{}{"tableDefinition": tableDef.name})
+	tableAlias := b.TableNameGenerator.Generate(6)
+	table := tableDef.TableExpression().As(tableAlias)
+	return goqu.Dialect("postgres").Insert(table).Rows(kv).Prepared(true).Returning(goqu.Star()), nil
 }
 
 func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {

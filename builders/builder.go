@@ -35,6 +35,11 @@ type (
 		Query(field Field) (string, []interface{}, error)
 	}
 
+	// MutationBuilder supports building DELETE/CREATE/UPDATE queries from given GraphQL
+	MutationBuilder interface {
+		Create(field Field) (string, []interface{}, error)
+	}
+
 	TableNameGenerator interface {
 		Generate(n int) string
 	}
