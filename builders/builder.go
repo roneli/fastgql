@@ -10,7 +10,6 @@ import (
 )
 
 type (
-
 	// Config is the basic level of data passed to a builder when it's created
 	Config struct {
 		Schema             *ast.Schema
@@ -46,6 +45,8 @@ type (
 )
 
 const (
+	InputFieldName = "inputs"
+
 	OrderingTypesAsc      OrderingTypes = "ASC"
 	OrderingTypesDesc     OrderingTypes = "DESC"
 	OrderingTypesAscNull  OrderingTypes = "ASC_NULL_FIRST"
