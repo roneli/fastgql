@@ -13,7 +13,6 @@ import (
 )
 
 type (
-
 	// Config is the basic level of data passed to a builder when it's created
 	Config struct {
 		Schema             *ast.Schema
@@ -45,12 +44,19 @@ type (
 		Query(field Field) (string, []interface{}, error)
 	}
 
+	// MutationBuilder supports building DELETE/CREATE/UPDATE queries from given GraphQL
+	MutationBuilder interface {
+		Create(field Field) (string, []interface{}, error)
+	}
+
 	TableNameGenerator interface {
 		Generate(n int) string
 	}
 )
 
 const (
+	InputFieldName = "inputs"
+
 	OrderingTypesAsc      OrderingTypes = "ASC"
 	OrderingTypesDesc     OrderingTypes = "DESC"
 	OrderingTypesAscNull  OrderingTypes = "ASC_NULL_FIRST"

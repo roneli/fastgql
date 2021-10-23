@@ -14,9 +14,32 @@ import (
 	"github.com/roneli/fastgql/example/graph/model"
 )
 
+func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.CreatePostInput) (*model.PostsPayload, error) {
+
+	builder := sql.NewBuilder(r.Cfg)
+
+	q, args, err := builder.Create(builders.CollectFields(ctx))
+
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Executor.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	var data model.PostsPayload
+	if err := pgxscan.ScanOne(&data, rows); err != nil {
+		return nil, err
+	}
+	return &data, nil
+
+}
+
 func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
 	builder := sql.NewBuilder(r.Cfg)
+
 	q, args, err := builder.Query(builders.CollectFields(ctx))
+
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +56,9 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 
 func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
 	builder := sql.NewBuilder(r.Cfg)
+
 	q, args, err := builder.Query(builders.CollectFields(ctx))
+
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +78,11 @@ func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int,
 }
 
 func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.AggregateResult, error) {
+
 	builder := sql.NewBuilder(r.Cfg)
+
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
+
 	if err != nil {
 		return nil, err
 	}
@@ -62,16 +90,20 @@ func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFi
 	if err != nil {
 		return nil, err
 	}
+
 	var data *model.AggregateResult
 	if err := pgxscan.ScanOne(&data, rows); err != nil {
 		return nil, err
 	}
 	return data, nil
+
 }
 
 func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.AggregateResult, error) {
 	builder := sql.NewBuilder(r.Cfg)
+
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
+
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +120,9 @@ func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFi
 
 func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.AggregateResult, error) {
 	builder := sql.NewBuilder(r.Cfg)
+
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
+
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +137,11 @@ func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.C
 	return data, nil
 }
 
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

@@ -36,6 +36,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -50,12 +51,21 @@ type ComplexityRoot struct {
 		Name func(childComplexity int) int
 	}
 
+	Mutation struct {
+		CreatePosts func(childComplexity int, inputs []model.CreatePostInput) int
+	}
+
 	Post struct {
 		Categories          func(childComplexity int, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) int
 		CategoriesAggregate func(childComplexity int, filter *model.CategoryFilterInput) int
 		ID                  func(childComplexity int) int
 		Name                func(childComplexity int) int
 		User                func(childComplexity int, filter *model.UserFilterInput) int
+	}
+
+	PostsPayload struct {
+		Posts        func(childComplexity int) int
+		RowsAffected func(childComplexity int) int
 	}
 
 	Query struct {
@@ -68,10 +78,10 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Blabla          func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
-		BlablaAggregate func(childComplexity int, filter *model.PostFilterInput) int
-		ID              func(childComplexity int) int
-		Name            func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Posts          func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
+		PostsAggregate func(childComplexity int, filter *model.PostFilterInput) int
 	}
 
 	AggregateResult struct {
@@ -79,6 +89,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type MutationResolver interface {
+	CreatePosts(ctx context.Context, inputs []model.CreatePostInput) (*model.PostsPayload, error)
+}
 type QueryResolver interface {
 	Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error)
 	Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
@@ -116,6 +129,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Category.Name(childComplexity), true
+
+	case "Mutation.createPosts":
+		if e.complexity.Mutation.CreatePosts == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createPosts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreatePosts(childComplexity, args["inputs"].([]model.CreatePostInput)), true
 
 	case "Post.categories":
 		if e.complexity.Post.Categories == nil {
@@ -166,6 +191,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Post.User(childComplexity, args["filter"].(*model.UserFilterInput)), true
+
+	case "PostsPayload.posts":
+		if e.complexity.PostsPayload.Posts == nil {
+			break
+		}
+
+		return e.complexity.PostsPayload.Posts(childComplexity), true
+
+	case "PostsPayload.rows_affected":
+		if e.complexity.PostsPayload.RowsAffected == nil {
+			break
+		}
+
+		return e.complexity.PostsPayload.RowsAffected(childComplexity), true
 
 	case "Query.categories":
 		if e.complexity.Query.Categories == nil {
@@ -239,30 +278,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.UsersAggregate(childComplexity, args["filter"].(*model.UserFilterInput)), true
 
-	case "User.blabla":
-		if e.complexity.User.Blabla == nil {
-			break
-		}
-
-		args, err := ec.field_User_blabla_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.User.Blabla(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
-
-	case "User._blablaAggregate":
-		if e.complexity.User.BlablaAggregate == nil {
-			break
-		}
-
-		args, err := ec.field_User__blablaAggregate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.User.BlablaAggregate(childComplexity, args["filter"].(*model.PostFilterInput)), true
-
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -276,6 +291,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.Name(childComplexity), true
+
+	case "User.posts":
+		if e.complexity.User.Posts == nil {
+			break
+		}
+
+		args, err := ec.field_User_posts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.PostOrdering), args["filter"].(*model.PostFilterInput)), true
+
+	case "User._postsAggregate":
+		if e.complexity.User.PostsAggregate == nil {
+			break
+		}
+
+		args, err := ec.field_User__postsAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.PostsAggregate(childComplexity, args["filter"].(*model.PostFilterInput)), true
 
 	case "_AggregateResult.count":
 		if e.complexity.AggregateResult.Count == nil {
@@ -301,6 +340,20 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 			first = false
 			data := ec._Query(ctx, rc.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 
@@ -336,9 +389,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var sources = []*ast.Source{
 	{Name: "schema.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
+directive @generateMutations(create: Boolean = True) on OBJECT
 directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-directive @tableName(name: String!) on OBJECT | INTERFACE
+directive @tableName(name: String!, schema: String) on OBJECT | INTERFACE
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean
@@ -350,7 +404,7 @@ input BooleanListComparator {
 	contained: [Boolean]
 	overlap: [Boolean]
 }
-type Category @generateFilterInput(name: "CategoryFilterInput") {
+type Category @tableName(name: "categories", schema: "") @generateFilterInput(name: "CategoryFilterInput") {
 	id: Int!
 	name: String
 }
@@ -398,7 +452,13 @@ input IntListComparator {
 	contained: [Int]
 	overlap: [Int]
 }
-type Post @generateFilterInput(name: "PostFilterInput") @tableName(name: "posts") {
+type Mutation {
+	"""
+	AutoGenerated input for Post
+	"""
+	createPosts(inputs: [CreatePostInput!]!): PostsPayload
+}
+type Post @generateFilterInput(name: "PostFilterInput") @tableName(name: "posts") @generateMutations(create: true) {
 	id: Int!
 	name: String
 	categories(
@@ -468,6 +528,16 @@ input PostOrdering {
 	Order Post by name
 	"""
 	name: _OrderingTypes
+}
+"""
+Autogenerated payload object
+"""
+type PostsPayload {
+	"""
+	rows affection by mutation
+	"""
+	rows_affected: Int!
+	posts: [Post]
 }
 type Query @generate {
 	posts(
@@ -581,7 +651,7 @@ input StringListComparator {
 type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user") {
 	id: Int!
 	name: String!
-	blabla(
+	posts(
 		"""
 		Limit
 		"""
@@ -598,16 +668,16 @@ type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user")
 		orderBy: [PostOrdering]
 	,
 		"""
-		Filter blabla
+		Filter posts
 		"""
 		filter: PostFilterInput
 	): [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
 	"""
-	blabla Aggregate
+	posts Aggregate
 	"""
-	_blablaAggregate(
+	_postsAggregate(
 		"""
-		Filter _blablaAggregate
+		Filter _postsAggregate
 		"""
 		filter: PostFilterInput
 	): _AggregateResult!
@@ -615,7 +685,7 @@ type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user")
 input UserFilterInput {
 	id: IntComparator
 	name: StringComparator
-	blabla: PostFilterInput
+	posts: PostFilterInput
 	"""
 	Logical AND of FilterInput
 	"""
@@ -655,6 +725,13 @@ enum _relationType {
 	ONE_TO_ONE
 	ONE_TO_MANY
 	MANY_TO_MANY
+}
+"""
+AutoGenerated input for Post
+"""
+input CreatePostInput {
+	id: Int!
+	name: String
 }
 `, BuiltIn: false},
 }
@@ -727,6 +804,21 @@ func (ec *executionContext) dir_skipGenerate_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["resolver"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createPosts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []model.CreatePostInput
+	if tmp, ok := rawArgs["inputs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inputs"))
+		arg0, err = ec.unmarshalNCreatePostInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCreatePostInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inputs"] = arg0
 	return args, nil
 }
 
@@ -988,7 +1080,7 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
-func (ec *executionContext) field_User__blablaAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_User__postsAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *model.PostFilterInput
@@ -1003,7 +1095,7 @@ func (ec *executionContext) field_User__blablaAggregate_args(ctx context.Context
 	return args, nil
 }
 
-func (ec *executionContext) field_User_blabla_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_User_posts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -1148,6 +1240,45 @@ func (ec *executionContext) _Category_name(ctx context.Context, field graphql.Co
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_createPosts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createPosts_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreatePosts(rctx, args["inputs"].([]model.CreatePostInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PostsPayload)
+	fc.Result = res
+	return ec.marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostsPayload(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -1335,6 +1466,73 @@ func (ec *executionContext) _Post__categoriesAggregate(ctx context.Context, fiel
 	res := resTmp.(*model.AggregateResult)
 	fc.Result = res
 	return ec.marshalN_AggregateResult2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐAggregateResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PostsPayload_rows_affected(ctx context.Context, field graphql.CollectedField, obj *model.PostsPayload) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PostsPayload",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RowsAffected, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PostsPayload_posts(ctx context.Context, field graphql.CollectedField, obj *model.PostsPayload) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PostsPayload",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Posts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Post)
+	fc.Result = res
+	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1745,7 +1943,7 @@ func (ec *executionContext) _User_name(ctx context.Context, field graphql.Collec
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_blabla(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_posts(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1762,7 +1960,7 @@ func (ec *executionContext) _User_blabla(ctx context.Context, field graphql.Coll
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_User_blabla_args(ctx, rawArgs)
+	args, err := ec.field_User_posts_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1770,7 +1968,7 @@ func (ec *executionContext) _User_blabla(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Blabla, nil
+		return obj.Posts, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1784,7 +1982,7 @@ func (ec *executionContext) _User_blabla(ctx context.Context, field graphql.Coll
 	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User__blablaAggregate(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User__postsAggregate(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1801,7 +1999,7 @@ func (ec *executionContext) _User__blablaAggregate(ctx context.Context, field gr
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_User__blablaAggregate_args(ctx, rawArgs)
+	args, err := ec.field_User__postsAggregate_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1809,7 +2007,7 @@ func (ec *executionContext) _User__blablaAggregate(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.BlablaAggregate, nil
+		return obj.PostsAggregate, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3155,6 +3353,37 @@ func (ec *executionContext) unmarshalInputCategoryOrdering(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreatePostInput(ctx context.Context, obj interface{}) (model.CreatePostInput, error) {
+	var it model.CreatePostInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj interface{}) (model.IntComparator, error) {
 	var it model.IntComparator
 	asMap := map[string]interface{}{}
@@ -3534,11 +3763,11 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "blabla":
+		case "posts":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("blabla"))
-			it.Blabla, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("posts"))
+			it.Posts, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3640,6 +3869,34 @@ func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createPosts":
+			out.Values[i] = ec._Mutation_createPosts(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var postImplementors = []string{"Post"}
 
 func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj *model.Post) graphql.Marshaler {
@@ -3667,6 +3924,35 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var postsPayloadImplementors = []string{"PostsPayload"}
+
+func (ec *executionContext) _PostsPayload(ctx context.Context, sel ast.SelectionSet, obj *model.PostsPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, postsPayloadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PostsPayload")
+		case "rows_affected":
+			out.Values[i] = ec._PostsPayload_rows_affected(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "posts":
+			out.Values[i] = ec._PostsPayload_posts(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3804,10 +4090,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "blabla":
-			out.Values[i] = ec._User_blabla(ctx, field, obj)
-		case "_blablaAggregate":
-			out.Values[i] = ec._User__blablaAggregate(ctx, field, obj)
+		case "posts":
+			out.Values[i] = ec._User_posts(ctx, field, obj)
+		case "_postsAggregate":
+			out.Values[i] = ec._User__postsAggregate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4112,6 +4398,32 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNCreatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCreatePostInput(ctx context.Context, v interface{}) (model.CreatePostInput, error) {
+	res, err := ec.unmarshalInputCreatePostInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreatePostInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCreatePostInputᚄ(ctx context.Context, v interface{}) ([]model.CreatePostInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]model.CreatePostInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNCreatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐCreatePostInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
@@ -4802,6 +5114,13 @@ func (ec *executionContext) unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfa
 	}
 	res, err := ec.unmarshalInputPostOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexampleᚋgraphᚋmodelᚐPostsPayload(ctx context.Context, sel ast.SelectionSet, v *model.PostsPayload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PostsPayload(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

@@ -5,9 +5,10 @@ go 1.17
 require (
 	github.com/99designs/gqlgen v0.14.0
 	github.com/doug-martin/goqu/v9 v9.10.0
-	github.com/georgysavva/scany v0.2.7
+	github.com/georgysavva/scany v0.2.9
 	github.com/iancoleman/strcase v0.1.3
 	github.com/jackc/pgx/v4 v4.10.1
+	github.com/jinzhu/inflection v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.15.0
 	github.com/spf13/afero v1.6.0

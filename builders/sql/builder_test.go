@@ -44,7 +44,6 @@ func (t *TestTableNameGenerator) Reset() {
 }
 
 func TestBuilder_Query(t *testing.T) {
-
 	testCases := []TestBuilderCase{
 		{
 			Name:              "base_query",
@@ -90,44 +89,79 @@ func TestBuilder_Query(t *testing.T) {
 		},
 	}
 	_ = os.Chdir("/testdata")
-	fs := afero.NewOsFs()
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			data, err := afero.ReadFile(fs, testCase.SchemaFile)
-			assert.Nil(t, err)
-			testSchema, err := gqlparser.LoadSchema(&ast.Source{
-				Name:    "schema.graphql",
-				Input:   string(data),
-				BuiltIn: false,
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
+				return b.Query(f)
 			})
-			assert.Nil(t, err)
-			fgqlPlugin := schema.FastGqlPlugin{}
-			src := fgqlPlugin.CreateAugmented(testSchema)
-			augmentedSchema, err := gqlparser.LoadSchema(src)
-			assert.Nil(t, err)
-
-			builder := sql.NewBuilder(&builders.Config{
-				Schema:             augmentedSchema,
-				Logger:             nil,
-				TableNameGenerator: &TestTableNameGenerator{},
-			})
-			doc, err := parser.ParseQuery(&ast.Source{Input: testCase.GraphQLQuery})
-			assert.Nil(t, err)
-			errs := validator.Validate(augmentedSchema, doc)
-			assert.Nil(t, errs)
-			def := doc.Operations.ForName("")
-			sel := def.SelectionSet[0].(*ast.Field)
-			field := builders.CollectFromQuery(sel, doc, make(map[string]interface{}), sel.ArgumentMap(nil))
-			query, args, err := builder.Query(field)
-			assert.Nil(t, err)
-			if testCase.ExpectedArguments == nil {
-				assert.Len(t, args, 0)
-			} else {
-				assert.ElementsMatch(t, testCase.ExpectedArguments, args)
-			}
-			assert.Equal(t, testCase.ExpectedSQL, query)
 		})
 
 	}
 
+}
+
+func TestBuilder_Insert(t *testing.T) {
+	testCases := []TestBuilderCase{
+		{
+			Name:              "simple_insert",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `mutation { createPosts(inputs: {name: "Ron", id: 111}) { rows_affected posts { name id } } }`,
+			ExpectedSQL:       `WITH create_posts AS (INSERT INTO "posts" AS "sq0" ("id", "name") VALUES (111, 'Ron') RETURNING *) SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq1"."name", 'id', "sq1"."id")), '[]'::jsonb) AS "posts" FROM "create_posts" AS "sq1") AS "posts", (SELECT COUNT(*) AS "rows_affected" FROM "create_posts")`,
+			ExpectedArguments: []interface{}{},
+		},
+		{
+			Name:              "multi_insert_query",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `mutation { createPosts(inputs: [{name: "Ron", id: 111}, {name: "Ron", id: 133}]) { rows_affected posts { name id } } }`,
+			ExpectedSQL:       `WITH create_posts AS (INSERT INTO "posts" AS "sq0" ("id", "name") VALUES (111, 'Ron'), (133, 'Ron') RETURNING *) SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq1"."name", 'id', "sq1"."id")), '[]'::jsonb) AS "posts" FROM "create_posts" AS "sq1") AS "posts", (SELECT COUNT(*) AS "rows_affected" FROM "create_posts")`,
+			ExpectedArguments: []interface{}{},
+		},
+	}
+	_ = os.Chdir("/testdata")
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
+				return b.Create(f)
+			})
+		})
+
+	}
+
+}
+
+func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders.Field) (string, []interface{}, error)) {
+	fs := afero.NewOsFs()
+	data, err := afero.ReadFile(fs, testCase.SchemaFile)
+	assert.Nil(t, err)
+	testSchema, err := gqlparser.LoadSchema(&ast.Source{
+		Name:    "schema.graphql",
+		Input:   string(data),
+		BuiltIn: false,
+	})
+	assert.Nil(t, err)
+	fgqlPlugin := schema.FastGqlPlugin{}
+	src := fgqlPlugin.CreateAugmented(testSchema)
+	augmentedSchema, err := gqlparser.LoadSchema(src)
+	assert.Nil(t, err)
+
+	builder := sql.NewBuilder(&builders.Config{
+		Schema:             augmentedSchema,
+		Logger:             nil,
+		TableNameGenerator: &TestTableNameGenerator{},
+	})
+	doc, err := parser.ParseQuery(&ast.Source{Input: testCase.GraphQLQuery})
+	assert.Nil(t, err)
+	errs := validator.Validate(augmentedSchema, doc)
+	assert.Nil(t, errs)
+	def := doc.Operations.ForName("")
+	sel := def.SelectionSet[0].(*ast.Field)
+	field := builders.CollectFromQuery(sel, doc, make(map[string]interface{}), sel.ArgumentMap(nil))
+	query, args, err := caller(builder, field)
+	assert.Nil(t, err)
+	if testCase.ExpectedArguments == nil {
+		assert.Len(t, args, 0)
+	} else {
+		assert.ElementsMatch(t, testCase.ExpectedArguments, args)
+	}
+	assert.Equal(t, testCase.ExpectedSQL, query)
 }

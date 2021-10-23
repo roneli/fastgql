@@ -2,6 +2,7 @@ package resolvergen
 
 import (
 	"bytes"
+	"go/types"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -206,6 +207,8 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 	}
 	baseFuncs := templates.Funcs()
 	baseFuncs["hasSuffix"] = strings.HasSuffix
+	baseFuncs["hasPrefix"] = strings.HasPrefix
+	baseFuncs["deref"] = deref
 	t := template.New("").Funcs(baseFuncs)
 	fileName := resolveName("sql.tpl", 0)
 
@@ -220,6 +223,10 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 	}
 
 	return buf, t.Execute(buf, resolver)
+}
+
+func deref(p types.Type) string {
+	return strings.TrimPrefix(templates.CurrentImports.LookupType(p), "*")
 }
 
 func resolveName(name string, skip int) string {

@@ -3,6 +3,8 @@ package sql
 import (
 	"strings"
 
+	"github.com/jinzhu/inflection"
+
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 
@@ -63,13 +65,32 @@ func parseRelationDirective(d *ast.Directive) relation {
 	}
 }
 
-// getTableName returns the field's type tableDefinition name in the database, if no directive is defined, type name is presumed
+// getTableNameFromField returns the field's type tableDefinition name in the database, if no directive is defined, type name is presumed
 // as the tableDefinition's name
-func getTableName(schema *ast.Schema, f *ast.FieldDefinition) tableDefinition {
-	objType, ok := schema.Types[f.Type.Name()]
+func getTableNameFromField(schema *ast.Schema, f *ast.FieldDefinition) tableDefinition {
+	return getTableName(schema, f.Type.Name(), f.Name)
+}
+
+// getTableNameFromField returns the field's type tableDefinition name in the database, if no directive is defined, type name is presumed
+// as the tableDefinition's name
+func getAggregateTableName(schema *ast.Schema, field *ast.Field) tableDefinition {
+	fieldName := strings.Split(field.Name, "Aggregate")[0][1:]
+	nonAggField := field.ObjectDefinition.Fields.ForName(fieldName)
+	return getTableNameFromField(schema, nonAggField)
+}
+
+// getCreateTableName returns the field's type tableDefinition name in the database, if no directive is defined, type name is presumed
+// as the tableDefinition's name
+func getTableNamePrefix(schema *ast.Schema, prefix string, field *ast.Field) tableDefinition {
+	fieldName := strings.Split(field.Name, "create")[1]
+	return getTableName(schema, inflection.Singular(fieldName), fieldName)
+}
+
+func getTableName(schema *ast.Schema, typeName, fieldName string) tableDefinition {
+	objType, ok := schema.Types[typeName]
 	if !ok {
 		return tableDefinition{
-			name:   f.Name,
+			name:   fieldName,
 			schema: "",
 		}
 	}
@@ -92,12 +113,4 @@ func getTableName(schema *ast.Schema, f *ast.FieldDefinition) tableDefinition {
 		name:   name,
 		schema: schemaValue.Value.Raw,
 	}
-}
-
-// getTableName returns the field's type tableDefinition name in the database, if no directive is defined, type name is presumed
-// as the tableDefinition's name
-func getAggregateTableName(schema *ast.Schema, field *ast.Field) tableDefinition {
-	fieldName := strings.Split(field.Name, "Aggregate")[0][1:]
-	nonAggField := field.ObjectDefinition.Fields.ForName(fieldName)
-	return getTableName(schema, nonAggField)
 }

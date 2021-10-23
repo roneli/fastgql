@@ -25,6 +25,7 @@ func (f FastGqlPlugin) MutateConfig(cfg *config.Config) error {
 	cfg.Directives["generateFilterInput"] = config.DirectiveConfig{SkipRuntime: true}
 	cfg.Directives["sqlRelation"] = config.DirectiveConfig{SkipRuntime: true}
 	cfg.Directives["tableName"] = config.DirectiveConfig{SkipRuntime: true}
+	cfg.Directives["generateMutations"] = config.DirectiveConfig{SkipRuntime: true}
 	return nil
 }
 
@@ -35,6 +36,7 @@ func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) *ast.Source {
 	_ = augmenters.Aggregation{}.Augment(schema)
 	_ = augmenters.FilterInput{}.Augment(schema)
 	_ = augmenters.FilterArguments{}.Augment(schema)
+	_ = augmenters.Mutations{}.Augment(schema)
 
 	var buf bytes.Buffer
 	formatter.NewFormatter(&buf).FormatSchema(schema)
