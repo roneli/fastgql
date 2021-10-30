@@ -71,7 +71,7 @@ func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 		schema: "",
 	}, dataField)
 	if err != nil {
-		return "", nil, errors.New("input values expected map")
+		return "", nil, errors.New("failed to build payload query")
 	}
 	withTable := goqu.T(strcase.ToSnake(field.Name))
 
@@ -82,18 +82,21 @@ func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 
 func (b Builder) Delete(field builders.Field) (string, []interface{}, error) {
 	tableDef := getTableNamePrefix(b.Schema, "delete", field.Field)
-	delete, err := b.buildDelete(tableDef, field)
+	deleteQuery, err := b.buildDelete(tableDef, field)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to build delete query: %w", err)
 	}
 	withTable := goqu.T(strcase.ToSnake(field.Name))
 	dataField := field.ForName(tableDef.name)
-	queryHelper, err := b.buildQuery(tableDefinition{
+	qh, err := b.buildQuery(tableDefinition{
 		name:   strcase.ToSnake(field.Name),
 		schema: "",
 	}, dataField)
-	sql, args, err := goqu.Select(queryHelper.SelectJsonAgg(dataField.Name),
-		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), delete).ToSQL()
+	if err != nil {
+		return "", nil, errors.New("failed to build payload query")
+	}
+	sql, args, err := goqu.Select(qh.SelectJsonAgg(dataField.Name),
+		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), deleteQuery).ToSQL()
 	return sql, args, err
 }
 
