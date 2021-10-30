@@ -24,6 +24,18 @@ type queryHelper struct {
 	selects []column
 }
 
+type tableHelper struct {
+	table exp.AliasedExpression
+	alias string
+}
+
+func (q queryHelper) Table() tableHelper {
+	return tableHelper{
+		table: q.table,
+		alias: q.alias,
+	}
+}
+
 func (q queryHelper) TableName() string {
 	return q.table.Aliased().(exp.IdentifierExpression).GetTable()
 }

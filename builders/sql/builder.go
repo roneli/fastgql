@@ -80,6 +80,23 @@ func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 	return sql, args, err
 }
 
+func (b Builder) Delete(field builders.Field) (string, []interface{}, error) {
+	tableDef := getTableNamePrefix(b.Schema, "delete", field.Field)
+	delete, err := b.buildDelete(tableDef, field)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to build delete query: %w", err)
+	}
+	withTable := goqu.T(strcase.ToSnake(field.Name))
+	dataField := field.ForName(tableDef.name)
+	queryHelper, err := b.buildQuery(tableDefinition{
+		name:   strcase.ToSnake(field.Name),
+		schema: "",
+	}, dataField)
+	sql, args, err := goqu.Select(queryHelper.SelectJsonAgg(dataField.Name),
+		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), delete).ToSQL()
+	return sql, args, err
+}
+
 func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 	query, err := b.buildQuery(getTableNameFromField(b.Schema, field.Definition), field)
 	if err != nil {
@@ -103,6 +120,22 @@ func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
 	return goqu.Dialect("postgres").Insert(table).Rows(kv).Prepared(true).Returning(goqu.Star()), nil
+}
+
+func (b Builder) buildDelete(tableDef tableDefinition, field builders.Field) (*goqu.DeleteDataset, error) {
+	b.Logger.Debug("building delete", map[string]interface{}{"tableDefinition": tableDef.name})
+	tableAlias := b.TableNameGenerator.Generate(6)
+	table := tableDef.TableExpression().As(tableAlias)
+	filterArg, ok := field.Arguments["filter"]
+	if !ok {
+		return nil, nil
+	}
+	filters, ok := filterArg.(map[string]interface{})
+	if !ok {
+		return goqu.Dialect("postgres").Delete(table), nil
+	}
+	filterExp, _ := b.buildFilterExp(tableHelper{table: table, alias: tableAlias}, field, filters)
+	return goqu.Dialect("postgres").Delete(table).Where(filterExp), nil
 }
 
 func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {
@@ -205,12 +238,12 @@ func (b Builder) buildFiltering(query *queryHelper, field builders.Field) error 
 	if !ok {
 		return fmt.Errorf("unexpected filter arg type")
 	}
-	filterExp, _ := b.buildFilterExp(query, field, filters)
+	filterExp, _ := b.buildFilterExp(query.Table(), field, filters)
 	query.SelectDataset = query.Where(filterExp)
 	return nil
 }
 
-func (b Builder) buildFilterLogicalExp(query *queryHelper, field builders.Field, filtersList []interface{}, logicalType exp.ExpressionListType) (goqu.Expression, error) {
+func (b Builder) buildFilterLogicalExp(table tableHelper, field builders.Field, filtersList []interface{}, logicalType exp.ExpressionListType) (goqu.Expression, error) {
 
 	expBuilder := exp.NewExpressionList(logicalType)
 	for _, filterValue := range filtersList {
@@ -218,7 +251,7 @@ func (b Builder) buildFilterLogicalExp(query *queryHelper, field builders.Field,
 		if !ok {
 			return nil, fmt.Errorf("fatal value of bool exp not map")
 		}
-		filterExp, err := b.buildFilterExp(query, field, kv)
+		filterExp, err := b.buildFilterExp(table, field, kv)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +260,7 @@ func (b Builder) buildFilterLogicalExp(query *queryHelper, field builders.Field,
 	return expBuilder, nil
 }
 
-func (b Builder) buildFilterExp(query *queryHelper, field builders.Field, filters map[string]interface{}) (goqu.Expression, error) {
+func (b Builder) buildFilterExp(table tableHelper, field builders.Field, filters map[string]interface{}) (goqu.Expression, error) {
 	filterInputDef := b.Schema.Types[fmt.Sprintf("%sFilterInput", field.GetTypeName())]
 	expBuilder := exp.NewExpressionList(exp.AndType)
 	for k, v := range filters {
@@ -242,13 +275,13 @@ func (b Builder) buildFilterExp(query *queryHelper, field builders.Field, filter
 			if k == string(schema.LogicalOperatorOR) {
 				logicalType = exp.OrType
 			}
-			logicalExp, err := b.buildFilterLogicalExp(query, field, vv, logicalType)
+			logicalExp, err := b.buildFilterLogicalExp(table, field, vv, logicalType)
 			if err != nil {
 				return nil, err
 			}
 			expBuilder = expBuilder.Append(logicalExp)
 		case k == string(schema.LogicalOperatorNot):
-			filterExp, err := b.buildFilterExp(query, field, filters)
+			filterExp, err := b.buildFilterExp(table, field, filters)
 			if err != nil {
 				return nil, err
 			}
@@ -266,7 +299,7 @@ func (b Builder) buildFilterExp(query *queryHelper, field builders.Field, filter
 				return nil, fmt.Errorf("missing directive sqlRelation")
 			}
 			innerField := field.ForName(k)
-			fq, err := b.buildFilterQuery(query, innerField, parseRelationDirective(d), kv)
+			fq, err := b.buildFilterQuery(table, innerField, parseRelationDirective(d), kv)
 			if err != nil {
 				return nil, err
 			}
@@ -277,7 +310,7 @@ func (b Builder) buildFilterExp(query *queryHelper, field builders.Field, filter
 				return nil, fmt.Errorf("fatal value of key not map")
 			}
 			for op, value := range opMap {
-				opExp, err := b.Operation(query.table, k, op, value)
+				opExp, err := b.Operation(table.table, k, op, value)
 				if err != nil {
 					return nil, err
 				}
@@ -371,7 +404,7 @@ func (b Builder) buildRelationAggregate(parentQuery *queryHelper, rf builders.Fi
 	return nil
 }
 
-func (b Builder) buildFilterQuery(parentQuery *queryHelper, rf builders.Field, rel relation, filters map[string]interface{}) (*queryHelper, error) {
+func (b Builder) buildFilterQuery(parentTable tableHelper, rf builders.Field, rel relation, filters map[string]interface{}) (*queryHelper, error) {
 
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := goqu.T(rel.referenceTable).As(tableAlias)
@@ -380,21 +413,21 @@ func (b Builder) buildFilterQuery(parentQuery *queryHelper, rf builders.Field, r
 	switch rel.relType {
 	case ManyToMany:
 		m2mTableName := b.TableNameGenerator.Generate(6)
-		jExps := buildJoinCondition(parentQuery.alias, rel.fields, m2mTableName, rel.manyToManyFields)
+		jExps := buildJoinCondition(parentTable.alias, rel.fields, m2mTableName, rel.manyToManyFields)
 		jExps = append(jExps, buildJoinCondition(m2mTableName, rel.manyToManyReferences, fq.alias, rel.references)...)
 		fq.SelectDataset = fq.InnerJoin(goqu.T(rel.manyToManyTable).As(m2mTableName), goqu.On(jExps...))
 	case OneToOne:
 		relationTableName := b.TableNameGenerator.Generate(6)
-		jExps := buildJoinCondition(parentQuery.alias, rel.fields, fq.alias, rel.references)
-		jExps = append(jExps, buildJoinCondition(parentQuery.alias, rel.fields, relationTableName, rel.fields)...)
+		jExps := buildJoinCondition(parentTable.alias, rel.fields, fq.alias, rel.references)
+		jExps = append(jExps, buildJoinCondition(parentTable.alias, rel.fields, relationTableName, rel.fields)...)
 		fq.SelectDataset = fq.InnerJoin(goqu.T(rel.baseTable).As(relationTableName), goqu.On(jExps...))
 	case OneToMany:
-		fq.SelectDataset = fq.InnerJoin(goqu.T(rel.baseTable).As(b.TableNameGenerator.Generate(6)), goqu.On(buildJoinCondition(parentQuery.alias, rel.fields, fq.alias, rel.references)...))
+		fq.SelectDataset = fq.InnerJoin(goqu.T(rel.baseTable).As(b.TableNameGenerator.Generate(6)), goqu.On(buildJoinCondition(parentTable.alias, rel.fields, fq.alias, rel.references)...))
 	default:
 		panic("unknown relation type")
 	}
 
-	expBuilder, err := b.buildFilterExp(fq, rf, filters)
+	expBuilder, err := b.buildFilterExp(fq.Table(), rf, filters)
 	if err != nil {
 		return nil, err
 	}
