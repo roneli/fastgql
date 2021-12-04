@@ -127,18 +127,18 @@ func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface
 
 func (b Builder) buildDelete(tableDef tableDefinition, field builders.Field) (*goqu.DeleteDataset, error) {
 	b.Logger.Debug("building delete", map[string]interface{}{"tableDefinition": tableDef.name})
-	tableAlias := b.TableNameGenerator.Generate(6)
-	table := tableDef.TableExpression().As(tableAlias)
 	filterArg, ok := field.Arguments["filter"]
+	q := goqu.Dialect("postgres").Delete(tableDef.TableExpression()).Returning(goqu.Star())
 	if !ok {
-		return nil, nil
+		return q, nil
 	}
 	filters, ok := filterArg.(map[string]interface{})
 	if !ok {
-		return goqu.Dialect("postgres").Delete(table), nil
+		return nil, fmt.Errorf("expected filters map got %T", filterArg)
 	}
-	filterExp, _ := b.buildFilterExp(tableHelper{table: table, alias: tableAlias}, field, filters)
-	return goqu.Dialect("postgres").Delete(table).Where(filterExp), nil
+	dataField := field.ForName(tableDef.name)
+	filterExp, _ := b.buildFilterExp(tableHelper{table: tableDef.TableExpression().As(tableDef.name), alias: ""}, dataField, filters)
+	return q.Where(filterExp), nil
 }
 
 func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {
@@ -263,8 +263,20 @@ func (b Builder) buildFilterLogicalExp(table tableHelper, field builders.Field, 
 	return expBuilder, nil
 }
 
+func (b Builder) getFilterExp(field builders.Field) *ast.Definition {
+	if field.Definition == nil {
+		return b.Schema.Types[fmt.Sprintf("%sFilterInput", field.GetTypeName())]
+	}
+	filterArgDef := field.Definition.Arguments.ForName("filter")
+	if filterArgDef == nil {
+		return b.Schema.Types[fmt.Sprintf("%sFilterInput", field.GetTypeName())]
+	}
+	return b.Schema.Types[filterArgDef.Type.Name()]
+}
+
 func (b Builder) buildFilterExp(table tableHelper, field builders.Field, filters map[string]interface{}) (goqu.Expression, error) {
-	filterInputDef := b.Schema.Types[fmt.Sprintf("%sFilterInput", field.GetTypeName())]
+	filterInputDef := b.getFilterExp(field)
+
 	expBuilder := exp.NewExpressionList(exp.AndType)
 	for k, v := range filters {
 		keyType := filterInputDef.Fields.ForName(k).Type

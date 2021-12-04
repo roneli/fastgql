@@ -129,6 +129,35 @@ func TestBuilder_Insert(t *testing.T) {
 
 }
 
+func TestBuilder_Delete(t *testing.T) {
+	testCases := []TestBuilderCase{
+		{
+			Name:              "simple_delete",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `mutation { deletePosts() { rows_affected posts { name id } } }`,
+			ExpectedSQL:       `WITH delete_posts AS (DELETE FROM "posts" RETURNING *) SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq0"."name", 'id', "sq0"."id")), '[]'::jsonb) AS "posts" FROM "delete_posts" AS "sq0") AS "posts", (SELECT COUNT(*) AS "rows_affected" FROM "delete_posts")`,
+			ExpectedArguments: []interface{}{},
+		},
+		{
+			Name:              "delete_with_filter",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      "mutation{deletePosts(filter: {id: {eq: 1}}) {rows_affected  posts {name id}}}",
+			ExpectedSQL:       `WITH delete_posts AS (DELETE FROM "posts" WHERE ("posts"."id" = 1) RETURNING *) SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq0"."name", 'id', "sq0"."id")), '[]'::jsonb) AS "posts" FROM "delete_posts" AS "sq0") AS "posts", (SELECT COUNT(*) AS "rows_affected" FROM "delete_posts")`,
+			ExpectedArguments: []interface{}{},
+		},
+	}
+	_ = os.Chdir("/testdata")
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
+				return b.Delete(f)
+			})
+		})
+
+	}
+
+}
+
 func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders.Field) (string, []interface{}, error)) {
 	fs := afero.NewOsFs()
 	data, err := afero.ReadFile(fs, testCase.SchemaFile)
