@@ -66,34 +66,6 @@ models:
       - github.com/99designs/gqlgen/graphql.Int32
 `))
 
-const schemaDefault = `type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user"){
-  id: Int!
-  name: String!
-  posts: [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
-}
-
-type Post @generateFilterInput(name: "PostFilterInput") {
-  id: Int!
-  name: String
-  categories: [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"]
-    manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-  user_id: Int
-  user: User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
-}
-
-
-type Category @generateFilterInput(name: "CategoryFilterInput"){
-  id: Int!
-  name: String
-}
-
-type Query @generate {
-  posts: [Post]
-  users: [User]
-  categories: [Category]
-}
-`
-
 var initCmd = &cobra.Command{
 	Use:   "init ",
 	Short: "create a new fastgql project in current directory",
@@ -178,7 +150,7 @@ func initSchema(schemaFilename string) error {
 		return fmt.Errorf("unable to create schema dir: " + err.Error())
 	}
 
-	if err = ioutil.WriteFile(schemaFullPath, []byte(strings.TrimSpace(schemaDefault)), 0644); err != nil {
+	if err = ioutil.WriteFile(schemaFullPath, []byte(strings.TrimSpace(schema.FastgqlSchema)), 0644); err != nil {
 		return fmt.Errorf("unable to write schema file: " + err.Error())
 	}
 	return nil

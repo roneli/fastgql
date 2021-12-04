@@ -166,10 +166,10 @@ query filterPostsByUser {
 
 ## Finishing touches
 
-At the top of our `resolver.go`, between `package` and `import`, add the following line:
+At the top of our `server.go`, between `package` and `import`, add the following line:
 
 ```go
-//go:generate go run github.com/roneli/fastgql
+//go:generate go run github.com/roneli/fastgql generate -c gqlgen.yml
 ```
 
 This magic comment tells `go generate` what command to run when we want to regenerate our code.  To run go generate recursively over your entire project, use this command:
