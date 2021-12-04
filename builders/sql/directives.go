@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/jinzhu/inflection"
@@ -45,6 +46,13 @@ func (t tableDefinition) TableExpression() exp.IdentifierExpression {
 	return tbl
 }
 
+func (t tableDefinition) String() string {
+	if t.schema != "" {
+		return fmt.Sprintf(`"%s"."%s"`, t.schema, t.name)
+	}
+	return fmt.Sprintf(`"%s"`, t.name)
+}
+
 /*
 parseRelationDirective parses the sqlRelation directive to connect graphQL Objects with SQL relations, this directive
 is also important for creating relational filters.
@@ -82,7 +90,7 @@ func getAggregateTableName(schema *ast.Schema, field *ast.Field) tableDefinition
 // getCreateTableName returns the field's type tableDefinition name in the database, if no directive is defined, type name is presumed
 // as the tableDefinition's name
 func getTableNamePrefix(schema *ast.Schema, prefix string, field *ast.Field) tableDefinition {
-	fieldName := strings.Split(field.Name, "create")[1]
+	fieldName := strings.Split(field.Name, prefix)[1]
 	return getTableName(schema, inflection.Singular(fieldName), fieldName)
 }
 

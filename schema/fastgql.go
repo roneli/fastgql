@@ -40,6 +40,7 @@ func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) *ast.Source {
 
 	var buf bytes.Buffer
 	formatter.NewFormatter(&buf).FormatSchema(schema)
+
 	return &ast.Source{
 		Name:    "schema.graphql",
 		Input:   buf.String(),

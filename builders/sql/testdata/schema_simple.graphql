@@ -5,7 +5,7 @@ type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user",
     someOtherName: [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
 }
 
-type Post @generateFilterInput(name: "PostFilterInput") @tableName(name: "posts") @generateMutations(create: true) {
+type Post @generateFilterInput(name: "PostFilterInput") @tableName(name: "posts") @generateMutations(create: true, delete: true) {
     id: Int!
     name: String
     categories: [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"]
@@ -37,7 +37,7 @@ directive @generateFilterInput(name: String!, description: String) on OBJECT | I
 # Generate arguments for a given field or all object fields
 directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on OBJECT
 
-directive @generateMutations(create: Boolean = True) on OBJECT
+directive @generateMutations(create: Boolean = True, delete: Boolean = True) on OBJECT
 
 
 enum _relationType {

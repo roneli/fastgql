@@ -15,10 +15,29 @@ import (
 )
 
 func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.CreatePostInput) (*model.PostsPayload, error) {
-
 	builder := sql.NewBuilder(r.Cfg)
 
 	q, args, err := builder.Create(builders.CollectFields(ctx))
+
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Executor.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	var data model.PostsPayload
+	if err := pgxscan.ScanOne(&data, rows); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model.PostFilterInput) (*model.PostsPayload, error) {
+
+	builder := sql.NewBuilder(r.Cfg)
+
+	q, args, err := builder.Delete(builders.CollectFields(ctx))
 
 	if err != nil {
 		return nil, err
@@ -78,7 +97,6 @@ func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int,
 }
 
 func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.AggregateResult, error) {
-
 	builder := sql.NewBuilder(r.Cfg)
 
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
@@ -96,7 +114,6 @@ func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFi
 		return nil, err
 	}
 	return data, nil
-
 }
 
 func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.AggregateResult, error) {
