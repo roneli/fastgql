@@ -32,9 +32,7 @@ func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.Creat
 	}
 	return &data, nil
 }
-
 func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model.PostFilterInput) (*model.PostsPayload, error) {
-
 	builder := sql.NewBuilder(r.Cfg)
 
 	q, args, err := builder.Delete(builders.CollectFields(ctx))
@@ -51,9 +49,7 @@ func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filte
 		return nil, err
 	}
 	return &data, nil
-
 }
-
 func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
@@ -72,7 +68,6 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 	}
 	return data, nil
 }
-
 func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
@@ -91,11 +86,9 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 	}
 	return data, nil
 }
-
 func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error) {
 	panic(fmt.Errorf("not implemented"))
 }
-
 func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.AggregateResult, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
@@ -115,7 +108,6 @@ func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFi
 	}
 	return data, nil
 }
-
 func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.AggregateResult, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
@@ -134,7 +126,6 @@ func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFi
 	}
 	return data, nil
 }
-
 func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.AggregateResult, error) {
 	builder := sql.NewBuilder(r.Cfg)
 

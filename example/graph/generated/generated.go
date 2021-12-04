@@ -41,7 +41,6 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	Generate     func(ctx context.Context, obj interface{}, next graphql.Resolver, filter *bool, pagination *bool, ordering *bool, aggregate *bool, recursive *bool) (res interface{}, err error)
 	SkipGenerate func(ctx context.Context, obj interface{}, next graphql.Resolver, resolver *bool) (res interface{}, err error)
 }
 
@@ -768,57 +767,6 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
-
-func (ec *executionContext) dir_generate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["filter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["filter"] = arg0
-	var arg1 *bool
-	if tmp, ok := rawArgs["pagination"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["pagination"] = arg1
-	var arg2 *bool
-	if tmp, ok := rawArgs["ordering"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ordering"))
-		arg2, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["ordering"] = arg2
-	var arg3 *bool
-	if tmp, ok := rawArgs["aggregate"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("aggregate"))
-		arg3, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["aggregate"] = arg3
-	var arg4 *bool
-	if tmp, ok := rawArgs["recursive"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("recursive"))
-		arg4, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["recursive"] = arg4
-	return args, nil
-}
 
 func (ec *executionContext) dir_skipGenerate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error

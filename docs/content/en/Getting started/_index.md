@@ -10,7 +10,7 @@ This tutorial will take you through the process of building a GraphQL server wit
 
 - automatically query, filter, order and pagination users, posts & categories from a postgres database.
 
-You can find the finished code for this tutorial [here](https://github.com/roneli/example).
+You can find the finished code for this tutorial [here](https://github.com/roneli/fastgql/tree/master/example).
 
 If you are familiar with [gqlgen](https://gqlgen.com), the setup is nearly identical, with a little work in 
 your Schema you won't need to define any resolvers!
@@ -27,12 +27,20 @@ $ go mod init github.com/[username]/fastgql-example
 $ go get github.com/roneli/fastgql
 ```
 
+#### Add github.com/roneli/fastgql to your project’s tools.go 
+
+```bash
+printf '// +build tools\npackage tools\nimport _ "github.com/roneli/fastgql"' | gofmt > tools.go
+go mod tidy
+```
+
 ## Building the server
 
 ### Create the project skeleton
 
 ```bash
 $ go run github.com/roneli/fastgql init
+$ go mod tidy
 ```
 
 This will create our suggested package layout. You can modify these paths in gqlgen.yml if you need to.
@@ -122,7 +130,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 ```
 
 We just need to start a postgres server and insert a schema, you can try the example's [compose file](https://github.com/roneli/fastgql/tree/master/example/docker-compose.yml) and 
-execute the [bast.sql](https://github.com/roneli/fastgql/tree/master/example/base.sql):
+execute the [schema.sql](https://github.com/roneli/fastgql/blob/master/example/graph/schema.graphql):
 
 Finally, we just need to define our postgres connection str that defined in server.go. We can override with ``PG_CONN_STR`` env variable.
 
@@ -159,10 +167,10 @@ query filterPostsByUser {
 
 ## Finishing touches
 
-At the top of our `resolver.go`, between `package` and `import`, add the following line:
+At the top of our `server.go`, between `package` and `import`, add the following line:
 
 ```go
-//go:generate go run github.com/roneli/fastgql
+//go:generate go run github.com/roneli/fastgql generate -c gqlgen.yml
 ```
 
 This magic comment tells `go generate` what command to run when we want to regenerate our code.  To run go generate recursively over your entire project, use this command:
