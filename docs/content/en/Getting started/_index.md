@@ -10,7 +10,7 @@ This tutorial will take you through the process of building a GraphQL server wit
 
 - automatically query, filter, order and pagination users, posts & categories from a postgres database.
 
-You can find the finished code for this tutorial [here](https://github.com/roneli/example).
+You can find the finished code for this tutorial [here](https://github.com/roneli/fastgql/tree/master/example).
 
 If you are familiar with [gqlgen](https://gqlgen.com), the setup is nearly identical, with a little work in 
 your Schema you won't need to define any resolvers!
@@ -25,6 +25,13 @@ $ mkdir fastgql-example
 $ cd fastgql-example 
 $ go mod init github.com/[username]/fastgql-example
 $ go get github.com/roneli/fastgql
+```
+
+#### Add github.com/roneli/fastgql to your project’s tools.go 
+
+```bash
+printf '// +build tools\npackage tools\nimport _ "github.com/roneli/fastgql"' | gofmt > tools.go
+go mod tidy
 ```
 
 ## Building the server
@@ -122,7 +129,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 ```
 
 We just need to start a postgres server and insert a schema, you can try the example's [compose file](https://github.com/roneli/fastgql/tree/master/example/docker-compose.yml) and 
-execute the [bast.sql](https://github.com/roneli/fastgql/tree/master/example/base.sql):
+execute the [schema.sql](https://github.com/roneli/fastgql/blob/master/example/graph/schema.graphql):
 
 Finally, we just need to define our postgres connection str that defined in server.go. We can override with ``PG_CONN_STR`` env variable.
 
