@@ -40,6 +40,7 @@ go mod tidy
 
 ```bash
 $ go run github.com/roneli/fastgql init
+$ go mod tidy
 ```
 
 This will create our suggested package layout. You can modify these paths in gqlgen.yml if you need to.
