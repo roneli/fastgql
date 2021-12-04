@@ -26,6 +26,7 @@ func (f FastGqlPlugin) MutateConfig(cfg *config.Config) error {
 	cfg.Directives["sqlRelation"] = config.DirectiveConfig{SkipRuntime: true}
 	cfg.Directives["tableName"] = config.DirectiveConfig{SkipRuntime: true}
 	cfg.Directives["generateMutations"] = config.DirectiveConfig{SkipRuntime: true}
+	cfg.Directives["generate"] = config.DirectiveConfig{SkipRuntime: true}
 	return nil
 }
 
