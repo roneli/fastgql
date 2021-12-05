@@ -9,7 +9,10 @@ services:
     networks:
       - postgres
     environment:
+      POSTGRES_DB: main
       POSTGRES_PASSWORD: password
+    volumes:
+      - ./db.sql:/docker-entrypoint-initdb.d/1-db.sql
 
   pgadmin:
     container_name: pgadmin_container
