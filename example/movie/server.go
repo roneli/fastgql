@@ -4,6 +4,9 @@ package main
 import (
 	"context"
 
+	"github.com/roneli/fastgql/example/simple/graph"
+	"github.com/roneli/fastgql/example/simple/graph/generated"
+
 	"github.com/99designs/gqlgen/graphql/playground"
 
 	"github.com/roneli/fastgql/log/adapters"
@@ -15,8 +18,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/roneli/fastgql/builders"
-	"github.com/roneli/fastgql/example/graph"
-	"github.com/roneli/fastgql/example/graph/generated"
 )
 
 const defaultPort = "8081"

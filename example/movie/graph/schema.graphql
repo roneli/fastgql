@@ -1,0 +1,11 @@
+type Actor @tableName(name:"actor", schema: "movies") @generateFilterInput(name:"ActorFilterInput") {
+    actorId: Int!
+    firstName: String!
+    LastName: String!
+    LastUpdate: String!
+}
+
+
+type Query @generate {
+    actors: [Actor]
+}
