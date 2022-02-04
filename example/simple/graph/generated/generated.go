@@ -11,9 +11,10 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/roneli/fastgql/example/simple/graph/model"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/roneli/fastgql/example/graph/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )

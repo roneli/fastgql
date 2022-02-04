@@ -7,11 +7,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/roneli/fastgql/example/simple/graph/generated"
+	"github.com/roneli/fastgql/example/simple/graph/model"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/roneli/fastgql/builders"
 	"github.com/roneli/fastgql/builders/sql"
-	"github.com/roneli/fastgql/example/graph/generated"
-	"github.com/roneli/fastgql/example/graph/model"
 )
 
 func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.CreatePostInput) (*model.PostsPayload, error) {

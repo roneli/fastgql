@@ -39,6 +39,10 @@ func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, recursive 
 			continue
 		}
 
+		if t := gql.GetType(f.Type); t.NamedType == "String" {
+			continue
+		}
+
 		if f.Arguments.ForName("limit") != nil || f.Arguments.ForName("offset") != nil {
 			continue
 		}

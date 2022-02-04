@@ -1,0 +1,25 @@
+type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user"){
+    id: Int!
+    name: String!
+    posts: [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
+}
+
+type Post @generateFilterInput(name: "PostFilterInput") @tableName(name: "posts") @generateMutations(create: true, delete: true) {
+    id: Int!
+    name: String
+    categories: [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"]
+        manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+    user: User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
+}
+
+
+type Category @tableName(name:"categories", schema:"") @generateFilterInput(name: "CategoryFilterInput") {
+    id: Int!
+    name: String
+}
+
+type Query @generate {
+    posts: [Post]
+    users: [User]
+    categories: [Category] @skipGenerate
+}
