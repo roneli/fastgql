@@ -15,10 +15,7 @@ func IsScalarListType(s *ast.Schema, a *ast.Type) bool {
 	t := GetType(a)
 	fieldDef := s.Types[t.Name()]
 	// we only support scalar types as aggregate fields
-	if fieldDef.IsLeafType() {
-		return true
-	}
-	return false
+	return fieldDef.IsLeafType()
 }
 
 func GetType(a *ast.Type) *ast.Type {
