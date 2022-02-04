@@ -4,8 +4,8 @@ package main
 import (
 	"context"
 
-	"github.com/roneli/fastgql/example/simple/graph"
-	"github.com/roneli/fastgql/example/simple/graph/generated"
+	"github.com/roneli/fastgql/example/movie/graph"
+	"github.com/roneli/fastgql/example/movie/graph/generated"
 
 	"github.com/99designs/gqlgen/graphql/playground"
 
@@ -22,7 +22,7 @@ import (
 
 const defaultPort = "8081"
 
-const defaultPGConnection = "postgresql://localhost/main?user=postgres&password=password"
+const defaultPGConnection = "postgresql://localhost/movies?user=postgres&password=password"
 
 func main() {
 	port := os.Getenv("PORT")

@@ -9,17 +9,21 @@ import (
 )
 
 type Actor struct {
-	ActorID    int    `json:"actorId" db:"actorId"`
-	FirstName  string `json:"firstName" db:"firstName"`
-	LastName   string `json:"LastName" db:"LastName"`
-	LastUpdate string `json:"LastUpdate" db:"LastUpdate"`
+	ActorID    int     `json:"actorId" db:"actorId"`
+	FirstName  string  `json:"firstName" db:"firstName"`
+	LastName   string  `json:"lastName" db:"lastName"`
+	LastUpdate string  `json:"lastUpdate" db:"lastUpdate"`
+	Films      []*Film `json:"films" db:"films"`
+	// films Aggregate
+	FilmsAggregate *FilmsAggregate `json:"_filmsAggregate" db:"_filmsAggregate"`
 }
 
 type ActorFilterInput struct {
 	ActorID    *IntComparator    `json:"actorId" db:"actorId"`
 	FirstName  *StringComparator `json:"firstName" db:"firstName"`
-	LastName   *StringComparator `json:"LastName" db:"LastName"`
-	LastUpdate *StringComparator `json:"LastUpdate" db:"LastUpdate"`
+	LastName   *StringComparator `json:"lastName" db:"lastName"`
+	LastUpdate *StringComparator `json:"lastUpdate" db:"lastUpdate"`
+	Films      *FilmFilterInput  `json:"films" db:"films"`
 	// Logical AND of FilterInput
 	And []*ActorFilterInput `json:"AND" db:"AND"`
 	// Logical OR of FilterInput
@@ -33,11 +37,11 @@ type ActorMin struct {
 	// Compute the maxiumum for actorId
 	ActorID int `json:"actorId" db:"actorId"`
 	// Compute the maxiumum for firstName
-	FirstName int `json:"firstName" db:"firstName"`
-	// Compute the maxiumum for LastName
-	LastName int `json:"LastName" db:"LastName"`
-	// Compute the maxiumum for LastUpdate
-	LastUpdate int `json:"LastUpdate" db:"LastUpdate"`
+	FirstName string `json:"firstName" db:"firstName"`
+	// Compute the maxiumum for lastName
+	LastName string `json:"lastName" db:"lastName"`
+	// Compute the maxiumum for lastUpdate
+	LastUpdate string `json:"lastUpdate" db:"lastUpdate"`
 }
 
 // Ordering for Actor
@@ -46,10 +50,10 @@ type ActorOrdering struct {
 	ActorID *OrderingTypes `json:"actorId" db:"actorId"`
 	// Order Actor by firstName
 	FirstName *OrderingTypes `json:"firstName" db:"firstName"`
-	// Order Actor by LastName
-	LastName *OrderingTypes `json:"LastName" db:"LastName"`
-	// Order Actor by LastUpdate
-	LastUpdate *OrderingTypes `json:"LastUpdate" db:"LastUpdate"`
+	// Order Actor by lastName
+	LastName *OrderingTypes `json:"lastName" db:"lastName"`
+	// Order Actor by lastUpdate
+	LastUpdate *OrderingTypes `json:"lastUpdate" db:"lastUpdate"`
 }
 
 // Aggregate Actor
@@ -75,6 +79,155 @@ type BooleanListComparator struct {
 	Overlap   []*bool `json:"overlap" db:"overlap"`
 }
 
+type Category struct {
+	CategoryID int    `json:"categoryId" db:"categoryId"`
+	Name       string `json:"name" db:"name"`
+	LastUpdate string `json:"lastUpdate" db:"lastUpdate"`
+	// Get all flims by language
+	Films []*Film `json:"films" db:"films"`
+}
+
+type CategoryFilterInput struct {
+	Category   *CategoryFilterInput `json:"category" db:"category"`
+	Film       *FilmFilterInput     `json:"film" db:"film"`
+	LastUpdate *StringComparator    `json:"lastUpdate" db:"lastUpdate"`
+	// Logical AND of FilterInput
+	And []*CategoryFilterInput `json:"AND" db:"AND"`
+	// Logical OR of FilterInput
+	Or []*CategoryFilterInput `json:"OR" db:"OR"`
+	// Logical NOT of FilterInput
+	Not *CategoryFilterInput `json:"NOT" db:"NOT"`
+}
+
+type Film struct {
+	FilmID          int             `json:"filmId" db:"filmId"`
+	Title           string          `json:"title" db:"title"`
+	Description     string          `json:"description" db:"description"`
+	RentalDuration  string          `json:"rentalDuration" db:"rentalDuration"`
+	RentalRate      float64         `json:"rentalRate" db:"rentalRate"`
+	Length          int             `json:"length" db:"length"`
+	ReplacementCost float64         `json:"replacementCost" db:"replacementCost"`
+	Rating          int             `json:"rating" db:"rating"`
+	LastUpdate      string          `json:"lastUpdate" db:"lastUpdate"`
+	SpecialFeatures []*string       `json:"specialFeatures" db:"specialFeatures"`
+	Fulltext        string          `json:"fulltext" db:"fulltext"`
+	Categories      []*FilmCategory `json:"categories" db:"categories"`
+	Language        *Language       `json:"language" db:"language"`
+	Actors          []*Actor        `json:"actors" db:"actors"`
+	// categories Aggregate
+	CategoriesAggregate *FilmCategoriesAggregate `json:"_categoriesAggregate" db:"_categoriesAggregate"`
+	// actors Aggregate
+	ActorsAggregate *ActorsAggregate `json:"_actorsAggregate" db:"_actorsAggregate"`
+}
+
+// Aggregate FilmCategory
+type FilmCategoriesAggregate struct {
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Computes the maximum of the non-null input values.
+	Max *FilmCategoryMin `json:"max" db:"max"`
+	// Computes the minimum of the non-null input values.
+	Min *FilmCategoryMin `json:"min" db:"min"`
+}
+
+type FilmCategory struct {
+	Category   *Category `json:"category" db:"category"`
+	Film       *Film     `json:"film" db:"film"`
+	LastUpdate string    `json:"lastUpdate" db:"lastUpdate"`
+}
+
+// max aggregator for FilmCategory
+type FilmCategoryMin struct {
+	// Compute the maxiumum for lastUpdate
+	LastUpdate string `json:"lastUpdate" db:"lastUpdate"`
+}
+
+// Ordering for FilmCategory
+type FilmCategoryOrdering struct {
+	// Order FilmCategory by lastUpdate
+	LastUpdate *OrderingTypes `json:"lastUpdate" db:"lastUpdate"`
+}
+
+type FilmFilterInput struct {
+	FilmID          *IntComparator        `json:"filmId" db:"filmId"`
+	Title           *StringComparator     `json:"title" db:"title"`
+	Description     *StringComparator     `json:"description" db:"description"`
+	RentalDuration  *StringComparator     `json:"rentalDuration" db:"rentalDuration"`
+	Length          *IntComparator        `json:"length" db:"length"`
+	Rating          *IntComparator        `json:"rating" db:"rating"`
+	LastUpdate      *StringComparator     `json:"lastUpdate" db:"lastUpdate"`
+	SpecialFeatures *StringListComparator `json:"specialFeatures" db:"specialFeatures"`
+	Fulltext        *StringComparator     `json:"fulltext" db:"fulltext"`
+	Language        *LanguageFilterInput  `json:"language" db:"language"`
+	Actors          *ActorFilterInput     `json:"actors" db:"actors"`
+	// Logical AND of FilterInput
+	And []*FilmFilterInput `json:"AND" db:"AND"`
+	// Logical OR of FilterInput
+	Or []*FilmFilterInput `json:"OR" db:"OR"`
+	// Logical NOT of FilterInput
+	Not *FilmFilterInput `json:"NOT" db:"NOT"`
+}
+
+// max aggregator for Film
+type FilmMin struct {
+	// Compute the maxiumum for filmId
+	FilmID int `json:"filmId" db:"filmId"`
+	// Compute the maxiumum for title
+	Title string `json:"title" db:"title"`
+	// Compute the maxiumum for description
+	Description string `json:"description" db:"description"`
+	// Compute the maxiumum for rentalDuration
+	RentalDuration string `json:"rentalDuration" db:"rentalDuration"`
+	// Compute the maxiumum for rentalRate
+	RentalRate float64 `json:"rentalRate" db:"rentalRate"`
+	// Compute the maxiumum for length
+	Length int `json:"length" db:"length"`
+	// Compute the maxiumum for replacementCost
+	ReplacementCost float64 `json:"replacementCost" db:"replacementCost"`
+	// Compute the maxiumum for rating
+	Rating int `json:"rating" db:"rating"`
+	// Compute the maxiumum for lastUpdate
+	LastUpdate string `json:"lastUpdate" db:"lastUpdate"`
+	// Compute the maxiumum for fulltext
+	Fulltext string `json:"fulltext" db:"fulltext"`
+}
+
+// Ordering for Film
+type FilmOrdering struct {
+	// Order Film by filmId
+	FilmID *OrderingTypes `json:"filmId" db:"filmId"`
+	// Order Film by title
+	Title *OrderingTypes `json:"title" db:"title"`
+	// Order Film by description
+	Description *OrderingTypes `json:"description" db:"description"`
+	// Order Film by rentalDuration
+	RentalDuration *OrderingTypes `json:"rentalDuration" db:"rentalDuration"`
+	// Order Film by rentalRate
+	RentalRate *OrderingTypes `json:"rentalRate" db:"rentalRate"`
+	// Order Film by length
+	Length *OrderingTypes `json:"length" db:"length"`
+	// Order Film by replacementCost
+	ReplacementCost *OrderingTypes `json:"replacementCost" db:"replacementCost"`
+	// Order Film by rating
+	Rating *OrderingTypes `json:"rating" db:"rating"`
+	// Order Film by lastUpdate
+	LastUpdate *OrderingTypes `json:"lastUpdate" db:"lastUpdate"`
+	// Order Film by specialFeatures
+	SpecialFeatures *OrderingTypes `json:"specialFeatures" db:"specialFeatures"`
+	// Order Film by fulltext
+	Fulltext *OrderingTypes `json:"fulltext" db:"fulltext"`
+}
+
+// Aggregate Film
+type FilmsAggregate struct {
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Computes the maximum of the non-null input values.
+	Max *FilmMin `json:"max" db:"max"`
+	// Computes the minimum of the non-null input values.
+	Min *FilmMin `json:"min" db:"min"`
+}
+
 type IntComparator struct {
 	Eq  *int `json:"eq" db:"eq"`
 	Neq *int `json:"neq" db:"neq"`
@@ -90,6 +243,59 @@ type IntListComparator struct {
 	Contains  []*int `json:"contains" db:"contains"`
 	Contained []*int `json:"contained" db:"contained"`
 	Overlap   []*int `json:"overlap" db:"overlap"`
+}
+
+type Language struct {
+	LanguageID int    `json:"languageId" db:"languageId"`
+	Name       string `json:"name" db:"name"`
+	LastUpdate string `json:"lastUpdate" db:"lastUpdate"`
+	// Get all flims by language
+	Films []*Film `json:"films" db:"films"`
+	// films Aggregate
+	FilmsAggregate *FilmsAggregate `json:"_filmsAggregate" db:"_filmsAggregate"`
+}
+
+type LanguageFilterInput struct {
+	LanguageID *IntComparator    `json:"languageId" db:"languageId"`
+	Name       *StringComparator `json:"name" db:"name"`
+	LastUpdate *StringComparator `json:"lastUpdate" db:"lastUpdate"`
+	Films      *FilmFilterInput  `json:"films" db:"films"`
+	// Logical AND of FilterInput
+	And []*LanguageFilterInput `json:"AND" db:"AND"`
+	// Logical OR of FilterInput
+	Or []*LanguageFilterInput `json:"OR" db:"OR"`
+	// Logical NOT of FilterInput
+	Not *LanguageFilterInput `json:"NOT" db:"NOT"`
+}
+
+// max aggregator for Language
+type LanguageMin struct {
+	// Compute the maxiumum for languageId
+	LanguageID int `json:"languageId" db:"languageId"`
+	// Compute the maxiumum for name
+	Name string `json:"name" db:"name"`
+	// Compute the maxiumum for lastUpdate
+	LastUpdate string `json:"lastUpdate" db:"lastUpdate"`
+}
+
+// Ordering for Language
+type LanguageOrdering struct {
+	// Order Language by languageId
+	LanguageID *OrderingTypes `json:"languageId" db:"languageId"`
+	// Order Language by name
+	Name *OrderingTypes `json:"name" db:"name"`
+	// Order Language by lastUpdate
+	LastUpdate *OrderingTypes `json:"lastUpdate" db:"lastUpdate"`
+}
+
+// Aggregate Language
+type LanguagesAggregate struct {
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Computes the maximum of the non-null input values.
+	Max *LanguageMin `json:"max" db:"max"`
+	// Computes the minimum of the non-null input values.
+	Min *LanguageMin `json:"min" db:"min"`
 }
 
 type StringComparator struct {

@@ -34,6 +34,9 @@ type (
 	// Operators are added by "key" to comparator Input types, and get called with expected value.
 	Operator func(table exp.AliasedExpression, key string, value interface{}) goqu.Expression
 
+	// AggregatorOperator gets called on aggregation methods // TBD //
+	AggregatorOperator func(table exp.AliasedExpression, fields []Field) (goqu.Expression, error)
+
 	// AggregateBuilder allows Builders to build aggregate queries on _XYZAggregate fields
 	AggregateBuilder interface {
 		Aggregate(field Field) (string, []interface{}, error)

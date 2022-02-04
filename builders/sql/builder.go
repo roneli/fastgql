@@ -25,10 +25,11 @@ func (tb defaultTableNameGenerator) Generate(_ int) string {
 }
 
 type Builder struct {
-	Schema             *ast.Schema
-	Logger             log.Logger
-	TableNameGenerator builders.TableNameGenerator
-	Operators          map[string]builders.Operator
+	Schema              *ast.Schema
+	Logger              log.Logger
+	TableNameGenerator  builders.TableNameGenerator
+	Operators           map[string]builders.Operator
+	AggregatorOperators map[string]builders.AggregatorOperator
 }
 
 func NewBuilder(config *builders.Config) Builder {
@@ -47,7 +48,8 @@ func NewBuilder(config *builders.Config) Builder {
 	for k, v := range config.CustomOperators {
 		operators[k] = v
 	}
-	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: operators}
+
+	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: operators, AggregatorOperators: defaultAggregatorOperators}
 }
 
 func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
@@ -105,7 +107,7 @@ func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	q, args, err := query.SelectRow().ToSQL()
+	q, args, err := query.SelectRow(true).ToSQL()
 	b.Logger.Debug("created query", map[string]interface{}{"query": q, "args": args, "err": err})
 	return q, args, err
 }
@@ -115,7 +117,9 @@ func (b Builder) Aggregate(field builders.Field) (string, []interface{}, error) 
 	if err != nil {
 		return "", nil, err
 	}
-	return query.ToSQL()
+	sql, args, err := query.ToSQL()
+	b.Logger.Debug("build aggregate query", map[string]interface{}{"query": sql, "args": args, "error": err})
+	return sql, args, err
 }
 
 func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface{}) (*goqu.InsertDataset, error) {
@@ -152,7 +156,7 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 		switch childField.FieldType {
 		case builders.TypeScalar:
 			b.Logger.Debug("adding field", map[string]interface{}{"tableDefinition": tableDef.name, "fieldName": childField.Name})
-			query.selects = append(query.selects, column{table: query.alias, name: childField.Name, alias: ""})
+			query.selects = append(query.selects, column{table: query.alias, name: strcase.ToSnake(childField.Name), alias: childField.Name})
 		case builders.TypeRelation:
 			b.Logger.Debug("adding relation field", map[string]interface{}{"tableDefinition": tableDef.name, "fieldName": childField.Name})
 			if err := b.buildRelation(&query, childField); err != nil {
@@ -185,8 +189,20 @@ func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) 
 
 	var aggColumns []interface{}
 	for _, f := range field.Selections {
-		if f.Name == "count" {
+		switch f.Name {
+		case "count":
 			aggColumns = append(aggColumns, goqu.L("'count'"), goqu.COUNT(goqu.L("1")))
+		default:
+			if op, ok := b.AggregatorOperators[f.Name]; ok {
+				aggExp, err := op(table, f.Selections)
+				if err != nil {
+					return nil, err
+				}
+				aggColumns = append(aggColumns, goqu.L(fmt.Sprintf("'%s'", f.Name)), aggExp)
+
+			} else {
+				return nil, fmt.Errorf("aggrgator %s not supported", f.Name)
+			}
 		}
 	}
 	if err := b.buildFiltering(query, field); err != nil {
@@ -345,7 +361,9 @@ func (b Builder) Operation(table exp.AliasedExpression, fieldName, operatorName 
 }
 
 func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) error {
-	relationQuery, err := b.buildQuery(getTableNameFromField(b.Schema, rf.Definition), rf)
+
+	tableDef := getTableNameFromField(b.Schema, rf.Definition)
+	relationQuery, err := b.buildQuery(tableDef, rf)
 	if err != nil {
 		return errors.Wrap(err, "failed building relation")
 	}
@@ -366,7 +384,7 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: relationQuery.alias})
 	case ManyToMany:
 		m2mTableAlias := b.TableNameGenerator.Generate(6)
-		m2mTable := goqu.T(rel.manyToManyTable).As(m2mTableAlias)
+		m2mTable := goqu.T(rel.manyToManyTable).Schema(tableDef.schema).As(m2mTableAlias)
 		m2mQuery := queryHelper{
 			SelectDataset: goqu.From(m2mTable),
 			table:         m2mTable,
@@ -375,15 +393,15 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 		}
 		// Join m2mBuilder with the relBuilder
 		m2mQuery.SelectDataset = m2mQuery.LeftJoin(
-			goqu.Lateral(relationQuery.SelectRow().Where(buildCrossCondition(relationQuery.alias, rel.references, m2mTableAlias, rel.manyToManyReferences))).As(relationQuery.alias),
+			goqu.Lateral(relationQuery.SelectRow(false).Where(buildCrossCondition(relationQuery.alias, rel.references, m2mTableAlias, rel.manyToManyReferences))).As(relationQuery.alias),
 			goqu.On(goqu.L("true")))
 
 		// Add cross condition from parent Builder (current Builder instance)
 		m2mQuery.SelectDataset = m2mQuery.Where(buildCrossCondition(parentQuery.alias, rel.fields, m2mTableAlias, rel.manyToManyFields)).As(relationQuery.alias)
 
-		// Finally aggregate relation query and join the m2m tableDefinition with the main query
+		// Finally, aggregate relation query and join the m2m tableDefinition with the main query
 		aggTableName := b.TableNameGenerator.Generate(6)
-		aggQuery := goqu.From(m2mQuery.SelectRow()).As(aggTableName).Select(relationQuery.buildJsonAgg(rf.Name).As(rf.Name)).As(aggTableName)
+		aggQuery := goqu.From(m2mQuery.SelectRow(false)).As(aggTableName).Select(relationQuery.buildJsonAgg(rf.Name).As(rf.Name)).As(aggTableName)
 		parentQuery.SelectDataset = parentQuery.CrossJoin(goqu.Lateral(aggQuery))
 		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: aggTableName})
 

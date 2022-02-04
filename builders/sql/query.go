@@ -14,6 +14,9 @@ type column struct {
 }
 
 func (c column) Expression() exp.AliasedExpression {
+	if c.alias != "" {
+		return goqu.T(c.table).Col(c.name).As(c.alias)
+	}
 	return goqu.T(c.table).Col(c.name).As(c.name)
 }
 
@@ -40,8 +43,11 @@ func (q queryHelper) TableName() string {
 	return q.table.Aliased().(exp.IdentifierExpression).GetTable()
 }
 
-func (q queryHelper) SelectRow() *goqu.SelectDataset {
+func (q queryHelper) SelectRow(alias bool) *goqu.SelectDataset {
 	for i, c := range q.selects {
+		if !alias {
+			c.alias = ""
+		}
 		if i == 0 {
 			q.SelectDataset = q.SelectDataset.Select(c.Expression())
 		} else {
@@ -70,7 +76,11 @@ func (q queryHelper) SelectOne() *goqu.SelectDataset {
 func (q queryHelper) buildJsonObject() exp.SQLFunctionExpression {
 	args := make([]interface{}, len(q.selects)*2)
 	for i, c := range q.selects {
-		args[i*2] = goqu.L(fmt.Sprintf("'%s'", c.name))
+		if c.alias != "" {
+			args[i*2] = goqu.L(fmt.Sprintf("'%s'", c.alias))
+		} else {
+			args[i*2] = goqu.L(fmt.Sprintf("'%s'", c.name))
+		}
 		args[i*2+1] = goqu.I(fmt.Sprintf("%s.%s", c.table, c.name))
 	}
 	return goqu.Func("jsonb_build_object", args...)

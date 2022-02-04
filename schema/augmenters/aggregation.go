@@ -38,6 +38,9 @@ func (a Aggregation) Augment(s *ast.Schema) error {
 func (a Aggregation) addAggregation(s *ast.Schema, obj *ast.Definition, recursive bool) {
 
 	for _, f := range obj.Fields {
+		if gql.IsScalarListType(s, f.Type) {
+			continue
+		}
 		if strings.HasPrefix(f.Name, "__") {
 			continue
 		}
@@ -119,6 +122,9 @@ func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition
 	}
 
 	for _, f := range obj.Fields {
+		if gql.IsListType(f.Type) {
+			continue
+		}
 		t := gql.GetType(f.Type)
 		fieldDef := s.Types[t.Name()]
 		// we only support scalar types as aggregate fields
@@ -130,7 +136,7 @@ func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition
 			Description: fmt.Sprintf("Compute the minimum for %s", f.Name),
 			Name:        f.Name,
 			Type: &ast.Type{
-				NamedType: "Int",
+				NamedType: t.NamedType,
 				NonNull:   true,
 			},
 		})
@@ -138,7 +144,7 @@ func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition
 			Description: fmt.Sprintf("Compute the maxiumum for %s", f.Name),
 			Name:        f.Name,
 			Type: &ast.Type{
-				NamedType: "Int",
+				NamedType: t.NamedType,
 				NonNull:   true,
 			},
 		})
