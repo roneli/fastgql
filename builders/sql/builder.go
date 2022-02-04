@@ -151,8 +151,13 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 	table := tableDef.TableExpression().As(tableAlias)
 	query := queryHelper{goqu.From(table), table, tableAlias, nil}
 
+	fieldsAdded := make(map[string]struct{})
 	// Add field columns
 	for _, childField := range field.Selections {
+		if _, ok := fieldsAdded[childField.Name]; ok {
+			continue
+		}
+		fieldsAdded[childField.Name] = struct{}{}
 		switch childField.FieldType {
 		case builders.TypeScalar:
 			b.Logger.Debug("adding field", map[string]interface{}{"tableDefinition": tableDef.name, "fieldName": childField.Name})
