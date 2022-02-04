@@ -7,12 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/roneli/fastgql/example/simple/graph/generated"
-	"github.com/roneli/fastgql/example/simple/graph/model"
-
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/roneli/fastgql/builders"
 	"github.com/roneli/fastgql/builders/sql"
+	"github.com/roneli/fastgql/example/simple/graph/generated"
+	"github.com/roneli/fastgql/example/simple/graph/model"
 )
 
 func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.CreatePostInput) (*model.PostsPayload, error) {
@@ -90,7 +89,7 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error) {
 	panic(fmt.Errorf("not implemented"))
 }
-func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.AggregateResult, error) {
+func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.PostsAggregate, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
@@ -109,7 +108,7 @@ func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFi
 	}
 	return data, nil
 }
-func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.AggregateResult, error) {
+func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.UsersAggregate, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
@@ -127,7 +126,7 @@ func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFi
 	}
 	return data, nil
 }
-func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.AggregateResult, error) {
+func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.CategoriesAggregate, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
