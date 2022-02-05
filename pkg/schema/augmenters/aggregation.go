@@ -8,7 +8,6 @@ import (
 	"github.com/roneli/fastgql/pkg/schema/gql"
 
 	"github.com/jinzhu/inflection"
-
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 )

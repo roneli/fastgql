@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cast"
-
 	"github.com/jinzhu/inflection"
-
+	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 

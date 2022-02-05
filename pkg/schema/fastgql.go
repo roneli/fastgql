@@ -4,7 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 
-	augmenters2 "github.com/roneli/fastgql/pkg/schema/augmenters"
+	"github.com/roneli/fastgql/pkg/schema/augmenters"
 	"github.com/roneli/fastgql/pkg/schema/plugin"
 	"github.com/roneli/fastgql/pkg/schema/plugin/resolvergen"
 	"github.com/roneli/fastgql/pkg/schema/plugin/servergen"
@@ -60,12 +60,12 @@ func (f FastGqlPlugin) MutateConfig(c *config.Config) error {
 
 // TODO: make this configurable
 func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) *ast.Source {
-	_ = augmenters2.Pagination{}.Augment(schema)
-	_ = augmenters2.Ordering{}.Augment(schema)
-	_ = augmenters2.Aggregation{}.Augment(schema)
-	_ = augmenters2.FilterInput{}.Augment(schema)
-	_ = augmenters2.FilterArguments{}.Augment(schema)
-	_ = augmenters2.Mutations{}.Augment(schema)
+	_ = augmenters.Pagination{}.Augment(schema)
+	_ = augmenters.Ordering{}.Augment(schema)
+	_ = augmenters.Aggregation{}.Augment(schema)
+	_ = augmenters.FilterInput{}.Augment(schema)
+	_ = augmenters.FilterArguments{}.Augment(schema)
+	_ = augmenters.Mutations{}.Augment(schema)
 
 	var buf bytes.Buffer
 	formatter.NewFormatter(&buf).FormatSchema(schema)

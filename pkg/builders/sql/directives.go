@@ -6,11 +6,9 @@ import (
 
 	"github.com/roneli/fastgql/pkg/schema/gql"
 
-	"github.com/jinzhu/inflection"
-
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
-
+	"github.com/jinzhu/inflection"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 )

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/roneli/fastgql/internal/log"
-	builders2 "github.com/roneli/fastgql/pkg/builders"
+	"github.com/roneli/fastgql/pkg/builders"
 	"github.com/roneli/fastgql/pkg/schema"
 
 	"github.com/doug-martin/goqu/v9"
@@ -22,27 +22,27 @@ import (
 type defaultTableNameGenerator struct{}
 
 func (tb defaultTableNameGenerator) Generate(_ int) string {
-	return builders2.GenerateTableName(6)
+	return builders.GenerateTableName(6)
 }
 
 type Builder struct {
 	Schema              *ast.Schema
 	Logger              log.Logger
-	TableNameGenerator  builders2.TableNameGenerator
-	Operators           map[string]builders2.Operator
-	AggregatorOperators map[string]builders2.AggregatorOperator
+	TableNameGenerator  builders.TableNameGenerator
+	Operators           map[string]builders.Operator
+	AggregatorOperators map[string]builders.AggregatorOperator
 }
 
-func NewBuilder(config *builders2.Config) Builder {
+func NewBuilder(config *builders.Config) Builder {
 	var l log.Logger = log.NullLogger{}
 	if config.Logger != nil {
 		l = config.Logger
 	}
-	var tableNameGenerator builders2.TableNameGenerator = defaultTableNameGenerator{}
+	var tableNameGenerator builders.TableNameGenerator = defaultTableNameGenerator{}
 	if config.TableNameGenerator != nil {
 		tableNameGenerator = config.TableNameGenerator
 	}
-	operators := make(map[string]builders2.Operator)
+	operators := make(map[string]builders.Operator)
 	for k, v := range defaultOperators {
 		operators[k] = v
 	}
@@ -53,10 +53,10 @@ func NewBuilder(config *builders2.Config) Builder {
 	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: operators, AggregatorOperators: defaultAggregatorOperators}
 }
 
-func (b Builder) Create(field builders2.Field) (string, []interface{}, error) {
+func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 
 	tableDef := getTableNamePrefix(b.Schema, "create", field.Field)
-	input, ok := field.Arguments[builders2.InputFieldName]
+	input, ok := field.Arguments[builders.InputFieldName]
 	if !ok {
 		return "", nil, errors.New("missing input argument for create")
 	}
@@ -83,7 +83,7 @@ func (b Builder) Create(field builders2.Field) (string, []interface{}, error) {
 	return sql, args, err
 }
 
-func (b Builder) Delete(field builders2.Field) (string, []interface{}, error) {
+func (b Builder) Delete(field builders.Field) (string, []interface{}, error) {
 	tableDef := getTableNamePrefix(b.Schema, "delete", field.Field)
 	deleteQuery, err := b.buildDelete(tableDef, field)
 	if err != nil {
@@ -103,7 +103,7 @@ func (b Builder) Delete(field builders2.Field) (string, []interface{}, error) {
 	return sql, args, err
 }
 
-func (b Builder) Query(field builders2.Field) (string, []interface{}, error) {
+func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 	query, err := b.buildQuery(getTableNameFromField(b.Schema, field.Definition), field)
 	if err != nil {
 		return "", nil, err
@@ -113,7 +113,7 @@ func (b Builder) Query(field builders2.Field) (string, []interface{}, error) {
 	return q, args, err
 }
 
-func (b Builder) Aggregate(field builders2.Field) (string, []interface{}, error) {
+func (b Builder) Aggregate(field builders.Field) (string, []interface{}, error) {
 	query, err := b.buildAggregate(getAggregateTableName(b.Schema, field.Field), field)
 	if err != nil {
 		return "", nil, err
@@ -130,7 +130,7 @@ func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface
 	return goqu.Dialect("postgres").Insert(table).Rows(kv).Prepared(true).Returning(goqu.Star()), nil
 }
 
-func (b Builder) buildDelete(tableDef tableDefinition, field builders2.Field) (*goqu.DeleteDataset, error) {
+func (b Builder) buildDelete(tableDef tableDefinition, field builders.Field) (*goqu.DeleteDataset, error) {
 	b.Logger.Debug("building delete", "tableDefinition", tableDef.name)
 	filterArg, ok := field.Arguments["filter"]
 	q := goqu.Dialect("postgres").Delete(tableDef.TableExpression()).Returning(goqu.Star())
@@ -146,7 +146,7 @@ func (b Builder) buildDelete(tableDef tableDefinition, field builders2.Field) (*
 	return q.Where(filterExp), nil
 }
 
-func (b Builder) buildQuery(tableDef tableDefinition, field builders2.Field) (*queryHelper, error) {
+func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {
 	b.Logger.Debug("building query", map[string]interface{}{"tableDefinition": tableDef.name})
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
@@ -160,15 +160,15 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders2.Field) (*q
 		}
 		fieldsAdded[childField.Name] = struct{}{}
 		switch childField.FieldType {
-		case builders2.TypeScalar:
+		case builders.TypeScalar:
 			b.Logger.Debug("adding field", "tableDefinition", tableDef.name, "fieldName", childField.Name)
 			query.selects = append(query.selects, column{table: query.alias, name: strcase.ToSnake(childField.Name), alias: childField.Name})
-		case builders2.TypeRelation:
+		case builders.TypeRelation:
 			b.Logger.Debug("adding relation field", "tableDefinition", tableDef.name, "fieldName", childField.Name)
 			if err := b.buildRelation(&query, childField); err != nil {
 				return nil, fmt.Errorf("failed to build relation for %s", childField.Name)
 			}
-		case builders2.TypeAggregate:
+		case builders.TypeAggregate:
 			if err := b.buildRelationAggregate(&query, childField); err != nil {
 				return nil, fmt.Errorf("failed to build relation for %s", childField.Name)
 			}
@@ -187,7 +187,7 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders2.Field) (*q
 	return &query, nil
 }
 
-func (b Builder) buildAggregate(tableDef tableDefinition, field builders2.Field) (*queryHelper, error) {
+func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {
 	b.Logger.Debug("building aggregate", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
@@ -219,29 +219,29 @@ func (b Builder) buildAggregate(tableDef tableDefinition, field builders2.Field)
 	return query, nil
 }
 
-func (b Builder) buildOrdering(query *queryHelper, field builders2.Field) {
+func (b Builder) buildOrdering(query *queryHelper, field builders.Field) {
 	orderBy, ok := field.Arguments["orderBy"]
 	if !ok {
 		return
 	}
-	orderFields, _ := builders2.CollectOrdering(orderBy)
+	orderFields, _ := builders.CollectOrdering(orderBy)
 
 	for _, o := range orderFields {
 		b.Logger.Debug("adding ordering", "tableDefinition", query.TableName(), "field", o.Key, "orderType", o.Type)
 		switch o.Type {
-		case builders2.OrderingTypesAsc:
+		case builders.OrderingTypesAsc:
 			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Asc().NullsLast())
-		case builders2.OrderingTypesAscNull:
+		case builders.OrderingTypesAscNull:
 			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Asc().NullsFirst())
-		case builders2.OrderingTypesDesc:
+		case builders.OrderingTypesDesc:
 			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Desc().NullsLast())
-		case builders2.OrderingTypesDescNull:
+		case builders.OrderingTypesDescNull:
 			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Desc().NullsFirst())
 		}
 	}
 }
 
-func (b Builder) buildPagination(query *queryHelper, field builders2.Field) {
+func (b Builder) buildPagination(query *queryHelper, field builders.Field) {
 
 	if limit, ok := field.Arguments["limit"]; ok {
 		b.Logger.Debug("adding pagination limit", "tableDefinition", query.TableName(), "limit", limit)
@@ -254,7 +254,7 @@ func (b Builder) buildPagination(query *queryHelper, field builders2.Field) {
 
 }
 
-func (b Builder) buildFiltering(query *queryHelper, field builders2.Field) error {
+func (b Builder) buildFiltering(query *queryHelper, field builders.Field) error {
 	filterArg, ok := field.Arguments["filter"]
 	if !ok {
 		return nil
@@ -268,7 +268,7 @@ func (b Builder) buildFiltering(query *queryHelper, field builders2.Field) error
 	return nil
 }
 
-func (b Builder) buildFilterLogicalExp(table tableHelper, field builders2.Field, filtersList []interface{}, logicalType exp.ExpressionListType) (goqu.Expression, error) {
+func (b Builder) buildFilterLogicalExp(table tableHelper, field builders.Field, filtersList []interface{}, logicalType exp.ExpressionListType) (goqu.Expression, error) {
 
 	expBuilder := exp.NewExpressionList(logicalType)
 	for _, filterValue := range filtersList {
@@ -285,7 +285,7 @@ func (b Builder) buildFilterLogicalExp(table tableHelper, field builders2.Field,
 	return expBuilder, nil
 }
 
-func (b Builder) getFilterExp(field builders2.Field) *ast.Definition {
+func (b Builder) getFilterExp(field builders.Field) *ast.Definition {
 	if field.Definition == nil {
 		return b.Schema.Types[fmt.Sprintf("%sFilterInput", field.GetTypeName())]
 	}
@@ -296,7 +296,7 @@ func (b Builder) getFilterExp(field builders2.Field) *ast.Definition {
 	return b.Schema.Types[filterArgDef.Type.Name()]
 }
 
-func (b Builder) buildFilterExp(table tableHelper, field builders2.Field, filters map[string]interface{}) (goqu.Expression, error) {
+func (b Builder) buildFilterExp(table tableHelper, field builders.Field, filters map[string]interface{}) (goqu.Expression, error) {
 	filterInputDef := b.getFilterExp(field)
 
 	expBuilder := exp.NewExpressionList(exp.AndType)
@@ -366,7 +366,7 @@ func (b Builder) Operation(table exp.AliasedExpression, fieldName, operatorName 
 	return opFunc(table, strcase.ToSnake(fieldName), value), nil
 }
 
-func (b Builder) buildRelation(parentQuery *queryHelper, rf builders2.Field) error {
+func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) error {
 
 	tableDef := getTableNameFromField(b.Schema, rf.Definition)
 	relationQuery, err := b.buildQuery(tableDef, rf)
@@ -415,7 +415,7 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders2.Field) err
 	return nil
 }
 
-func (b Builder) buildRelationAggregate(parentQuery *queryHelper, rf builders2.Field) error {
+func (b Builder) buildRelationAggregate(parentQuery *queryHelper, rf builders.Field) error {
 	// Build aggregate query
 	aggQuery, err := b.buildAggregate(getAggregateTableName(b.Schema, rf.Field), rf)
 	if err != nil {
@@ -443,7 +443,7 @@ func (b Builder) buildRelationAggregate(parentQuery *queryHelper, rf builders2.F
 	return nil
 }
 
-func (b Builder) buildFilterQuery(parentTable tableHelper, rf builders2.Field, rel relation, filters map[string]interface{}) (*queryHelper, error) {
+func (b Builder) buildFilterQuery(parentTable tableHelper, rf builders.Field, rel relation, filters map[string]interface{}) (*queryHelper, error) {
 
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := goqu.T(rel.referenceTable).As(tableAlias)

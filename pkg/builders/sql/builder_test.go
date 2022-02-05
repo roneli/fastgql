@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	builders2 "github.com/roneli/fastgql/pkg/builders"
+	"github.com/roneli/fastgql/pkg/builders"
 	"github.com/roneli/fastgql/pkg/builders/sql"
 	"github.com/roneli/fastgql/pkg/schema"
 
@@ -91,7 +91,7 @@ func TestBuilder_Query(t *testing.T) {
 	_ = os.Chdir("/testdata")
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			builderTester(t, testCase, func(b sql.Builder, f builders2.Field) (string, []interface{}, error) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
 				return b.Query(f)
 			})
 		})
@@ -120,7 +120,7 @@ func TestBuilder_Insert(t *testing.T) {
 	_ = os.Chdir("/testdata")
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			builderTester(t, testCase, func(b sql.Builder, f builders2.Field) (string, []interface{}, error) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
 				return b.Create(f)
 			})
 		})
@@ -149,7 +149,7 @@ func TestBuilder_Delete(t *testing.T) {
 	_ = os.Chdir("/testdata")
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			builderTester(t, testCase, func(b sql.Builder, f builders2.Field) (string, []interface{}, error) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
 				return b.Delete(f)
 			})
 		})
@@ -158,7 +158,7 @@ func TestBuilder_Delete(t *testing.T) {
 
 }
 
-func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders2.Field) (string, []interface{}, error)) {
+func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders.Field) (string, []interface{}, error)) {
 	fs := afero.NewOsFs()
 	data, err := afero.ReadFile(fs, testCase.SchemaFile)
 	assert.Nil(t, err)
@@ -173,7 +173,7 @@ func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Bui
 	augmentedSchema, err := gqlparser.LoadSchema(src)
 	assert.Nil(t, err)
 
-	builder := sql.NewBuilder(&builders2.Config{
+	builder := sql.NewBuilder(&builders.Config{
 		Schema:             augmentedSchema,
 		Logger:             nil,
 		TableNameGenerator: &TestTableNameGenerator{},
@@ -184,7 +184,7 @@ func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Bui
 	assert.Nil(t, errs)
 	def := doc.Operations.ForName("")
 	sel := def.SelectionSet[0].(*ast.Field)
-	field := builders2.CollectFromQuery(sel, doc, make(map[string]interface{}), sel.ArgumentMap(nil))
+	field := builders.CollectFromQuery(sel, doc, make(map[string]interface{}), sel.ArgumentMap(nil))
 	query, args, err := caller(builder, field)
 	assert.Nil(t, err)
 	if testCase.ExpectedArguments == nil {
