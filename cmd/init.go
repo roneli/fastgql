@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	_ "embed"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -161,7 +162,7 @@ func initFastgqlSchema() error {
 		return fmt.Errorf("unable to create schema dir: " + err.Error())
 	}
 
-	if err := ioutil.WriteFile("graph/fastgql.graphql", []byte(strings.TrimSpace(schema.FastgqlSchema)), 0644); err != nil {
+	if err := ioutil.WriteFile("graph/fastgql.graphql", []byte(strings.TrimSpace(schema.FastGQLSchema)), 0644); err != nil {
 		return fmt.Errorf("unable to write schema file: " + err.Error())
 	}
 	return nil

@@ -13,6 +13,51 @@ import (
 	"github.com/roneli/fastgql/example/movie/graph/model"
 )
 
+func (r *movieResolver) Actors(ctx context.Context, obj *model.Movie, limit *int, offset *int, orderBy []*model.ActorOrdering, filter *model.ActorFilterInput) ([]*model.Actor, error) {
+
+	builder := sql.NewBuilder(r.Cfg)
+
+	q, args, err := builder.Query(builders.CollectFields(ctx))
+
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Executor.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var data []*model.Actor
+	if err := pgxscan.ScanAll(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
+
+}
+func (r *movieResolver) ActorsAggregate(ctx context.Context, obj *model.Movie) (*model.ActorsAggregate, error) {
+
+	builder := sql.NewBuilder(r.Cfg)
+
+	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
+
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Executor.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var data *model.ActorsAggregate
+	if err := pgxscan.ScanOne(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
+
+}
+func (r *queryResolver) Movie(ctx context.Context) (*model.Movie, error) {
+	return &model.Movie{}, nil
+}
 func (r *queryResolver) Actors(ctx context.Context, limit *int, offset *int, orderBy []*model.ActorOrdering, filter *model.ActorFilterInput) ([]*model.Actor, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
@@ -70,7 +115,7 @@ func (r *queryResolver) Language(ctx context.Context, limit *int, offset *int, o
 	}
 	return data, nil
 }
-func (r *queryResolver) ActorsAggregate(ctx context.Context, filter *model.ActorFilterInput) (*model.ActorsAggregate, error) {
+func (r *queryResolver) ActorsAggregate(ctx context.Context) (*model.ActorsAggregate, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
@@ -89,7 +134,7 @@ func (r *queryResolver) ActorsAggregate(ctx context.Context, filter *model.Actor
 	}
 	return data, nil
 }
-func (r *queryResolver) FilmsAggregate(ctx context.Context, filter *model.FilmFilterInput) (*model.FilmsAggregate, error) {
+func (r *queryResolver) FilmsAggregate(ctx context.Context) (*model.FilmsAggregate, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
@@ -108,7 +153,7 @@ func (r *queryResolver) FilmsAggregate(ctx context.Context, filter *model.FilmFi
 	}
 	return data, nil
 }
-func (r *queryResolver) LanguageAggregate(ctx context.Context, filter *model.LanguageFilterInput) (*model.LanguagesAggregate, error) {
+func (r *queryResolver) LanguageAggregate(ctx context.Context) (*model.LanguagesAggregate, error) {
 	builder := sql.NewBuilder(r.Cfg)
 
 	q, args, err := builder.Aggregate(builders.CollectFields(ctx))
@@ -128,7 +173,11 @@ func (r *queryResolver) LanguageAggregate(ctx context.Context, filter *model.Lan
 	return data, nil
 }
 
+// Movie returns generated.MovieResolver implementation.
+func (r *Resolver) Movie() generated.MovieResolver { return &movieResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+type movieResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
