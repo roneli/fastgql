@@ -12,8 +12,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-type Aggregation struct {
-}
+type Aggregation struct{}
 
 func (a Aggregation) DirectiveName() string {
 	return "generate"

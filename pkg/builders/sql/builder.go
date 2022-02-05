@@ -60,7 +60,6 @@ func NewBuilder(config *builders.Config) Builder {
 }
 
 func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
-
 	tableDef := getTableNamePrefix(b.Schema, "create", field.Field)
 	input, ok := field.Arguments[builders.InputFieldName]
 	if !ok {
@@ -83,6 +82,35 @@ func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 		return "", nil, errors.New("failed to build payload query")
 	}
 	withTable := goqu.T(b.CaseConverter(field.Name))
+
+	sql, args, err := goqu.Select(queryHelper.SelectJsonAgg(dataField.Name),
+		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), insert).ToSQL()
+	return sql, args, err
+}
+
+func (b Builder) Update(field builders.Field) (string, []interface{}, error) {
+	tableDef := getTableNamePrefix(b.Schema, "update", field.Field)
+	input, ok := field.Arguments[builders.InputFieldName]
+	if !ok {
+		return "", nil, errors.New("missing input argument for create")
+	}
+	kv, err := getInputValues(input)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to get input values: %w", err)
+	}
+	insert, err := b.buildUpdate(tableDef, kv)
+	if err != nil {
+		return "", nil, err
+	}
+	dataField := field.ForName(tableDef.name)
+	queryHelper, err := b.buildQuery(tableDefinition{
+		name:   strcase.ToSnake(field.Name),
+		schema: "",
+	}, dataField)
+	if err != nil {
+		return "", nil, errors.New("failed to build payload query")
+	}
+	withTable := goqu.T(strcase.ToSnake(field.Name))
 
 	sql, args, err := goqu.Select(queryHelper.SelectJsonAgg(dataField.Name),
 		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), insert).ToSQL()
@@ -134,6 +162,13 @@ func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
 	return goqu.Dialect("postgres").Insert(table).Rows(kv).Prepared(true).Returning(goqu.Star()), nil
+}
+
+func (b Builder) buildUpdate(tableDef tableDefinition, kv []map[string]interface{}) (*goqu.UpdateDataset, error) {
+	b.Logger.Debug("building update", "tableDefinition", tableDef.name)
+	tableAlias := b.TableNameGenerator.Generate(6)
+	table := tableDef.TableExpression().As(tableAlias)
+	return goqu.Dialect("postgres").Update(table).Set(kv).Prepared(true).Returning(goqu.Star()), nil
 }
 
 func (b Builder) buildDelete(tableDef tableDefinition, field builders.Field) (*goqu.DeleteDataset, error) {

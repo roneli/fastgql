@@ -7,7 +7,7 @@ directive @generateFilterInput(name: String!, description: String) on OBJECT | I
 # Generate arguments for a given field or all object fields
 directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean) on OBJECT
 
-directive @generateMutations(create: Boolean = True, delete: Boolean = True) on OBJECT
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 
 enum _relationType {
     ONE_TO_ONE

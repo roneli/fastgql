@@ -60,6 +60,7 @@ type (
 	MutationBuilder interface {
 		Create(field Field) (string, []interface{}, error)
 		Delete(field Field) (string, []interface{}, error)
+		Update(field Field) (string, []interface{}, error)
 	}
 
 	TableNameGenerator interface {
