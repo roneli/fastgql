@@ -25,7 +25,7 @@
 realtime GraphQL APIs over Postgres.
 
 - **fastgql is based on a Schema first approach** — You get to Define your API using the GraphQL [Schema Definition Language](http://graphql.org/learn/schema/).
-- **fastgql prioritizes extendability** — You can modify resolvers, and your own custom operators and even your own database query builder.
+- **fastgql prioritizes extendability** — You can modify resolvers, add your own custom operators and even create your own database query builder.
 - **fastgql enables codegen** — We generate even more of the boring CRUD bits, so you can focus on building your app even faster!
 
 
