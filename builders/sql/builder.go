@@ -108,7 +108,7 @@ func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 		return "", nil, err
 	}
 	q, args, err := query.SelectRow(true).ToSQL()
-	b.Logger.Debug("created query", map[string]interface{}{"query": q, "args": args, "err": err})
+	b.Logger.Debug("created query", "query", q, "args", args, "error", err)
 	return q, args, err
 }
 
@@ -118,19 +118,19 @@ func (b Builder) Aggregate(field builders.Field) (string, []interface{}, error) 
 		return "", nil, err
 	}
 	sql, args, err := query.ToSQL()
-	b.Logger.Debug("build aggregate query", map[string]interface{}{"query": sql, "args": args, "error": err})
+	b.Logger.Debug("build aggregate query", "query", sql, "args", args, "error", err)
 	return sql, args, err
 }
 
 func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface{}) (*goqu.InsertDataset, error) {
-	b.Logger.Debug("building insert", map[string]interface{}{"tableDefinition": tableDef.name})
+	b.Logger.Debug("building insert", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
 	return goqu.Dialect("postgres").Insert(table).Rows(kv).Prepared(true).Returning(goqu.Star()), nil
 }
 
 func (b Builder) buildDelete(tableDef tableDefinition, field builders.Field) (*goqu.DeleteDataset, error) {
-	b.Logger.Debug("building delete", map[string]interface{}{"tableDefinition": tableDef.name})
+	b.Logger.Debug("building delete", "tableDefinition", tableDef.name)
 	filterArg, ok := field.Arguments["filter"]
 	q := goqu.Dialect("postgres").Delete(tableDef.TableExpression()).Returning(goqu.Star())
 	if !ok {
@@ -160,10 +160,10 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 		fieldsAdded[childField.Name] = struct{}{}
 		switch childField.FieldType {
 		case builders.TypeScalar:
-			b.Logger.Debug("adding field", map[string]interface{}{"tableDefinition": tableDef.name, "fieldName": childField.Name})
+			b.Logger.Debug("adding field", "tableDefinition", tableDef.name, "fieldName", childField.Name)
 			query.selects = append(query.selects, column{table: query.alias, name: strcase.ToSnake(childField.Name), alias: childField.Name})
 		case builders.TypeRelation:
-			b.Logger.Debug("adding relation field", map[string]interface{}{"tableDefinition": tableDef.name, "fieldName": childField.Name})
+			b.Logger.Debug("adding relation field", "tableDefinition", tableDef.name, "fieldName", childField.Name)
 			if err := b.buildRelation(&query, childField); err != nil {
 				return nil, fmt.Errorf("failed to build relation for %s", childField.Name)
 			}
@@ -173,7 +173,7 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 			}
 
 		default:
-			b.Logger.Error("unknown field type", map[string]interface{}{"tableDefinition": tableDef.name, "fieldName": childField.Name, "fieldType": childField.FieldType})
+			b.Logger.Error("unknown field type", "tableDefinition", tableDef.name, "fieldName", childField.Name, "fieldType", childField.FieldType)
 			panic("unknown field type")
 		}
 	}
@@ -187,7 +187,7 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 }
 
 func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {
-	b.Logger.Debug("building aggregate", map[string]interface{}{"tableDefinition": tableDef.name})
+	b.Logger.Debug("building aggregate", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
 	query := &queryHelper{goqu.From(table), table, tableAlias, nil}
@@ -226,7 +226,7 @@ func (b Builder) buildOrdering(query *queryHelper, field builders.Field) {
 	orderFields, _ := builders.CollectOrdering(orderBy)
 
 	for _, o := range orderFields {
-		b.Logger.Debug("adding ordering", map[string]interface{}{"tableDefinition": query.TableName(), "field": o.Key, "orderType": o.Type})
+		b.Logger.Debug("adding ordering", "tableDefinition", query.TableName(), "field", o.Key, "orderType", o.Type)
 		switch o.Type {
 		case builders.OrderingTypesAsc:
 			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Asc().NullsLast())
@@ -243,11 +243,11 @@ func (b Builder) buildOrdering(query *queryHelper, field builders.Field) {
 func (b Builder) buildPagination(query *queryHelper, field builders.Field) {
 
 	if limit, ok := field.Arguments["limit"]; ok {
-		b.Logger.Debug("adding pagination limit", map[string]interface{}{"tableDefinition": query.TableName(), "limit": limit})
+		b.Logger.Debug("adding pagination limit", "tableDefinition", query.TableName(), "limit", limit)
 		query.SelectDataset = query.Limit(cast.ToUint(limit))
 	}
 	if offset, ok := field.Arguments["offset"]; ok {
-		b.Logger.Debug("adding pagination offset", map[string]interface{}{"tableDefinition": query.TableName(), "offset": offset})
+		b.Logger.Debug("adding pagination offset", "tableDefinition", query.TableName(), "offset", offset)
 		query.SelectDataset = query.Offset(cast.ToUint(offset))
 	}
 
