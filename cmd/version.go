@@ -3,7 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/roneli/fastgql/schema"
+	"github.com/roneli/fastgql/pkg/schema"
+
 	"github.com/spf13/cobra"
 )
 

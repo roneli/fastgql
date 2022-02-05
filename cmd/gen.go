@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/roneli/fastgql/schema"
+	"github.com/roneli/fastgql/pkg/schema"
+
 	"github.com/spf13/cobra"
 )
 
