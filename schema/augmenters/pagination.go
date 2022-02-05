@@ -32,18 +32,16 @@ func (p Pagination) Augment(s *ast.Schema) error {
 
 func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
-		if strings.HasPrefix(f.Name, "__") {
-			continue
-		}
-		if !gql.IsListType(f.Type) {
-			continue
-		}
-
-		if t := gql.GetType(f.Type); t.NamedType == "String" {
+		// avoid recurse
+		if strings.HasPrefix(f.Name, "__") || f.Arguments.ForName("limit") != nil || f.Arguments.ForName("offset") != nil {
 			continue
 		}
 
-		if f.Arguments.ForName("limit") != nil || f.Arguments.ForName("offset") != nil {
+		fieldType := s.Types[f.Type.Name()]
+		if gql.IsScalarListType(s, f.Type) || !gql.IsListType(f.Type) {
+			if recursive && fieldType.IsCompositeType() {
+				p.addPagination(s, fieldType, recursive)
+			}
 			continue
 		}
 
@@ -60,13 +58,8 @@ func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, recursive 
 				Type:         &ast.Type{NamedType: "Int"},
 			},
 		)
-		if !recursive {
-			continue
+		if recursive && fieldType.IsCompositeType() {
+			p.addPagination(s, fieldType, recursive)
 		}
-		fieldType := s.Types[f.Type.Name()]
-		if !fieldType.IsCompositeType() {
-			continue
-		}
-		p.addPagination(s, fieldType, recursive)
 	}
 }

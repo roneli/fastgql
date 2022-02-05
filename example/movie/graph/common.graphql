@@ -5,7 +5,7 @@ directive @tableName(name: String!, schema: String) on OBJECT | INTERFACE
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 
 # Generate arguments for a given field or all object fields
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on OBJECT
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean) on OBJECT
 
 directive @generateMutations(create: Boolean = True, delete: Boolean = True) on OBJECT
 
@@ -19,6 +19,7 @@ directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTabl
     references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 
 directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
+
 
 enum _OrderingTypes {
     ASC

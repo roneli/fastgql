@@ -88,9 +88,10 @@ type Category struct {
 }
 
 type CategoryFilterInput struct {
-	Category   *CategoryFilterInput `json:"category" db:"category"`
-	Film       *FilmFilterInput     `json:"film" db:"film"`
-	LastUpdate *StringComparator    `json:"lastUpdate" db:"lastUpdate"`
+	CategoryID *IntComparator    `json:"categoryId" db:"categoryId"`
+	Name       *StringComparator `json:"name" db:"name"`
+	LastUpdate *StringComparator `json:"lastUpdate" db:"lastUpdate"`
+	Films      *FilmFilterInput  `json:"films" db:"films"`
 	// Logical AND of FilterInput
 	And []*CategoryFilterInput `json:"AND" db:"AND"`
 	// Logical OR of FilterInput
@@ -296,6 +297,13 @@ type LanguagesAggregate struct {
 	Max *LanguageMin `json:"max" db:"max"`
 	// Computes the minimum of the non-null input values.
 	Min *LanguageMin `json:"min" db:"min"`
+}
+
+// Wrapper objects don't do anything that act like query
+type Movie struct {
+	Actors []*Actor `json:"actors" db:"actors"`
+	// actors Aggregate
+	ActorsAggregate *ActorsAggregate `json:"_actorsAggregate" db:"_actorsAggregate"`
 }
 
 type StringComparator struct {

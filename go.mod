@@ -10,15 +10,15 @@ require (
 	github.com/jackc/pgx/v4 v4.10.1
 	github.com/jinzhu/inflection v1.0.0
 	github.com/pkg/errors v0.9.1
-	github.com/rs/zerolog v1.15.0
+	github.com/rs/zerolog v1.26.0
 	github.com/spf13/afero v1.6.0
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.2.1
 	github.com/stretchr/testify v1.7.0
 	github.com/vektah/gqlparser/v2 v2.3.1
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
-	golang.org/x/tools v0.1.5
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
+	golang.org/x/tools v0.1.7
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 

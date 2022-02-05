@@ -23,7 +23,10 @@ func New() plugin.Plugin {
 	return &Plugin{}
 }
 
-const defaultImpl = `panic(fmt.Errorf("not implemented"))`
+const (
+	defaultImpl = `panic(fmt.Errorf("not implemented"))`
+	wrapperImpl = `return &{{.Field.TypeReference.GO | deref}}{}, nil`
+)
 
 type Plugin struct{}
 
@@ -199,16 +202,29 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 		return buf, nil
 	}
 
+	baseFuncs := templates.Funcs()
+	baseFuncs["hasSuffix"] = strings.HasSuffix
+	baseFuncs["hasPrefix"] = strings.HasPrefix
+	baseFuncs["deref"] = deref
+
+	if d := resolver.Field.FieldDefinition.Directives.ForName("generate"); d != nil {
+		if v := d.Arguments.ForName("wrapper"); v != nil && cast.ToBool(v.Value.Raw) {
+			t, err := template.New("").Funcs(baseFuncs).Parse(wrapperImpl)
+			if err != nil {
+				return buf, err
+			}
+
+			return buf, t.Execute(buf, resolver)
+		}
+	}
+
 	if d := resolver.Field.FieldDefinition.Directives.ForName("skipGenerate"); d != nil {
 		if v := d.Definition.Arguments.ForName("resolver"); v != nil && cast.ToBool(v.DefaultValue.Raw) {
 			buf.WriteString(`panic(fmt.Errorf("not implemented"))`)
 			return buf, nil
 		}
 	}
-	baseFuncs := templates.Funcs()
-	baseFuncs["hasSuffix"] = strings.HasSuffix
-	baseFuncs["hasPrefix"] = strings.HasPrefix
-	baseFuncs["deref"] = deref
+
 	t := template.New("").Funcs(baseFuncs)
 	fileName := resolveName("sql.tpl", 0)
 

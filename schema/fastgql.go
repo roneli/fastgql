@@ -2,6 +2,7 @@ package schema
 
 import (
 	"bytes"
+	_ "embed"
 
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
@@ -14,19 +15,45 @@ import (
 	"github.com/vektah/gqlparser/v2/formatter"
 )
 
+//go:embed fastgql.graphql
+var FastGQLSchema string
+
 type FastGqlPlugin struct{}
 
 func (f FastGqlPlugin) Name() string {
 	return "fastGQLPlugin"
 }
 
-func (f FastGqlPlugin) MutateConfig(cfg *config.Config) error {
-	cfg.Directives["generateArguments"] = config.DirectiveConfig{SkipRuntime: true}
-	cfg.Directives["generateFilterInput"] = config.DirectiveConfig{SkipRuntime: true}
-	cfg.Directives["sqlRelation"] = config.DirectiveConfig{SkipRuntime: true}
-	cfg.Directives["tableName"] = config.DirectiveConfig{SkipRuntime: true}
-	cfg.Directives["generateMutations"] = config.DirectiveConfig{SkipRuntime: true}
-	cfg.Directives["generate"] = config.DirectiveConfig{SkipRuntime: true}
+func (f FastGqlPlugin) MutateConfig(c *config.Config) error {
+	c.Directives["generateArguments"] = config.DirectiveConfig{SkipRuntime: true}
+	c.Directives["generateFilterInput"] = config.DirectiveConfig{SkipRuntime: true}
+	c.Directives["sqlRelation"] = config.DirectiveConfig{SkipRuntime: true}
+	c.Directives["tableName"] = config.DirectiveConfig{SkipRuntime: true}
+	c.Directives["generateMutations"] = config.DirectiveConfig{SkipRuntime: true}
+	c.Directives["generate"] = config.DirectiveConfig{SkipRuntime: true}
+
+	for _, schemaType := range c.Schema.Types {
+		if schemaType == c.Schema.Query || schemaType == c.Schema.Mutation || schemaType == c.Schema.Subscription {
+			continue
+		}
+		if rg := schemaType.Directives.ForName("generate"); rg != nil {
+			for _, f := range schemaType.Fields {
+				if c.Models[schemaType.Name].Fields == nil {
+					c.Models[schemaType.Name] = config.TypeMapEntry{
+						Model:  c.Models[schemaType.Name].Model,
+						Fields: map[string]config.TypeMapField{},
+					}
+				}
+
+				c.Models[schemaType.Name].Fields[f.Name] = config.TypeMapField{
+					FieldName: f.Name,
+					Resolver:  true,
+				}
+			}
+		}
+
+	}
+
 	return nil
 }
 

@@ -32,17 +32,19 @@ func (o Ordering) Augment(s *ast.Schema) error {
 
 func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
-
-		if f.Arguments.ForName("orderBy") != nil {
+		// avoid recurse and adding to internal objects
+		if strings.HasPrefix(f.Name, "__") || f.Arguments.ForName("orderBy") != nil {
 			continue
 		}
 
-		if strings.HasPrefix(f.Name, "__") {
+		fieldType := s.Types[f.Type.Name()]
+		if gql.IsScalarListType(s, f.Type) || !gql.IsListType(f.Type) {
+			if recursive && fieldType.IsCompositeType() {
+				o.addOrdering(s, fieldType, recursive)
+			}
 			continue
 		}
-		if !gql.IsListType(f.Type) {
-			continue
-		}
+
 		t := gql.GetType(f.Type)
 		fieldDef, ok := s.Types[t.Name()]
 		if !ok {
@@ -63,16 +65,9 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool
 				Type:        &ast.Type{Elem: &ast.Type{NamedType: orderDef.Name}},
 			},
 		)
-
-		if !recursive {
-			continue
+		if recursive && fieldType.IsCompositeType() {
+			o.addOrdering(s, fieldType, recursive)
 		}
-		fieldType := s.Types[f.Type.Name()]
-		if !fieldType.IsCompositeType() {
-			continue
-		}
-		o.addOrdering(s, fieldType, recursive)
-
 	}
 }
 
