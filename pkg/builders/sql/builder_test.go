@@ -9,16 +9,12 @@ import (
 	"github.com/roneli/fastgql/pkg/builders/sql"
 	"github.com/roneli/fastgql/pkg/schema"
 
-	"github.com/vektah/gqlparser/v2/validator"
-
-	"github.com/vektah/gqlparser/v2/parser"
-
-	"github.com/vektah/gqlparser/v2"
-
 	"github.com/spf13/afero"
-	"github.com/vektah/gqlparser/v2/ast"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/vektah/gqlparser/v2"
+	"github.com/vektah/gqlparser/v2/ast"
+	"github.com/vektah/gqlparser/v2/parser"
+	"github.com/vektah/gqlparser/v2/validator"
 )
 
 type TestBuilderCase struct {
