@@ -84,15 +84,15 @@ func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 
 func (b Builder) Update(field builders.Field) (string, []interface{}, error) {
 	tableDef := getTableNamePrefix(b.Schema, "update", field.Field)
-	input, ok := field.Arguments[builders.InputFieldName]
+	input, ok := field.Arguments["input"]
 	if !ok {
-		return "", nil, errors.New("missing input argument for create")
+		return "", nil, errors.New("missing input argument for update")
 	}
 	kv, err := getInputValues(input)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get input values: %w", err)
 	}
-	insert, err := b.buildUpdate(tableDef, kv)
+	update, err := b.buildUpdate(tableDef, kv[0])
 	if err != nil {
 		return "", nil, err
 	}
@@ -107,7 +107,7 @@ func (b Builder) Update(field builders.Field) (string, []interface{}, error) {
 	withTable := goqu.T(strcase.ToSnake(field.Name))
 
 	sql, args, err := goqu.Select(queryHelper.SelectJsonAgg(dataField.Name),
-		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), insert).ToSQL()
+		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), update).ToSQL()
 	return sql, args, err
 }
 
@@ -158,7 +158,7 @@ func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface
 	return goqu.Dialect("postgres").Insert(table).Rows(kv).Prepared(true).Returning(goqu.Star()), nil
 }
 
-func (b Builder) buildUpdate(tableDef tableDefinition, kv []map[string]interface{}) (*goqu.UpdateDataset, error) {
+func (b Builder) buildUpdate(tableDef tableDefinition, kv map[string]interface{}) (*goqu.UpdateDataset, error) {
 	b.Logger.Debug("building update", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)

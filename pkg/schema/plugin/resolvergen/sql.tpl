@@ -7,8 +7,9 @@ builder := sql.NewBuilder(r.Cfg)
 {{- else if hasPrefix .Field.Name "create" }}
     q, args, err := builder.Create(builders.CollectFields(ctx))
 {{- else if hasPrefix .Field.Name "delete" }}
+    q, args, err := builder.Delete(builders.CollectFields(ctx))
+{{- else if hasPrefix .Field.Name "update" }}
     q, args, err := builder.Update(builders.CollectFields(ctx))
-{{- else if hasPrefix .Field.Name "delete" }}
 {{- else}}
     q, args, err := builder.Query(builders.CollectFields(ctx))
 {{end}}
