@@ -52,6 +52,7 @@ func (r *movieResolver) ActorsAggregate(ctx context.Context, obj *model.Movie) (
 
 }
 func (r *mutationResolver) CreateActors(ctx context.Context, inputs []model.CreateActorInput) (*model.ActorsPayload, error) {
+
 	builder := sql.NewBuilder(r.Cfg)
 	q, args, err := builder.Create(builders.CollectFields(ctx))
 	if err != nil {
@@ -66,10 +67,12 @@ func (r *mutationResolver) CreateActors(ctx context.Context, inputs []model.Crea
 		return nil, err
 	}
 	return &data, nil
+
 }
 func (r *mutationResolver) DeleteActors(ctx context.Context, cascade *bool, filter *model.ActorFilterInput) (*model.ActorsPayload, error) {
+
 	builder := sql.NewBuilder(r.Cfg)
-	q, args, err := builder.Update(builders.CollectFields(ctx))
+	q, args, err := builder.Delete(builders.CollectFields(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -82,11 +85,12 @@ func (r *mutationResolver) DeleteActors(ctx context.Context, cascade *bool, filt
 		return nil, err
 	}
 	return &data, nil
+
 }
 func (r *mutationResolver) UpdateActors(ctx context.Context, input model.UpdateActorInput, filter *model.ActorFilterInput) (*model.ActorsPayload, error) {
-	builder := sql.NewBuilder(r.Cfg)
-	q, args, err := builder.Query(builders.CollectFields(ctx))
 
+	builder := sql.NewBuilder(r.Cfg)
+	q, args, err := builder.Update(builders.CollectFields(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +104,27 @@ func (r *mutationResolver) UpdateActors(ctx context.Context, input model.UpdateA
 		return nil, err
 	}
 	return data, nil
+
 }
 func (r *queryResolver) Movie(ctx context.Context) (*model.Movie, error) {
-	return &model.Movie{}, nil
+
+	builder := sql.NewBuilder(r.Cfg)
+	q, args, err := builder.Query(builders.CollectFields(ctx))
+
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Executor.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var data *model.Movie
+	if err := pgxscan.ScanAll(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
+
 }
 func (r *queryResolver) Actors(ctx context.Context, limit *int, offset *int, orderBy []*model.ActorOrdering, filter *model.ActorFilterInput) ([]*model.Actor, error) {
 

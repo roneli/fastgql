@@ -1051,10 +1051,9 @@ type Category @tableName(name: "category", schema: "movies") @generateFilterInpu
 	): [Film] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
 }
 input CategoryFilterInput {
-	categoryId: IntComparator
-	name: StringComparator
+	category: CategoryFilterInput
+	film: FilmFilterInput
 	lastUpdate: StringComparator
-	films: FilmFilterInput
 	"""
 	Logical AND of FilterInput
 	"""
@@ -6315,19 +6314,19 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
-		case "categoryId":
+		case "category":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categoryId"))
-			it.CategoryID, err = ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			it.Category, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "name":
+		case "film":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("film"))
+			it.Film, err = ec.unmarshalOFilmFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐFilmFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6336,14 +6335,6 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastUpdate"))
 			it.LastUpdate, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStringComparator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "films":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("films"))
-			it.Films, err = ec.unmarshalOFilmFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐFilmFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
