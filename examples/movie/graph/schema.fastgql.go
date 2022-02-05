@@ -51,6 +51,56 @@ func (r *movieResolver) ActorsAggregate(ctx context.Context, obj *model.Movie) (
 	}
 	return data, nil
 }
+func (r *mutationResolver) CreateActors(ctx context.Context, inputs []model.CreateActorInput) (*model.ActorsPayload, error) {
+	builder := sql.NewBuilder(r.Cfg)
+	q, args, err := builder.Create(builders.CollectFields(ctx))
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Executor.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	var data model.ActorsPayload
+	if err := pgxscan.ScanOne(&data, rows); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+func (r *mutationResolver) DeleteActors(ctx context.Context, cascade *bool, filter *model.ActorFilterInput) (*model.ActorsPayload, error) {
+	builder := sql.NewBuilder(r.Cfg)
+	q, args, err := builder.Update(builders.CollectFields(ctx))
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Executor.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	var data model.ActorsPayload
+	if err := pgxscan.ScanOne(&data, rows); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+func (r *mutationResolver) UpdateActors(ctx context.Context, input model.UpdateActorInput, filter *model.ActorFilterInput) (*model.ActorsPayload, error) {
+	builder := sql.NewBuilder(r.Cfg)
+	q, args, err := builder.Query(builders.CollectFields(ctx))
+
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.Executor.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var data *model.ActorsPayload
+	if err := pgxscan.ScanAll(&data, rows); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
 func (r *queryResolver) Movie(ctx context.Context) (*model.Movie, error) {
 	return &model.Movie{}, nil
 }
@@ -172,8 +222,12 @@ func (r *queryResolver) LanguageAggregate(ctx context.Context) (*model.Languages
 // Movie returns generated.MovieResolver implementation.
 func (r *Resolver) Movie() generated.MovieResolver { return &movieResolver{r} }
 
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type movieResolver struct{ *Resolver }
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

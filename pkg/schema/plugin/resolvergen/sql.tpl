@@ -1,15 +1,15 @@
 {{ reserveImport "github.com/georgysavva/scany/pgxscan" }}
-{{ reserveImport "github.com/roneli/fastgql/builders" }}
-{{ reserveImport 	"github.com/roneli/fastgql/builders/sql" }}
-
+{{ reserveImport "github.com/roneli/fastgql/pkg/builders" }}
+{{ reserveImport 	"github.com/roneli/fastgql/pkg/builders/sql" }}
 builder := sql.NewBuilder(r.Cfg)
-{{ if hasSuffix .Field.Name "Aggregate" }}
+{{- if hasSuffix .Field.Name "Aggregate" }}
     q, args, err := builder.Aggregate(builders.CollectFields(ctx))
-{{ else if hasPrefix .Field.Name "create" }}
+{{- else if hasPrefix .Field.Name "create" }}
     q, args, err := builder.Create(builders.CollectFields(ctx))
-{{ else if hasPrefix .Field.Name "delete" }}
-    q, args, err := builder.Delete(builders.CollectFields(ctx))
-{{else}}
+{{- else if hasPrefix .Field.Name "delete" }}
+    q, args, err := builder.Update(builders.CollectFields(ctx))
+{{- else if hasPrefix .Field.Name "delete" }}
+{{- else}}
     q, args, err := builder.Query(builders.CollectFields(ctx))
 {{end}}
 if err != nil {

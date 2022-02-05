@@ -2,6 +2,7 @@ package augmenters
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/roneli/fastgql/pkg/schema/gql"
@@ -48,17 +49,17 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool
 
 		t := gql.GetType(f.Type)
 		fieldDef, ok := s.Types[t.Name()]
-		if !ok {
+		if !ok || !fieldDef.IsCompositeType() {
 			continue
 		}
-		if !fieldDef.IsCompositeType() {
-			continue
-		}
+
 		orderDef := o.buildOrderingEnum(s, fieldDef)
 		if orderDef == nil {
+			log.Printf("ordering for field %s@%s already exists skipping\n", f.Name, obj.Name)
 			continue
 		}
-		// Finally we can add the argument
+		log.Printf("adding ordering to field %s@%s\n", f.Name, obj.Name)
+		// Finally, we can add the argument
 		f.Arguments = append(f.Arguments,
 			&ast.ArgumentDefinition{
 				Description: orderDef.Description,
@@ -67,6 +68,7 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool
 			},
 		)
 		if recursive && fieldType.IsCompositeType() {
+			log.Printf("adding recursive ordering to field %s@%s\n", f.Name, obj.Name)
 			o.addOrdering(s, fieldType, recursive)
 		}
 	}
@@ -80,12 +82,14 @@ func (o Ordering) buildOrderingEnum(s *ast.Schema, obj *ast.Definition) *ast.Def
 		Name:        fmt.Sprintf("%sOrdering", obj.Name),
 	}
 
+	log.Printf("adding ordering for %s\n", obj.Name)
 	for _, f := range obj.Fields {
 		fieldDef := s.Types[f.Type.Name()]
 		// Ordering only supports first level ordering
 		if !fieldDef.IsLeafType() {
 			continue
 		}
+		log.Printf("adding order field %s for %s\n", f.Name, obj.Name)
 		orderInputDef.Fields = append(orderInputDef.Fields, &ast.FieldDefinition{
 			Description: fmt.Sprintf("Order %s by %s", obj.Name, f.Name),
 			Name:        f.Name,

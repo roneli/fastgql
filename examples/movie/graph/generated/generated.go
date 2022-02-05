@@ -36,6 +36,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Movie() MovieResolver
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -64,6 +65,11 @@ type ComplexityRoot struct {
 		Count func(childComplexity int) int
 		Max   func(childComplexity int) int
 		Min   func(childComplexity int) int
+	}
+
+	ActorsPayload struct {
+		Actors       func(childComplexity int) int
+		RowsAffected func(childComplexity int) int
 	}
 
 	Category struct {
@@ -152,6 +158,12 @@ type ComplexityRoot struct {
 		ActorsAggregate func(childComplexity int) int
 	}
 
+	Mutation struct {
+		CreateActors func(childComplexity int, inputs []model.CreateActorInput) int
+		DeleteActors func(childComplexity int, cascade *bool, filter *model.ActorFilterInput) int
+		UpdateActors func(childComplexity int, input model.UpdateActorInput, filter *model.ActorFilterInput) int
+	}
+
 	Query struct {
 		Actors            func(childComplexity int, limit *int, offset *int, orderBy []*model.ActorOrdering, filter *model.ActorFilterInput) int
 		ActorsAggregate   func(childComplexity int) int
@@ -170,6 +182,11 @@ type ComplexityRoot struct {
 type MovieResolver interface {
 	Actors(ctx context.Context, obj *model.Movie, limit *int, offset *int, orderBy []*model.ActorOrdering, filter *model.ActorFilterInput) ([]*model.Actor, error)
 	ActorsAggregate(ctx context.Context, obj *model.Movie) (*model.ActorsAggregate, error)
+}
+type MutationResolver interface {
+	CreateActors(ctx context.Context, inputs []model.CreateActorInput) (*model.ActorsPayload, error)
+	DeleteActors(ctx context.Context, cascade *bool, filter *model.ActorFilterInput) (*model.ActorsPayload, error)
+	UpdateActors(ctx context.Context, input model.UpdateActorInput, filter *model.ActorFilterInput) (*model.ActorsPayload, error)
 }
 type QueryResolver interface {
 	Movie(ctx context.Context) (*model.Movie, error)
@@ -291,6 +308,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActorsAggregate.Min(childComplexity), true
+
+	case "ActorsPayload.actors":
+		if e.complexity.ActorsPayload.Actors == nil {
+			break
+		}
+
+		return e.complexity.ActorsPayload.Actors(childComplexity), true
+
+	case "ActorsPayload.rows_affected":
+		if e.complexity.ActorsPayload.RowsAffected == nil {
+			break
+		}
+
+		return e.complexity.ActorsPayload.RowsAffected(childComplexity), true
 
 	case "Category.categoryId":
 		if e.complexity.Category.CategoryID == nil {
@@ -688,6 +719,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Movie.ActorsAggregate(childComplexity), true
 
+	case "Mutation.createActors":
+		if e.complexity.Mutation.CreateActors == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createActors_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateActors(childComplexity, args["inputs"].([]model.CreateActorInput)), true
+
+	case "Mutation.deleteActors":
+		if e.complexity.Mutation.DeleteActors == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteActors_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteActors(childComplexity, args["cascade"].(*bool), args["filter"].(*model.ActorFilterInput)), true
+
+	case "Mutation.updateActors":
+		if e.complexity.Mutation.UpdateActors == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateActors_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateActors(childComplexity, args["input"].(model.UpdateActorInput), args["filter"].(*model.ActorFilterInput)), true
+
 	case "Query.actors":
 		if e.complexity.Query.Actors == nil {
 			break
@@ -783,6 +850,20 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				Data: buf.Bytes(),
 			}
 		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
 
 	default:
 		return graphql.OneShot(graphql.ErrorResponse(ctx, "unsupported GraphQL operation"))
@@ -811,11 +892,11 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var sources = []*ast.Source{
 	{Name: "schema.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
-directive @generateMutations(create: Boolean = True, delete: Boolean = True) on OBJECT
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @tableName(name: String!, schema: String) on OBJECT | INTERFACE
-type Actor @tableName(name: "actor", schema: "movies") @generateFilterInput(name: "ActorFilterInput") {
+type Actor @tableName(name: "actor", schema: "movies") @generateFilterInput(name: "ActorFilterInput") @generateMutations {
 	actorId: Int!
 	firstName: String!
 	lastName: String!
@@ -923,6 +1004,16 @@ type ActorsAggregate {
 	Computes the minimum of the non-null input values.
 	"""
 	min: ActorMin
+}
+"""
+Autogenerated payload object
+"""
+type ActorsPayload {
+	"""
+	rows affection by mutation
+	"""
+	rows_affected: Int!
+	actors: [Actor]
 }
 input BooleanComparator {
 	eq: Boolean
@@ -1359,6 +1450,35 @@ type Movie @generate(recursive: true, wrapper: true) {
 	"""
 	_actorsAggregate: ActorsAggregate!
 }
+type Mutation {
+	"""
+	AutoGenerated input for Actor
+	"""
+	createActors(inputs: [CreateActorInput!]!): ActorsPayload
+	"""
+	AutoGenerated input for Actor
+	"""
+	deleteActors(
+		"""
+		cascade on delete
+		"""
+		cascade: Boolean
+	,
+		"""
+		Filter objects to delete
+		"""
+		filter: ActorFilterInput
+	): ActorsPayload
+	"""
+	AutoGenerated input for Actor
+	"""
+	updateActors(input: UpdateActorInput!,
+		"""
+		Filter objects to update
+		"""
+		filter: ActorFilterInput
+	): ActorsPayload
+}
 type Query @generate(recursive: true) {
 	movie: Movie
 	actors(
@@ -1467,6 +1587,24 @@ enum _relationType {
 	ONE_TO_ONE
 	ONE_TO_MANY
 	MANY_TO_MANY
+}
+"""
+AutoGenerated input for Actor
+"""
+input CreateActorInput {
+	actorId: Int!
+	firstName: String!
+	lastName: String!
+	lastUpdate: String!
+}
+"""
+AutoGenerated update input for Actor
+"""
+input UpdateActorInput {
+	actorId: Int
+	firstName: String
+	lastName: String
+	lastUpdate: String
 }
 `, BuiltIn: false},
 }
@@ -1722,6 +1860,69 @@ func (ec *executionContext) field_Movie_actors_args(ctx context.Context, rawArgs
 		}
 	}
 	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createActors_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []model.CreateActorInput
+	if tmp, ok := rawArgs["inputs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inputs"))
+		arg0, err = ec.unmarshalNCreateActorInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCreateActorInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inputs"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteActors_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *bool
+	if tmp, ok := rawArgs["cascade"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cascade"))
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["cascade"] = arg0
+	var arg1 *model.ActorFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg1, err = ec.unmarshalOActorFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateActors_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UpdateActorInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUpdateActorInput2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐUpdateActorInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	var arg1 *model.ActorFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg1, err = ec.unmarshalOActorFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg1
 	return args, nil
 }
 
@@ -2370,6 +2571,73 @@ func (ec *executionContext) _ActorsAggregate_min(ctx context.Context, field grap
 	res := resTmp.(*model.ActorMin)
 	fc.Result = res
 	return ec.marshalOActorMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorMin(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ActorsPayload_rows_affected(ctx context.Context, field graphql.CollectedField, obj *model.ActorsPayload) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ActorsPayload",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RowsAffected, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ActorsPayload_actors(ctx context.Context, field graphql.CollectedField, obj *model.ActorsPayload) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ActorsPayload",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Actors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Actor)
+	fc.Result = res
+	return ec.marshalOActor2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Category_categoryId(ctx context.Context, field graphql.CollectedField, obj *model.Category) (ret graphql.Marshaler) {
@@ -4220,6 +4488,123 @@ func (ec *executionContext) _Movie__actorsAggregate(ctx context.Context, field g
 	return ec.marshalNActorsAggregate2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorsAggregate(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_createActors(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createActors_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateActors(rctx, args["inputs"].([]model.CreateActorInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ActorsPayload)
+	fc.Result = res
+	return ec.marshalOActorsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorsPayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteActors(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteActors_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteActors(rctx, args["cascade"].(*bool), args["filter"].(*model.ActorFilterInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ActorsPayload)
+	fc.Result = res
+	return ec.marshalOActorsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorsPayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateActors(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateActors_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateActors(rctx, args["input"].(model.UpdateActorInput), args["filter"].(*model.ActorFilterInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ActorsPayload)
+	fc.Result = res
+	return ec.marshalOActorsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorsPayload(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_movie(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5992,6 +6377,53 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateActorInput(ctx context.Context, obj interface{}) (model.CreateActorInput, error) {
+	var it model.CreateActorInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "actorId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actorId"))
+			it.ActorID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "firstName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firstName"))
+			it.FirstName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+			it.LastName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastUpdate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastUpdate"))
+			it.LastUpdate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputFilmCategoryOrdering(ctx context.Context, obj interface{}) (model.FilmCategoryOrdering, error) {
 	var it model.FilmCategoryOrdering
 	asMap := map[string]interface{}{}
@@ -6607,6 +7039,53 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateActorInput(ctx context.Context, obj interface{}) (model.UpdateActorInput, error) {
+	var it model.UpdateActorInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "actorId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actorId"))
+			it.ActorID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "firstName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firstName"))
+			it.FirstName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+			it.LastName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastUpdate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastUpdate"))
+			it.LastUpdate, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -6784,6 +7263,44 @@ func (ec *executionContext) _ActorsAggregate(ctx context.Context, sel ast.Select
 		case "min":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._ActorsAggregate_min(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var actorsPayloadImplementors = []string{"ActorsPayload"}
+
+func (ec *executionContext) _ActorsPayload(ctx context.Context, sel ast.SelectionSet, obj *model.ActorsPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, actorsPayloadImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ActorsPayload")
+		case "rows_affected":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ActorsPayload_rows_affected(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "actors":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ActorsPayload_actors(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -7538,6 +8055,57 @@ func (ec *executionContext) _Movie(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
+			Object: field.Name,
+			Field:  field,
+		})
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createActors":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createActors(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+		case "deleteActors":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteActors(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+		case "updateActors":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateActors(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -8200,6 +8768,28 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNCreateActorInput2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCreateActorInput(ctx context.Context, v interface{}) (model.CreateActorInput, error) {
+	res, err := ec.unmarshalInputCreateActorInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateActorInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCreateActorInputᚄ(ctx context.Context, v interface{}) ([]model.CreateActorInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]model.CreateActorInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNCreateActorInput2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCreateActorInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) marshalNFilmCategoriesAggregate2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐFilmCategoriesAggregate(ctx context.Context, sel ast.SelectionSet, v *model.FilmCategoriesAggregate) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8323,6 +8913,11 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalNUpdateActorInput2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐUpdateActorInput(ctx context.Context, v interface{}) (model.UpdateActorInput, error) {
+	res, err := ec.unmarshalInputUpdateActorInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -8697,6 +9292,13 @@ func (ec *executionContext) unmarshalOActorOrdering2ᚖgithubᚗcomᚋroneliᚋf
 	}
 	res, err := ec.unmarshalInputActorOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOActorsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorsPayload(ctx context.Context, sel ast.SelectionSet, v *model.ActorsPayload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ActorsPayload(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
