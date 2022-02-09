@@ -169,8 +169,8 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 				//
 				// It serves as dependency injection for your app, add any dependencies you require here.`,
 			Template: `{{ reserveImport "context"  }}
-{{ reserveImport "github.com/roneli/fastgql/builders" }}
-{{ reserveImport "github.com/roneli/fastgql/execution" }}
+{{ reserveImport "github.com/roneli/fastgql/pkg/builders" }}
+{{ reserveImport "github.com/roneli/fastgql/pkg/execution" }}
 type {{.}} struct {
 	Cfg *builders.Config 
 	Executor execution.Querier
@@ -208,13 +208,12 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 	baseFuncs["hasPrefix"] = strings.HasPrefix
 	baseFuncs["deref"] = deref
 
-	if d := resolver.Field.FieldDefinition.Directives.ForName("generate"); d != nil {
+	if d := resolver.Field.TypeReference.Definition.Directives.ForName("generate"); d != nil {
 		if v := d.Arguments.ForName("wrapper"); v != nil && cast.ToBool(v.Value.Raw) {
 			t, err := template.New("").Funcs(baseFuncs).Parse(wrapperImpl)
 			if err != nil {
 				return buf, err
 			}
-
 			return buf, t.Execute(buf, resolver)
 		}
 	}
