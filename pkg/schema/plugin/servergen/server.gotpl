@@ -5,7 +5,7 @@
 {{ reserveImport "github.com/99designs/gqlgen/graphql/playground" }}
 {{ reserveImport "github.com/99designs/gqlgen/graphql/handler" }}
 {{ reserveImport "github.com/jackc/pgx/v4/pgxpool" }}
-{{ reserveImport "github.com/roneli/fastgql/builders" }}
+{{ reserveImport "github.com/roneli/fastgql/pkg/builders" }}
 
 
 const defaultPort = "8080"
