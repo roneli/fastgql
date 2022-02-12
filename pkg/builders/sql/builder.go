@@ -104,13 +104,13 @@ func (b Builder) Update(field builders.Field) (string, []interface{}, error) {
 	}
 	dataField := field.ForName(tableDef.name)
 	queryHelper, err := b.buildQuery(tableDefinition{
-		name:   strcase.ToSnake(field.Name),
+		name:   b.CaseConverter(field.Name),
 		schema: "",
 	}, dataField)
 	if err != nil {
 		return "", nil, errors.New("failed to build payload query")
 	}
-	withTable := goqu.T(strcase.ToSnake(field.Name))
+	withTable := goqu.T(b.CaseConverter(field.Name))
 
 	sql, args, err := goqu.Select(queryHelper.SelectJsonAgg(dataField.Name),
 		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), update).ToSQL()

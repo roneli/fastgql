@@ -24,7 +24,6 @@ func (r *movieResolver) Actors(ctx context.Context, obj *model.Movie, limit *int
 	if err != nil {
 		return nil, err
 	}
-
 	var data []*model.Actor
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
@@ -43,7 +42,6 @@ func (r *movieResolver) ActorsAggregate(ctx context.Context, obj *model.Movie) (
 	if err != nil {
 		return nil, err
 	}
-
 	var data *model.ActorsAggregate
 	if err := pgxscan.ScanOne(&data, rows); err != nil {
 		return nil, err
@@ -98,7 +96,6 @@ func (r *mutationResolver) UpdateActors(ctx context.Context, input model.UpdateA
 	if err != nil {
 		return nil, err
 	}
-
 	var data *model.ActorsPayload
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
@@ -107,24 +104,7 @@ func (r *mutationResolver) UpdateActors(ctx context.Context, input model.UpdateA
 
 }
 func (r *queryResolver) Movie(ctx context.Context) (*model.Movie, error) {
-
-	builder := sql.NewBuilder(r.Cfg)
-	q, args, err := builder.Query(builders.CollectFields(ctx))
-
-	if err != nil {
-		return nil, err
-	}
-	rows, err := r.Executor.Query(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	var data *model.Movie
-	if err := pgxscan.ScanAll(&data, rows); err != nil {
-		return nil, err
-	}
-	return data, nil
-
+	return &model.Movie{}, nil
 }
 func (r *queryResolver) Actors(ctx context.Context, limit *int, offset *int, orderBy []*model.ActorOrdering, filter *model.ActorFilterInput) ([]*model.Actor, error) {
 
@@ -137,7 +117,6 @@ func (r *queryResolver) Actors(ctx context.Context, limit *int, offset *int, ord
 	if err != nil {
 		return nil, err
 	}
-
 	var data []*model.Actor
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
@@ -156,7 +135,6 @@ func (r *queryResolver) Films(ctx context.Context, limit *int, offset *int, orde
 	if err != nil {
 		return nil, err
 	}
-
 	var data []*model.Film
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
@@ -175,7 +153,6 @@ func (r *queryResolver) Language(ctx context.Context, limit *int, offset *int, o
 	if err != nil {
 		return nil, err
 	}
-
 	var data []*model.Language
 	if err := pgxscan.ScanAll(&data, rows); err != nil {
 		return nil, err
@@ -194,7 +171,6 @@ func (r *queryResolver) ActorsAggregate(ctx context.Context) (*model.ActorsAggre
 	if err != nil {
 		return nil, err
 	}
-
 	var data *model.ActorsAggregate
 	if err := pgxscan.ScanOne(&data, rows); err != nil {
 		return nil, err
@@ -213,7 +189,6 @@ func (r *queryResolver) FilmsAggregate(ctx context.Context) (*model.FilmsAggrega
 	if err != nil {
 		return nil, err
 	}
-
 	var data *model.FilmsAggregate
 	if err := pgxscan.ScanOne(&data, rows); err != nil {
 		return nil, err
@@ -232,7 +207,6 @@ func (r *queryResolver) LanguageAggregate(ctx context.Context) (*model.Languages
 	if err != nil {
 		return nil, err
 	}
-
 	var data *model.LanguagesAggregate
 	if err := pgxscan.ScanOne(&data, rows); err != nil {
 		return nil, err
