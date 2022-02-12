@@ -36,11 +36,12 @@ input StringComparator {
     eq: String
     neq: String
     contains: [String]
-    not_contains: [String]
+    notContains: [String]
     like: String
     ilike: String
     suffix: String
     prefix: String
+    isNull: Boolean
 }
 
 input StringListComparator {
@@ -49,6 +50,7 @@ input StringListComparator {
     contains: [String]
     containedBy: [String]
     overlap: [String]
+    isNull: Boolean
 }
 
 input IntComparator {
@@ -58,6 +60,7 @@ input IntComparator {
     gte: Int
     lt: Int
     lte: Int
+    isNull: Boolean
 }
 
 input IntListComparator {
@@ -66,11 +69,13 @@ input IntListComparator {
     contains: [Int]
     contained: [Int]
     overlap: [Int]
+    isNull: Boolean
 }
 
 input BooleanComparator {
     eq: Boolean
     neq: Boolean
+    isNull: Boolean
 }
 
 input BooleanListComparator {
@@ -79,4 +84,5 @@ input BooleanListComparator {
     contains: [Boolean]
     contained: [Boolean]
     overlap: [Boolean]
+    isNull: Boolean
 }

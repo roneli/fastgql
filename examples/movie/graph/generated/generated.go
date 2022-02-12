@@ -927,6 +927,7 @@ type ActorsAggregate {
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean
+	isNull: Boolean
 }
 input BooleanListComparator {
 	eq: [Boolean]
@@ -934,6 +935,7 @@ input BooleanListComparator {
 	contains: [Boolean]
 	contained: [Boolean]
 	overlap: [Boolean]
+	isNull: Boolean
 }
 type Category @tableName(name: "category", schema: "movies") @generateFilterInput(name: "CategoryFilterInput") {
 	categoryId: Int!
@@ -1219,6 +1221,7 @@ input IntComparator {
 	gte: Int
 	lt: Int
 	lte: Int
+	isNull: Boolean
 }
 input IntListComparator {
 	eq: [Int]
@@ -1226,6 +1229,7 @@ input IntListComparator {
 	contains: [Int]
 	contained: [Int]
 	overlap: [Int]
+	isNull: Boolean
 }
 type Language @tableName(name: "language", schema: "movies") @generateFilterInput(name: "LanguageFilterInput") {
 	languageId: Int!
@@ -1446,6 +1450,7 @@ input StringComparator {
 	ilike: String
 	suffix: String
 	prefix: String
+	isNull: Boolean
 }
 input StringListComparator {
 	eq: [String]
@@ -1453,6 +1458,7 @@ input StringListComparator {
 	contains: [String]
 	containedBy: [String]
 	overlap: [String]
+	isNull: Boolean
 }
 type _AggregateResult {
 	count: Int!
@@ -5860,6 +5866,14 @@ func (ec *executionContext) unmarshalInputBooleanComparator(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "isNull":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
+			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -5912,6 +5926,14 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
 			it.Overlap, err = ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isNull":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
+			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6302,6 +6324,14 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 			if err != nil {
 				return it, err
 			}
+		case "isNull":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
+			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6354,6 +6384,14 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
 			it.Overlap, err = ec.unmarshalOInt2ᚕᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isNull":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
+			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6546,6 +6584,14 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
+		case "isNull":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
+			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6598,6 +6644,14 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
 			it.Overlap, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isNull":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
+			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}

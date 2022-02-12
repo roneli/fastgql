@@ -67,8 +67,9 @@ type ActorsAggregate struct {
 }
 
 type BooleanComparator struct {
-	Eq  *bool `json:"eq" db:"eq"`
-	Neq *bool `json:"neq" db:"neq"`
+	Eq     *bool `json:"eq" db:"eq"`
+	Neq    *bool `json:"neq" db:"neq"`
+	IsNull *bool `json:"isNull" db:"isNull"`
 }
 
 type BooleanListComparator struct {
@@ -77,6 +78,7 @@ type BooleanListComparator struct {
 	Contains  []*bool `json:"contains" db:"contains"`
 	Contained []*bool `json:"contained" db:"contained"`
 	Overlap   []*bool `json:"overlap" db:"overlap"`
+	IsNull    *bool   `json:"isNull" db:"isNull"`
 }
 
 type Category struct {
@@ -230,12 +232,13 @@ type FilmsAggregate struct {
 }
 
 type IntComparator struct {
-	Eq  *int `json:"eq" db:"eq"`
-	Neq *int `json:"neq" db:"neq"`
-	Gt  *int `json:"gt" db:"gt"`
-	Gte *int `json:"gte" db:"gte"`
-	Lt  *int `json:"lt" db:"lt"`
-	Lte *int `json:"lte" db:"lte"`
+	Eq     *int  `json:"eq" db:"eq"`
+	Neq    *int  `json:"neq" db:"neq"`
+	Gt     *int  `json:"gt" db:"gt"`
+	Gte    *int  `json:"gte" db:"gte"`
+	Lt     *int  `json:"lt" db:"lt"`
+	Lte    *int  `json:"lte" db:"lte"`
+	IsNull *bool `json:"isNull" db:"isNull"`
 }
 
 type IntListComparator struct {
@@ -244,6 +247,7 @@ type IntListComparator struct {
 	Contains  []*int `json:"contains" db:"contains"`
 	Contained []*int `json:"contained" db:"contained"`
 	Overlap   []*int `json:"overlap" db:"overlap"`
+	IsNull    *bool  `json:"isNull" db:"isNull"`
 }
 
 type Language struct {
@@ -315,6 +319,7 @@ type StringComparator struct {
 	Ilike       *string   `json:"ilike" db:"ilike"`
 	Suffix      *string   `json:"suffix" db:"suffix"`
 	Prefix      *string   `json:"prefix" db:"prefix"`
+	IsNull      *bool     `json:"isNull" db:"isNull"`
 }
 
 type StringListComparator struct {
@@ -323,6 +328,7 @@ type StringListComparator struct {
 	Contains    []*string `json:"contains" db:"contains"`
 	ContainedBy []*string `json:"containedBy" db:"containedBy"`
 	Overlap     []*string `json:"overlap" db:"overlap"`
+	IsNull      *bool     `json:"isNull" db:"isNull"`
 }
 
 type AggregateResult struct {
