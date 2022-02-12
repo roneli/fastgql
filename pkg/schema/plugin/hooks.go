@@ -9,6 +9,5 @@ func MutateHook(b *modelgen.ModelBuild) *modelgen.ModelBuild {
 			field.Tag += ` db:"` + field.Name + `"`
 		}
 	}
-
 	return b
 }
