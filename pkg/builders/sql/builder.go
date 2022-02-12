@@ -31,6 +31,7 @@ type Builder struct {
 	TableNameGenerator  builders.TableNameGenerator
 	Operators           map[string]builders.Operator
 	AggregatorOperators map[string]builders.AggregatorOperator
+	CaseConverter       builders.ColumnCaseConverter
 }
 
 func NewBuilder(config *builders.Config) Builder {
@@ -42,6 +43,11 @@ func NewBuilder(config *builders.Config) Builder {
 	if config.TableNameGenerator != nil {
 		tableNameGenerator = config.TableNameGenerator
 	}
+	var caseConverter builders.ColumnCaseConverter = strcase.ToSnake
+	if config.ColumnCaseConverter != nil {
+		caseConverter = config.ColumnCaseConverter
+	}
+
 	operators := make(map[string]builders.Operator)
 	for k, v := range defaultOperators {
 		operators[k] = v
@@ -50,7 +56,7 @@ func NewBuilder(config *builders.Config) Builder {
 		operators[k] = v
 	}
 
-	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: operators, AggregatorOperators: defaultAggregatorOperators}
+	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: operators, AggregatorOperators: defaultAggregatorOperators, CaseConverter: caseConverter}
 }
 
 func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
@@ -70,13 +76,13 @@ func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 	}
 	dataField := field.ForName(tableDef.name)
 	queryHelper, err := b.buildQuery(tableDefinition{
-		name:   strcase.ToSnake(field.Name),
+		name:   b.CaseConverter(field.Name),
 		schema: "",
 	}, dataField)
 	if err != nil {
 		return "", nil, errors.New("failed to build payload query")
 	}
-	withTable := goqu.T(strcase.ToSnake(field.Name))
+	withTable := goqu.T(b.CaseConverter(field.Name))
 
 	sql, args, err := goqu.Select(queryHelper.SelectJsonAgg(dataField.Name),
 		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), insert).ToSQL()
@@ -89,10 +95,10 @@ func (b Builder) Delete(field builders.Field) (string, []interface{}, error) {
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to build delete query: %w", err)
 	}
-	withTable := goqu.T(strcase.ToSnake(field.Name))
+	withTable := goqu.T(b.CaseConverter(field.Name))
 	dataField := field.ForName(tableDef.name)
 	qh, err := b.buildQuery(tableDefinition{
-		name:   strcase.ToSnake(field.Name),
+		name:   b.CaseConverter(field.Name),
 		schema: "",
 	}, dataField)
 	if err != nil {
@@ -162,7 +168,7 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 		switch childField.FieldType {
 		case builders.TypeScalar:
 			b.Logger.Debug("adding field", "tableDefinition", tableDef.name, "fieldName", childField.Name)
-			query.selects = append(query.selects, column{table: query.alias, name: strcase.ToSnake(childField.Name), alias: childField.Name})
+			query.selects = append(query.selects, column{table: query.alias, name: b.CaseConverter(childField.Name), alias: childField.Name})
 		case builders.TypeRelation:
 			b.Logger.Debug("adding relation field", "tableDefinition", tableDef.name, "fieldName", childField.Name)
 			if err := b.buildRelation(&query, childField); err != nil {
@@ -230,13 +236,13 @@ func (b Builder) buildOrdering(query *queryHelper, field builders.Field) {
 		b.Logger.Debug("adding ordering", "tableDefinition", query.TableName(), "field", o.Key, "orderType", o.Type)
 		switch o.Type {
 		case builders.OrderingTypesAsc:
-			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Asc().NullsLast())
+			query.SelectDataset = query.OrderAppend(goqu.C(b.CaseConverter(o.Key)).Asc().NullsLast())
 		case builders.OrderingTypesAscNull:
-			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Asc().NullsFirst())
+			query.SelectDataset = query.OrderAppend(goqu.C(b.CaseConverter(o.Key)).Asc().NullsFirst())
 		case builders.OrderingTypesDesc:
-			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Desc().NullsLast())
+			query.SelectDataset = query.OrderAppend(goqu.C(b.CaseConverter(o.Key)).Desc().NullsLast())
 		case builders.OrderingTypesDescNull:
-			query.SelectDataset = query.OrderAppend(goqu.C(strcase.ToSnake(o.Key)).Desc().NullsFirst())
+			query.SelectDataset = query.OrderAppend(goqu.C(b.CaseConverter(o.Key)).Desc().NullsFirst())
 		}
 	}
 }
@@ -363,7 +369,7 @@ func (b Builder) Operation(table exp.AliasedExpression, fieldName, operatorName 
 	if !ok {
 		return nil, fmt.Errorf("key operator %s not supported", operatorName)
 	}
-	return opFunc(table, strcase.ToSnake(fieldName), value), nil
+	return opFunc(table, b.CaseConverter(fieldName), value), nil
 }
 
 func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) error {
@@ -407,7 +413,7 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 
 		// Finally, aggregate relation query and join the m2m tableDefinition with the main query
 		aggTableName := b.TableNameGenerator.Generate(6)
-		aggQuery := goqu.From(m2mQuery.SelectRow(false)).As(aggTableName).Select(relationQuery.buildJsonAgg(rf.Name).As(rf.Name)).As(aggTableName)
+		aggQuery := goqu.From(m2mQuery.SelectRow(false)).As(aggTableName).Select(relationQuery.buildJsonAgg(rf.Name).As(rf.Name)).As(aggTableName).Where(goqu.T(relationQuery.alias).IsNot(nil))
 		parentQuery.SelectDataset = parentQuery.CrossJoin(goqu.Lateral(aggQuery))
 		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: aggTableName})
 

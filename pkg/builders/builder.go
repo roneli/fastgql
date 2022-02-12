@@ -14,11 +14,17 @@ import (
 type (
 	// Config is the basic level of data passed to a builder when it's created
 	Config struct {
-		Schema             *ast.Schema
-		Logger             log.Logger
-		TableNameGenerator TableNameGenerator
+		Schema *ast.Schema
+		Logger log.Logger
 		// CustomOperators are user defined operators, can also be used to override existing default operators.
 		CustomOperators map[string]Operator
+
+		// TableNameGenerator allows defining how aliases "Table" names are generated in the query, this is mostly used for test
+		TableNameGenerator TableNameGenerator
+
+		// ColumnCaseConverter converts columns from ast.Field Name to database field name, by default it converts to snake case
+		// but sometimes as a user you want to override this logic / define special abbreviations etc'
+		ColumnCaseConverter ColumnCaseConverter
 	}
 
 	OrderingTypes string
@@ -27,6 +33,10 @@ type (
 		Key  string
 		Type OrderingTypes
 	}
+
+	// ColumnCaseConverter converts columns from ast.Field Name to database field name, by default it converts to snake case
+	// but sometimes as a user you want to override this logic / define special abbreviations etc'
+	ColumnCaseConverter func(c string) string
 
 	// Operator gets called on filters expressions written in graphql. Users can define new operators in the graphql
 	// schema, and define operator functions for those operators based on the operator name given.
