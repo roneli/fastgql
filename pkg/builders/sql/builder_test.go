@@ -166,7 +166,7 @@ func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Bui
 	assert.Nil(t, err)
 	fgqlPlugin := schema.FastGqlPlugin{}
 	src := fgqlPlugin.CreateAugmented(testSchema)
-	augmentedSchema, err := gqlparser.LoadSchema(src)
+	augmentedSchema, err := gqlparser.LoadSchema(src...)
 	assert.Nil(t, err)
 
 	builder := sql.NewBuilder(&builders.Config{

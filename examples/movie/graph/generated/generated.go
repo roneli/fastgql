@@ -809,17 +809,101 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean) on OBJECT
-directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
-directive @generateMutations(create: Boolean = True, delete: Boolean = True) on OBJECT
-directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
-directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-directive @tableName(name: String!, schema: String) on OBJECT | INTERFACE
-type Actor @tableName(name: "actor", schema: "movies") @generateFilterInput(name: "ActorFilterInput") {
-	actorId: Int!
-	firstName: String!
-	lastName: String!
+	{Name: "graph/schema.graphql", Input: `type Category @tableName(name: "category", schema: "movies") @generateFilterInput(name: "CategoryFilterInput") {
+	categoryId: Int!
+	name: String!
 	lastUpdate: String!
+	"""
+	Get all flims by language
+	"""
+	films(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Film
+		"""
+		orderBy: [FilmOrdering]
+	): [Film] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
+}
+type Film @tableName(name: "film", schema: "movies") @generateFilterInput(name: "FilmFilterInput") {
+	filmId: Int!
+	title: String!
+	description: String!
+	rentalDuration: String!
+	rentalRate: Float!
+	length: Int!
+	replacementCost: Float!
+	rating: Int!
+	lastUpdate: String!
+	specialFeatures: [String]
+	fulltext: String!
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for FilmCategory
+		"""
+		orderBy: [FilmCategoryOrdering]
+	): [FilmCategory] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "film", refTable: "film_category", fields: ["film_id"], references: ["film_id"])
+	language: Language! @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film", refTable: "language", fields: ["language_id"], references: ["language_id"])
+	actors(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Actor
+		"""
+		orderBy: [ActorOrdering]
+	,
+		"""
+		Filter actors
+		"""
+		filter: ActorFilterInput
+	): [Actor] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "film", refTable: "actor", fields: ["film_id"], references: ["actor_id"], manyToManyTable: "film_actor", manyToManyFields: ["film_id"], manyToManyReferences: ["actor_id"])
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate: FilmCategoriesAggregate!
+	"""
+	actors Aggregate
+	"""
+	_actorsAggregate: ActorsAggregate!
+}
+type FilmCategory @tableName(name: "film_category", schema: "movies") @generateFilterInput(name: "CategoryFilterInput") {
+	category: Category @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film_category", refTable: "category", fields: ["category_id"], references: ["category_id"])
+	film: Film @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film_category", refTable: "film", fields: ["film_id"], references: ["film_id"])
+	lastUpdate: String!
+}
+type Language @tableName(name: "language", schema: "movies") @generateFilterInput(name: "LanguageFilterInput") {
+	languageId: Int!
+	name: String!
+	lastUpdate: String!
+	"""
+	Get all flims by language
+	"""
 	films(
 		"""
 		Limit
@@ -840,13 +924,92 @@ type Actor @tableName(name: "actor", schema: "movies") @generateFilterInput(name
 		Filter films
 		"""
 		filter: FilmFilterInput
-	): [Film] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "actor", refTable: "film", fields: ["actor_id"], references: ["film_id"], manyToManyTable: "film_actor", manyToManyFields: ["actor_id"], manyToManyReferences: ["film_id"])
+	): [Film] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
 	"""
 	films Aggregate
 	"""
 	_filmsAggregate: FilmsAggregate!
 }
-input ActorFilterInput {
+type Query @generate(recursive: true) {
+	movie: Movie
+	actors(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Actor
+		"""
+		orderBy: [ActorOrdering]
+	,
+		"""
+		Filter actors
+		"""
+		filter: ActorFilterInput
+	): [Actor]
+	films(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Film
+		"""
+		orderBy: [FilmOrdering]
+	,
+		"""
+		Filter films
+		"""
+		filter: FilmFilterInput
+	): [Film]
+	language(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Language
+		"""
+		orderBy: [LanguageOrdering]
+	,
+		"""
+		Filter language
+		"""
+		filter: LanguageFilterInput
+	): [Language]
+	"""
+	actors Aggregate
+	"""
+	_actorsAggregate: ActorsAggregate!
+	"""
+	films Aggregate
+	"""
+	_filmsAggregate: FilmsAggregate!
+	"""
+	language Aggregate
+	"""
+	_languageAggregate: LanguagesAggregate!
+}
+`, BuiltIn: false},
+	{Name: "fastgql.graphql", Input: `input ActorFilterInput {
 	actorId: IntComparator
 	firstName: StringComparator
 	lastName: StringComparator
@@ -924,48 +1087,10 @@ type ActorsAggregate {
 	"""
 	min: ActorMin
 }
-input BooleanComparator {
-	eq: Boolean
-	neq: Boolean
-	isNull: Boolean
-}
-input BooleanListComparator {
-	eq: [Boolean]
-	neq: [Boolean]
-	contains: [Boolean]
-	contained: [Boolean]
-	overlap: [Boolean]
-	isNull: Boolean
-}
-type Category @tableName(name: "category", schema: "movies") @generateFilterInput(name: "CategoryFilterInput") {
-	categoryId: Int!
-	name: String!
-	lastUpdate: String!
-	"""
-	Get all flims by language
-	"""
-	films(
-		"""
-		Limit
-		"""
-		limit: Int = 100
-	,
-		"""
-		Offset
-		"""
-		offset: Int = 0
-	,
-		"""
-		Ordering for Film
-		"""
-		orderBy: [FilmOrdering]
-	): [Film] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
-}
 input CategoryFilterInput {
-	categoryId: IntComparator
-	name: StringComparator
+	category: CategoryFilterInput
+	film: FilmFilterInput
 	lastUpdate: StringComparator
-	films: FilmFilterInput
 	"""
 	Logical AND of FilterInput
 	"""
@@ -978,65 +1103,6 @@ input CategoryFilterInput {
 	Logical NOT of FilterInput
 	"""
 	NOT: CategoryFilterInput
-}
-type Film @tableName(name: "film", schema: "movies") @generateFilterInput(name: "FilmFilterInput") {
-	filmId: Int!
-	title: String!
-	description: String!
-	rentalDuration: String!
-	rentalRate: Float!
-	length: Int!
-	replacementCost: Float!
-	rating: Int!
-	lastUpdate: String!
-	specialFeatures: [String]
-	fulltext: String!
-	categories(
-		"""
-		Limit
-		"""
-		limit: Int = 100
-	,
-		"""
-		Offset
-		"""
-		offset: Int = 0
-	,
-		"""
-		Ordering for FilmCategory
-		"""
-		orderBy: [FilmCategoryOrdering]
-	): [FilmCategory] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "film", refTable: "film_category", fields: ["film_id"], references: ["film_id"])
-	language: Language! @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film", refTable: "language", fields: ["language_id"], references: ["language_id"])
-	actors(
-		"""
-		Limit
-		"""
-		limit: Int = 100
-	,
-		"""
-		Offset
-		"""
-		offset: Int = 0
-	,
-		"""
-		Ordering for Actor
-		"""
-		orderBy: [ActorOrdering]
-	,
-		"""
-		Filter actors
-		"""
-		filter: ActorFilterInput
-	): [Actor] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "film", refTable: "actor", fields: ["film_id"], references: ["actor_id"], manyToManyTable: "film_actor", manyToManyFields: ["film_id"], manyToManyReferences: ["actor_id"])
-	"""
-	categories Aggregate
-	"""
-	_categoriesAggregate: FilmCategoriesAggregate!
-	"""
-	actors Aggregate
-	"""
-	_actorsAggregate: ActorsAggregate!
 }
 """
 Aggregate FilmCategory
@@ -1054,11 +1120,6 @@ type FilmCategoriesAggregate {
 	Computes the minimum of the non-null input values.
 	"""
 	min: FilmCategoryMin
-}
-type FilmCategory @tableName(name: "film_category", schema: "movies") @generateFilterInput(name: "CategoryFilterInput") {
-	category: Category @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film_category", refTable: "category", fields: ["category_id"], references: ["category_id"])
-	film: Film @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film_category", refTable: "film", fields: ["film_id"], references: ["film_id"])
-	lastUpdate: String!
 }
 """
 max aggregator for FilmCategory
@@ -1214,56 +1275,6 @@ type FilmsAggregate {
 	"""
 	min: FilmMin
 }
-input IntComparator {
-	eq: Int
-	neq: Int
-	gt: Int
-	gte: Int
-	lt: Int
-	lte: Int
-	isNull: Boolean
-}
-input IntListComparator {
-	eq: [Int]
-	neq: [Int]
-	contains: [Int]
-	contained: [Int]
-	overlap: [Int]
-	isNull: Boolean
-}
-type Language @tableName(name: "language", schema: "movies") @generateFilterInput(name: "LanguageFilterInput") {
-	languageId: Int!
-	name: String!
-	lastUpdate: String!
-	"""
-	Get all flims by language
-	"""
-	films(
-		"""
-		Limit
-		"""
-		limit: Int = 100
-	,
-		"""
-		Offset
-		"""
-		offset: Int = 0
-	,
-		"""
-		Ordering for Film
-		"""
-		orderBy: [FilmOrdering]
-	,
-		"""
-		Filter films
-		"""
-		filter: FilmFilterInput
-	): [Film] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
-	"""
-	films Aggregate
-	"""
-	_filmsAggregate: FilmsAggregate!
-}
 input LanguageFilterInput {
 	languageId: IntComparator
 	name: StringComparator
@@ -1333,113 +1344,42 @@ type LanguagesAggregate {
 	"""
 	min: LanguageMin
 }
-"""
-Wrapper objects don't do anything that act like query
-"""
-type Movie @generate(recursive: true, wrapper: true) {
-	actors(
-		"""
-		Limit
-		"""
-		limit: Int = 100
-	,
-		"""
-		Offset
-		"""
-		offset: Int = 0
-	,
-		"""
-		Ordering for Actor
-		"""
-		orderBy: [ActorOrdering]
-	,
-		"""
-		Filter actors
-		"""
-		filter: ActorFilterInput
-	): [Actor]
-	"""
-	actors Aggregate
-	"""
-	_actorsAggregate: ActorsAggregate!
+`, BuiltIn: false},
+	{Name: "graph/common.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean) on OBJECT
+directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
+directive @generateMutations(create: Boolean = True, delete: Boolean = True) on OBJECT
+directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
+directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+directive @tableName(name: String!, schema: String) on OBJECT | INTERFACE
+input BooleanComparator {
+	eq: Boolean
+	neq: Boolean
+	isNull: Boolean
 }
-type Query @generate(recursive: true) {
-	movie: Movie
-	actors(
-		"""
-		Limit
-		"""
-		limit: Int = 100
-	,
-		"""
-		Offset
-		"""
-		offset: Int = 0
-	,
-		"""
-		Ordering for Actor
-		"""
-		orderBy: [ActorOrdering]
-	,
-		"""
-		Filter actors
-		"""
-		filter: ActorFilterInput
-	): [Actor]
-	films(
-		"""
-		Limit
-		"""
-		limit: Int = 100
-	,
-		"""
-		Offset
-		"""
-		offset: Int = 0
-	,
-		"""
-		Ordering for Film
-		"""
-		orderBy: [FilmOrdering]
-	,
-		"""
-		Filter films
-		"""
-		filter: FilmFilterInput
-	): [Film]
-	language(
-		"""
-		Limit
-		"""
-		limit: Int = 100
-	,
-		"""
-		Offset
-		"""
-		offset: Int = 0
-	,
-		"""
-		Ordering for Language
-		"""
-		orderBy: [LanguageOrdering]
-	,
-		"""
-		Filter language
-		"""
-		filter: LanguageFilterInput
-	): [Language]
-	"""
-	actors Aggregate
-	"""
-	_actorsAggregate: ActorsAggregate!
-	"""
-	films Aggregate
-	"""
-	_filmsAggregate: FilmsAggregate!
-	"""
-	language Aggregate
-	"""
-	_languageAggregate: LanguagesAggregate!
+input BooleanListComparator {
+	eq: [Boolean]
+	neq: [Boolean]
+	contains: [Boolean]
+	contained: [Boolean]
+	overlap: [Boolean]
+	isNull: Boolean
+}
+input IntComparator {
+	eq: Int
+	neq: Int
+	gt: Int
+	gte: Int
+	lt: Int
+	lte: Int
+	isNull: Boolean
+}
+input IntListComparator {
+	eq: [Int]
+	neq: [Int]
+	contains: [Int]
+	contained: [Int]
+	overlap: [Int]
+	isNull: Boolean
 }
 input StringComparator {
 	eq: String
@@ -1473,6 +1413,68 @@ enum _relationType {
 	ONE_TO_ONE
 	ONE_TO_MANY
 	MANY_TO_MANY
+}
+`, BuiltIn: false},
+	{Name: "graph/actors.graphql", Input: `type Actor @tableName(name: "actor", schema: "movies") @generateFilterInput(name: "ActorFilterInput") {
+	actorId: Int!
+	firstName: String!
+	lastName: String!
+	lastUpdate: String!
+	films(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Film
+		"""
+		orderBy: [FilmOrdering]
+	,
+		"""
+		Filter films
+		"""
+		filter: FilmFilterInput
+	): [Film] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "actor", refTable: "film", fields: ["actor_id"], references: ["film_id"], manyToManyTable: "film_actor", manyToManyFields: ["actor_id"], manyToManyReferences: ["film_id"])
+	"""
+	films Aggregate
+	"""
+	_filmsAggregate: FilmsAggregate!
+}
+"""
+Wrapper objects don't do anything that act like query
+"""
+type Movie @generate(recursive: true, wrapper: true) {
+	actors(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Actor
+		"""
+		orderBy: [ActorOrdering]
+	,
+		"""
+		Filter actors
+		"""
+		filter: ActorFilterInput
+	): [Actor]
+	"""
+	actors Aggregate
+	"""
+	_actorsAggregate: ActorsAggregate!
 }
 `, BuiltIn: false},
 }
@@ -5952,19 +5954,19 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
-		case "categoryId":
+		case "category":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categoryId"))
-			it.CategoryID, err = ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			it.Category, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "name":
+		case "film":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("film"))
+			it.Film, err = ec.unmarshalOFilmFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐFilmFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5973,14 +5975,6 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastUpdate"))
 			it.LastUpdate, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStringComparator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "films":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("films"))
-			it.Films, err = ec.unmarshalOFilmFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐFilmFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
