@@ -25,8 +25,6 @@ type (
 		// ColumnCaseConverter converts columns from ast.Field Name to database field name, by default it converts to snake case
 		// but sometimes as a user you want to override this logic / define special abbreviations etc'
 		ColumnCaseConverter ColumnCaseConverter
-
-		Hooks []FilterMutator
 	}
 
 	OrderingTypes string
@@ -67,8 +65,6 @@ type (
 	TableNameGenerator interface {
 		Generate(n int) string
 	}
-
-	FilterMutator func(filters map[string]interface{}) error
 )
 
 const (
