@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"bytes"
 	_ "embed"
 
 	"github.com/roneli/fastgql/pkg/schema/augmenters"
@@ -13,7 +12,6 @@ import (
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin/modelgen"
 	"github.com/vektah/gqlparser/v2/ast"
-	"github.com/vektah/gqlparser/v2/formatter"
 )
 
 //go:embed fastgql.graphql
@@ -59,22 +57,14 @@ func (f FastGqlPlugin) MutateConfig(c *config.Config) error {
 }
 
 // TODO: make this configurable
-func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) *ast.Source {
+func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) []*ast.Source {
 	_ = augmenters.Pagination{}.Augment(schema)
 	_ = augmenters.Ordering{}.Augment(schema)
 	_ = augmenters.Aggregation{}.Augment(schema)
 	_ = augmenters.FilterInput{}.Augment(schema)
 	_ = augmenters.FilterArguments{}.Augment(schema)
 	_ = augmenters.Mutations{}.Augment(schema)
-
-	var buf bytes.Buffer
-	formatter.NewFormatter(&buf).FormatSchema(schema)
-
-	return &ast.Source{
-		Name:    "schema.graphql",
-		Input:   buf.String(),
-		BuiltIn: false,
-	}
+	return FormatSchema(schema)
 }
 
 func Generate(configPath string, generateServer bool, sources ...*ast.Source) error {
@@ -90,14 +80,14 @@ func Generate(configPath string, generateServer bool, sources ...*ast.Source) er
 		return err
 	}
 	fgqlPlugin := FastGqlPlugin{}
-	src := fgqlPlugin.CreateAugmented(cfg.Schema)
+	srcs := fgqlPlugin.CreateAugmented(cfg.Schema)
 
 	// Load config again
 	cfg, err = config.LoadConfig(configPath)
 	if err != nil {
 		return err
 	}
-	cfg.Sources = []*ast.Source{src}
+	cfg.Sources = srcs
 
 	// Attaching the mutation function onto modelgen plugin
 	modelgenPlugin := modelgen.Plugin{

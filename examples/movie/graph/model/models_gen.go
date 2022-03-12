@@ -90,10 +90,9 @@ type Category struct {
 }
 
 type CategoryFilterInput struct {
-	CategoryID *IntComparator    `json:"categoryId" db:"categoryId"`
-	Name       *StringComparator `json:"name" db:"name"`
-	LastUpdate *StringComparator `json:"lastUpdate" db:"lastUpdate"`
-	Films      *FilmFilterInput  `json:"films" db:"films"`
+	Category   *CategoryFilterInput `json:"category" db:"category"`
+	Film       *FilmFilterInput     `json:"film" db:"film"`
+	LastUpdate *StringComparator    `json:"lastUpdate" db:"lastUpdate"`
 	// Logical AND of FilterInput
 	And []*CategoryFilterInput `json:"AND" db:"AND"`
 	// Logical OR of FilterInput

@@ -1,0 +1,17 @@
+
+type Actor @tableName(name:"actor", schema: "movies") @generateFilterInput(name:"ActorFilterInput") {
+    actorId: Int!
+    firstName: String!
+    lastName: String!
+    lastUpdate: String!
+
+    # Relations
+
+    films: [Film]  @sqlRelation(relationType: MANY_TO_MANY, baseTable: "actor", refTable: "film", fields: ["actor_id"], references: ["film_id"]
+        manyToManyTable: "film_actor", manyToManyFields: ["actor_id"], manyToManyReferences: ["film_id"])
+}
+
+"Wrapper objects don't do anything that act like query"
+type Movie @generate(recursive: true, wrapper: true) {
+    actors: [Actor]
+}
