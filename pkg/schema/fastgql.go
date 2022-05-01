@@ -94,6 +94,9 @@ func Generate(configPath string, generateServer bool, sources ...*ast.Source) er
 		MutateHook: plugin.MutateHook,
 	}
 
+	// skip validation for now, as after code generation we need to mod tidy again
+	cfg.SkipValidation = true
+
 	if generateServer {
 		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(resolvergen.New()),
 			api.AddPlugin(fgqlPlugin), api.AddPlugin(servergen.New("server.go")))

@@ -29,13 +29,13 @@ func (a Aggregation) Augment(s *ast.Schema) error {
 		args := d.ArgumentMap(nil)
 		recursive := cast.ToBool(args["recursive"])
 		if addAggregate, ok := args["aggregate"]; ok && cast.ToBool(addAggregate) {
-			a.addAggregation(s, v, recursive)
+			a.addAggregation(s, v, nil, recursive)
 		}
 	}
 	return nil
 }
 
-func (a Aggregation) addAggregation(s *ast.Schema, obj *ast.Definition, recursive bool) {
+func (a Aggregation) addAggregation(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
 
 	for _, f := range obj.Fields {
 		if gql.IsScalarListType(s, f.Type) {
@@ -65,14 +65,10 @@ func (a Aggregation) addAggregation(s *ast.Schema, obj *ast.Definition, recursiv
 			},
 		})
 
-		if !recursive {
-			continue
-		}
 		fieldType := s.Types[f.Type.Name()]
-		if !fieldType.IsCompositeType() {
-			continue
+		if recursive && fieldType.IsCompositeType() && fieldType != parent {
+			a.addAggregation(s, fieldType, obj, recursive)
 		}
-		a.addAggregation(s, fieldType, recursive)
 	}
 }
 
