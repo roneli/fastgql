@@ -7,18 +7,15 @@ import (
 	"context"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/roneli/fastgql/pkg/builders"
-	"github.com/roneli/fastgql/pkg/builders/sql"
-
 	"github.com/roneli/fastgql/examples/simple/graph/generated"
 	"github.com/roneli/fastgql/examples/simple/graph/model"
+	"github.com/roneli/fastgql/pkg/builders"
+	"github.com/roneli/fastgql/pkg/builders/sql"
 )
 
 func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.CreatePostInput) (*model.PostsPayload, error) {
 	builder := sql.NewBuilder(r.Cfg)
-
 	q, args, err := builder.Create(builders.CollectFields(ctx))
-
 	if err != nil {
 		return nil, err
 	}
@@ -34,9 +31,7 @@ func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.Creat
 }
 func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model.PostFilterInput) (*model.PostsPayload, error) {
 	builder := sql.NewBuilder(r.Cfg)
-
 	q, args, err := builder.Delete(builders.CollectFields(ctx))
-
 	if err != nil {
 		return nil, err
 	}
