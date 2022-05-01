@@ -125,13 +125,13 @@ func (fa FilterArguments) Augment(s *ast.Schema) error {
 		args := d.ArgumentMap(nil)
 		recursive := cast.ToBool(args["recursive"])
 		if addFilters, ok := args["filter"]; ok && cast.ToBool(addFilters) {
-			fa.addFilter(s, v, recursive)
+			fa.addFilter(s, v, nil, recursive)
 		}
 	}
 	return nil
 }
 
-func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, recursive bool) {
+func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
 		// avoid recurse and Skip "special" field types such as type name etc'
 		if strings.HasPrefix(f.Name, "__") || f.Arguments.ForName("filter") != nil {
@@ -140,8 +140,8 @@ func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, recursiv
 
 		fieldType := s.Types[f.Type.Name()]
 		if gql.IsScalarListType(s, f.Type) || !gql.IsListType(f.Type) {
-			if recursive && fieldType.IsCompositeType() {
-				fa.addFilter(s, fieldType, recursive)
+			if recursive && fieldType.IsCompositeType() && fieldType != parent {
+				fa.addFilter(s, fieldType, obj, recursive)
 			}
 			continue
 		}
@@ -170,7 +170,7 @@ func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, recursiv
 			},
 		)
 		if recursive && fieldType.IsCompositeType() {
-			fa.addFilter(s, fieldType, recursive)
+			fa.addFilter(s, fieldType, obj, recursive)
 		}
 	}
 }

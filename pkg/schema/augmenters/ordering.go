@@ -25,13 +25,13 @@ func (o Ordering) Augment(s *ast.Schema) error {
 		args := d.ArgumentMap(nil)
 		recursive := cast.ToBool(args["recursive"])
 		if addOrdering, ok := args["ordering"]; ok && cast.ToBool(addOrdering) {
-			o.addOrdering(s, v, recursive)
+			o.addOrdering(s, v, nil, recursive)
 		}
 	}
 	return nil
 }
 
-func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool) {
+func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
 		// avoid recurse and adding to internal objects
 		if strings.HasPrefix(f.Name, "__") || f.Arguments.ForName("orderBy") != nil {
@@ -40,8 +40,8 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool
 
 		fieldType := s.Types[f.Type.Name()]
 		if gql.IsScalarListType(s, f.Type) || !gql.IsListType(f.Type) {
-			if recursive && fieldType.IsCompositeType() {
-				o.addOrdering(s, fieldType, recursive)
+			if recursive && fieldType.IsCompositeType() && parent != fieldType {
+				o.addOrdering(s, fieldType, obj, recursive)
 			}
 			continue
 		}
@@ -67,7 +67,7 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, recursive bool
 			},
 		)
 		if recursive && fieldType.IsCompositeType() {
-			o.addOrdering(s, fieldType, recursive)
+			o.addOrdering(s, fieldType, obj, recursive)
 		}
 	}
 }

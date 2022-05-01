@@ -3,22 +3,17 @@ package main
 
 import (
 	"context"
-
-	"github.com/roneli/fastgql/internal/log/adapters"
-	"github.com/roneli/fastgql/pkg/builders"
-
-	"github.com/roneli/fastgql/examples/simple/graph"
-	"github.com/roneli/fastgql/examples/simple/graph/generated"
-
-	"github.com/99designs/gqlgen/graphql/playground"
-
-	"github.com/rs/zerolog/log"
-
 	"net/http"
 	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/roneli/fastgql/examples/simple/graph"
+	"github.com/roneli/fastgql/examples/simple/graph/generated"
+	"github.com/roneli/fastgql/internal/log/adapters"
+	"github.com/roneli/fastgql/pkg/builders"
+	"github.com/rs/zerolog/log"
 )
 
 const defaultPort = "8081"

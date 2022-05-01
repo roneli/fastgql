@@ -25,13 +25,13 @@ func (p Pagination) Augment(s *ast.Schema) error {
 		args := d.ArgumentMap(nil)
 		recursive := cast.ToBool(args["recursive"])
 		if addPagination, ok := args["pagination"]; ok && cast.ToBool(addPagination) {
-			p.addPagination(s, v, recursive)
+			p.addPagination(s, v, nil, recursive)
 		}
 	}
 	return nil
 }
 
-func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, recursive bool) {
+func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
 		// avoid recurse
 		if strings.HasPrefix(f.Name, "__") || f.Arguments.ForName("limit") != nil || f.Arguments.ForName("offset") != nil {
@@ -40,8 +40,8 @@ func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, recursive 
 
 		fieldType := s.Types[f.Type.Name()]
 		if gql.IsScalarListType(s, f.Type) || !gql.IsListType(f.Type) {
-			if recursive && fieldType.IsCompositeType() {
-				p.addPagination(s, fieldType, recursive)
+			if recursive && fieldType.IsCompositeType() && fieldType != parent {
+				p.addPagination(s, fieldType, obj, recursive)
 			}
 			continue
 		}
@@ -60,7 +60,7 @@ func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, recursive 
 			},
 		)
 		if recursive && fieldType.IsCompositeType() {
-			p.addPagination(s, fieldType, recursive)
+			p.addPagination(s, fieldType, obj, recursive)
 		}
 	}
 }
