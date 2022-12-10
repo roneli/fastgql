@@ -26,6 +26,9 @@ func GetType(a *ast.Type) *ast.Type {
 }
 
 func GetDirectiveValue(d *ast.Directive, name string) interface{} {
+	if d == nil {
+		return nil
+	}
 	arg := d.Arguments.ForName(name)
 	if arg == nil {
 		return nil

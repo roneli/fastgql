@@ -36,12 +36,15 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Language() LanguageResolver
 	Movie() MovieResolver
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
 type DirectiveRoot struct {
 	SkipGenerate func(ctx context.Context, obj interface{}, next graphql.Resolver, resolver *bool) (res interface{}, err error)
+	SqlRelation  func(ctx context.Context, obj interface{}, next graphql.Resolver, relationType model.RelationType, baseTable string, refTable string, fields []string, references []string, manyToManyTable *string, manyToManyFields []*string, manyToManyReferences []*string) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -65,6 +68,11 @@ type ComplexityRoot struct {
 		Count func(childComplexity int) int
 		Max   func(childComplexity int) int
 		Min   func(childComplexity int) int
+	}
+
+	ActorsPayload struct {
+		Actors       func(childComplexity int) int
+		RowsAffected func(childComplexity int) int
 	}
 
 	Category struct {
@@ -134,6 +142,8 @@ type ComplexityRoot struct {
 		LanguageID     func(childComplexity int) int
 		LastUpdate     func(childComplexity int) int
 		Name           func(childComplexity int) int
+		Stuff          func(childComplexity int, limit *int, offset *int, orderBy []*model.StuffOrdering, filter *model.StuffFilterInput) int
+		StuffAggregate func(childComplexity int) int
 	}
 
 	LanguageMin struct {
@@ -153,6 +163,11 @@ type ComplexityRoot struct {
 		ActorsAggregate func(childComplexity int) int
 	}
 
+	Mutation struct {
+		CreateActors func(childComplexity int, inputs []model.CreateActorInput) int
+		DeleteActors func(childComplexity int, cascade *bool, filter *model.ActorFilterInput) int
+	}
+
 	Query struct {
 		Actors            func(childComplexity int, limit *int, offset *int, orderBy []*model.ActorOrdering, filter *model.ActorFilterInput) int
 		ActorsAggregate   func(childComplexity int) int
@@ -163,14 +178,37 @@ type ComplexityRoot struct {
 		Movie             func(childComplexity int) int
 	}
 
+	Stuff struct {
+		LanguageID func(childComplexity int) int
+		Name       func(childComplexity int) int
+	}
+
+	StuffMin struct {
+		LanguageID func(childComplexity int) int
+		Name       func(childComplexity int) int
+	}
+
+	StuffsAggregate struct {
+		Count func(childComplexity int) int
+		Max   func(childComplexity int) int
+		Min   func(childComplexity int) int
+	}
+
 	_AggregateResult struct {
 		Count func(childComplexity int) int
 	}
 }
 
+type LanguageResolver interface {
+	Stuff(ctx context.Context, obj *model.Language, limit *int, offset *int, orderBy []*model.StuffOrdering, filter *model.StuffFilterInput) ([]*model.Stuff, error)
+}
 type MovieResolver interface {
 	Actors(ctx context.Context, obj *model.Movie, limit *int, offset *int, orderBy []*model.ActorOrdering, filter *model.ActorFilterInput) ([]*model.Actor, error)
 	ActorsAggregate(ctx context.Context, obj *model.Movie) (*model.ActorsAggregate, error)
+}
+type MutationResolver interface {
+	CreateActors(ctx context.Context, inputs []model.CreateActorInput) (*model.ActorsPayload, error)
+	DeleteActors(ctx context.Context, cascade *bool, filter *model.ActorFilterInput) (*model.ActorsPayload, error)
 }
 type QueryResolver interface {
 	Movie(ctx context.Context) (*model.Movie, error)
@@ -292,6 +330,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActorsAggregate.Min(childComplexity), true
+
+	case "ActorsPayload.actors":
+		if e.complexity.ActorsPayload.Actors == nil {
+			break
+		}
+
+		return e.complexity.ActorsPayload.Actors(childComplexity), true
+
+	case "ActorsPayload.rows_affected":
+		if e.complexity.ActorsPayload.RowsAffected == nil {
+			break
+		}
+
+		return e.complexity.ActorsPayload.RowsAffected(childComplexity), true
 
 	case "Category.categoryId":
 		if e.complexity.Category.CategoryID == nil {
@@ -628,6 +680,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Language.Name(childComplexity), true
 
+	case "Language.stuff":
+		if e.complexity.Language.Stuff == nil {
+			break
+		}
+
+		args, err := ec.field_Language_stuff_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Language.Stuff(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.StuffOrdering), args["filter"].(*model.StuffFilterInput)), true
+
+	case "Language._stuffAggregate":
+		if e.complexity.Language.StuffAggregate == nil {
+			break
+		}
+
+		return e.complexity.Language.StuffAggregate(childComplexity), true
+
 	case "LanguageMin.languageId":
 		if e.complexity.LanguageMin.LanguageID == nil {
 			break
@@ -688,6 +759,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Movie.ActorsAggregate(childComplexity), true
+
+	case "Mutation.createActors":
+		if e.complexity.Mutation.CreateActors == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createActors_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateActors(childComplexity, args["inputs"].([]model.CreateActorInput)), true
+
+	case "Mutation.deleteActors":
+		if e.complexity.Mutation.DeleteActors == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteActors_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteActors(childComplexity, args["cascade"].(*bool), args["filter"].(*model.ActorFilterInput)), true
 
 	case "Query.actors":
 		if e.complexity.Query.Actors == nil {
@@ -753,6 +848,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Movie(childComplexity), true
 
+	case "Stuff.languageId":
+		if e.complexity.Stuff.LanguageID == nil {
+			break
+		}
+
+		return e.complexity.Stuff.LanguageID(childComplexity), true
+
+	case "Stuff.name":
+		if e.complexity.Stuff.Name == nil {
+			break
+		}
+
+		return e.complexity.Stuff.Name(childComplexity), true
+
+	case "StuffMin.languageId":
+		if e.complexity.StuffMin.LanguageID == nil {
+			break
+		}
+
+		return e.complexity.StuffMin.LanguageID(childComplexity), true
+
+	case "StuffMin.name":
+		if e.complexity.StuffMin.Name == nil {
+			break
+		}
+
+		return e.complexity.StuffMin.Name(childComplexity), true
+
+	case "StuffsAggregate.count":
+		if e.complexity.StuffsAggregate.Count == nil {
+			break
+		}
+
+		return e.complexity.StuffsAggregate.Count(childComplexity), true
+
+	case "StuffsAggregate.max":
+		if e.complexity.StuffsAggregate.Max == nil {
+			break
+		}
+
+		return e.complexity.StuffsAggregate.Max(childComplexity), true
+
+	case "StuffsAggregate.min":
+		if e.complexity.StuffsAggregate.Min == nil {
+			break
+		}
+
+		return e.complexity.StuffsAggregate.Min(childComplexity), true
+
 	case "_AggregateResult.count":
 		if e.complexity._AggregateResult.Count == nil {
 			break
@@ -773,6 +917,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBooleanComparator,
 		ec.unmarshalInputBooleanListComparator,
 		ec.unmarshalInputCategoryFilterInput,
+		ec.unmarshalInputCreateActorInput,
 		ec.unmarshalInputFilmCategoryOrdering,
 		ec.unmarshalInputFilmFilterInput,
 		ec.unmarshalInputFilmOrdering,
@@ -782,6 +927,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLanguageOrdering,
 		ec.unmarshalInputStringComparator,
 		ec.unmarshalInputStringListComparator,
+		ec.unmarshalInputStuffFilterInput,
+		ec.unmarshalInputStuffOrdering,
 	)
 	first := true
 
@@ -794,6 +941,21 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			first = false
 			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
 			data := ec._Query(ctx, rc.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
+			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 
@@ -905,10 +1067,21 @@ type ActorsAggregate {
 	"""
 	min: ActorMin
 }
+"""
+Autogenerated payload object
+"""
+type ActorsPayload {
+	"""
+	rows affection by mutation
+	"""
+	rows_affected: Int!
+	actors: [Actor]
+}
 input CategoryFilterInput {
-	category: CategoryFilterInput
-	film: FilmFilterInput
+	categoryId: IntComparator
+	name: StringComparator
 	lastUpdate: StringComparator
+	films: FilmFilterInput
 	"""
 	Logical AND of FilterInput
 	"""
@@ -1098,6 +1271,7 @@ input LanguageFilterInput {
 	name: StringComparator
 	lastUpdate: StringComparator
 	films: FilmFilterInput
+	stuff: StuffFilterInput
 	"""
 	Logical AND of FilterInput
 	"""
@@ -1162,13 +1336,102 @@ type LanguagesAggregate {
 	"""
 	min: LanguageMin
 }
+type Mutation {
+	"""
+	AutoGenerated input for Actor
+	"""
+	createActors(inputs: [CreateActorInput!]!): ActorsPayload
+	"""
+	AutoGenerated input for Actor
+	"""
+	deleteActors(
+		"""
+		cascade on delete
+		"""
+		cascade: Boolean
+	,
+		"""
+		Filter objects to delete
+		"""
+		filter: ActorFilterInput
+	): ActorsPayload
+}
+input StuffFilterInput {
+	name: StringComparator
+	languageId: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [StuffFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [StuffFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: StuffFilterInput
+}
+"""
+max aggregator for Stuff
+"""
+type StuffMin {
+	"""
+	Compute the maxiumum for name
+	"""
+	name: String!
+	"""
+	Compute the maxiumum for languageId
+	"""
+	languageId: String!
+}
+"""
+Ordering for Stuff
+"""
+input StuffOrdering {
+	"""
+	Order Stuff by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order Stuff by languageId
+	"""
+	languageId: _OrderingTypes
+}
+"""
+Aggregate Stuff
+"""
+type StuffsAggregate {
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Computes the maximum of the non-null input values.
+	"""
+	max: StuffMin
+	"""
+	Computes the minimum of the non-null input values.
+	"""
+	min: StuffMin
+}
+"""
+AutoGenerated input for Actor
+"""
+input CreateActorInput {
+	actorId: Int!
+	firstName: String!
+	lastName: String!
+	lastUpdate: String!
+}
 `, BuiltIn: false},
 	{Name: "graph/common.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 directive @generateMutations(create: Boolean = True, delete: Boolean = True) on OBJECT
+directive @relation(type: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-directive @tableName(name: String!, schema: String) on OBJECT | INTERFACE
+directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean
@@ -1233,7 +1496,7 @@ enum _relationType {
 	MANY_TO_MANY
 }
 `, BuiltIn: false},
-	{Name: "graph/actors.graphql", Input: `type Actor @tableName(name: "actor", schema: "movies") @generateFilterInput(name: "ActorFilterInput") {
+	{Name: "graph/actors.graphql", Input: `type Actor @table(name: "actor", schema: "movies") @generateFilterInput(name: "ActorFilterInput") @generateMutations(create: true, delete: true) {
 	actorId: Int!
 	firstName: String!
 	lastName: String!
@@ -1258,7 +1521,7 @@ enum _relationType {
 		Filter films
 		"""
 		filter: FilmFilterInput
-	): [Film] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "actor", refTable: "film", fields: ["actor_id"], references: ["film_id"], manyToManyTable: "film_actor", manyToManyFields: ["actor_id"], manyToManyReferences: ["film_id"])
+	): [Film] @relation(type: MANY_TO_MANY, baseTable: "actor", refTable: "film", fields: ["actor_id"], references: ["film_id"], manyToManyTable: "film_actor", manyToManyFields: ["actor_id"], manyToManyReferences: ["film_id"])
 	"""
 	films Aggregate
 	"""
@@ -1295,7 +1558,7 @@ type Movie @generate(recursive: true, wrapper: true) {
 	_actorsAggregate: ActorsAggregate!
 }
 `, BuiltIn: false},
-	{Name: "graph/schema.graphql", Input: `type Category @tableName(name: "category", schema: "movies") @generateFilterInput(name: "CategoryFilterInput") {
+	{Name: "graph/schema.graphql", Input: `type Category @table(name: "category", schema: "movies") @generateFilterInput(name: "CategoryFilterInput") {
 	categoryId: Int!
 	name: String!
 	lastUpdate: String!
@@ -1317,9 +1580,9 @@ type Movie @generate(recursive: true, wrapper: true) {
 		Ordering for Film
 		"""
 		orderBy: [FilmOrdering]
-	): [Film] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
+	): [Film] @relation(type: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
 }
-type Film @tableName(name: "film", schema: "movies") @generateFilterInput(name: "FilmFilterInput") {
+type Film @table(name: "film", schema: "movies") @generateFilterInput(name: "FilmFilterInput") {
 	filmId: Int!
 	title: String!
 	description: String!
@@ -1346,8 +1609,8 @@ type Film @tableName(name: "film", schema: "movies") @generateFilterInput(name: 
 		Ordering for FilmCategory
 		"""
 		orderBy: [FilmCategoryOrdering]
-	): [FilmCategory] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "film", refTable: "film_category", fields: ["film_id"], references: ["film_id"])
-	language: Language! @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film", refTable: "language", fields: ["language_id"], references: ["language_id"])
+	): [FilmCategory] @relation(type: ONE_TO_MANY, baseTable: "film", refTable: "film_category", fields: ["film_id"], references: ["film_id"])
+	language: Language! @relation(type: ONE_TO_ONE, baseTable: "film", refTable: "language", fields: ["language_id"], references: ["language_id"])
 	actors(
 		"""
 		Limit
@@ -1368,7 +1631,7 @@ type Film @tableName(name: "film", schema: "movies") @generateFilterInput(name: 
 		Filter actors
 		"""
 		filter: ActorFilterInput
-	): [Actor] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "film", refTable: "actor", fields: ["film_id"], references: ["actor_id"], manyToManyTable: "film_actor", manyToManyFields: ["film_id"], manyToManyReferences: ["actor_id"])
+	): [Actor] @relation(type: MANY_TO_MANY, baseTable: "film", refTable: "actor", fields: ["film_id"], references: ["actor_id"], manyToManyTable: "film_actor", manyToManyFields: ["film_id"], manyToManyReferences: ["actor_id"])
 	"""
 	categories Aggregate
 	"""
@@ -1378,12 +1641,12 @@ type Film @tableName(name: "film", schema: "movies") @generateFilterInput(name: 
 	"""
 	_actorsAggregate: ActorsAggregate!
 }
-type FilmCategory @tableName(name: "film_category", schema: "movies") @generateFilterInput(name: "CategoryFilterInput") {
-	category: Category @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film_category", refTable: "category", fields: ["category_id"], references: ["category_id"])
-	film: Film @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film_category", refTable: "film", fields: ["film_id"], references: ["film_id"])
+type FilmCategory @table(name: "film_category", schema: "movies") @generateFilterInput(name: "CategoryFilterInput") {
+	category: Category @relation(type: ONE_TO_ONE, baseTable: "film_category", refTable: "category", fields: ["category_id"], references: ["category_id"])
+	film: Film @relation(type: ONE_TO_ONE, baseTable: "film_category", refTable: "film", fields: ["film_id"], references: ["film_id"])
 	lastUpdate: String!
 }
-type Language @tableName(name: "language", schema: "movies") @generateFilterInput(name: "LanguageFilterInput") {
+type Language @table(name: "language", schema: "movies") @generateFilterInput(name: "LanguageFilterInput") {
 	languageId: Int!
 	name: String!
 	lastUpdate: String!
@@ -1410,11 +1673,36 @@ type Language @tableName(name: "language", schema: "movies") @generateFilterInpu
 		Filter films
 		"""
 		filter: FilmFilterInput
-	): [Film] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
+	): [Film] @relation(type: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
+	stuff(
+		"""
+		Limit
+		"""
+		limit: Int = 100
+	,
+		"""
+		Offset
+		"""
+		offset: Int = 0
+	,
+		"""
+		Ordering for Stuff
+		"""
+		orderBy: [StuffOrdering]
+	,
+		"""
+		Filter stuff
+		"""
+		filter: StuffFilterInput
+	): [Stuff] @relation(type: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
 	"""
 	films Aggregate
 	"""
 	_filmsAggregate: FilmsAggregate!
+	"""
+	stuff Aggregate
+	"""
+	_stuffAggregate: StuffsAggregate!
 }
 type Query @generate(recursive: true) {
 	movie: Movie
@@ -1494,6 +1782,10 @@ type Query @generate(recursive: true) {
 	"""
 	_languageAggregate: LanguagesAggregate!
 }
+type Stuff @table(name: "stuff", schema: "movies", dialect: "mongo") @generateFilterInput(name: "StuffFilterInput") {
+	name: String!
+	languageId: String
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -1514,6 +1806,84 @@ func (ec *executionContext) dir_skipGenerate_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["resolver"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) dir_sqlRelation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.RelationType
+	if tmp, ok := rawArgs["relationType"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("relationType"))
+		arg0, err = ec.unmarshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐRelationType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["relationType"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["baseTable"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("baseTable"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["baseTable"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["refTable"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("refTable"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["refTable"] = arg2
+	var arg3 []string
+	if tmp, ok := rawArgs["fields"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fields"))
+		arg3, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fields"] = arg3
+	var arg4 []string
+	if tmp, ok := rawArgs["references"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("references"))
+		arg4, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["references"] = arg4
+	var arg5 *string
+	if tmp, ok := rawArgs["manyToManyTable"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("manyToManyTable"))
+		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["manyToManyTable"] = arg5
+	var arg6 []*string
+	if tmp, ok := rawArgs["manyToManyFields"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("manyToManyFields"))
+		arg6, err = ec.unmarshalOString2ᚕᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["manyToManyFields"] = arg6
+	var arg7 []*string
+	if tmp, ok := rawArgs["manyToManyReferences"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("manyToManyReferences"))
+		arg7, err = ec.unmarshalOString2ᚕᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["manyToManyReferences"] = arg7
 	return args, nil
 }
 
@@ -1709,6 +2079,48 @@ func (ec *executionContext) field_Language_films_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Language_stuff_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg1
+	var arg2 []*model.StuffOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg2, err = ec.unmarshalOStuffOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffOrdering(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg2
+	var arg3 *model.StuffFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOStuffFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Movie_actors_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1748,6 +2160,45 @@ func (ec *executionContext) field_Movie_actors_args(ctx context.Context, rawArgs
 		}
 	}
 	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createActors_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []model.CreateActorInput
+	if tmp, ok := rawArgs["inputs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inputs"))
+		arg0, err = ec.unmarshalNCreateActorInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCreateActorInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inputs"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteActors_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *bool
+	if tmp, ok := rawArgs["cascade"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cascade"))
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["cascade"] = arg0
+	var arg1 *model.ActorFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg1, err = ec.unmarshalOActorFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg1
 	return args, nil
 }
 
@@ -2566,6 +3017,105 @@ func (ec *executionContext) fieldContext_ActorsAggregate_min(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _ActorsPayload_rows_affected(ctx context.Context, field graphql.CollectedField, obj *model.ActorsPayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActorsPayload_rows_affected(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RowsAffected, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActorsPayload_rows_affected(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActorsPayload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActorsPayload_actors(ctx context.Context, field graphql.CollectedField, obj *model.ActorsPayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActorsPayload_actors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Actors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Actor)
+	fc.Result = res
+	return ec.marshalOActor2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActor(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActorsPayload_actors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActorsPayload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "actorId":
+				return ec.fieldContext_Actor_actorId(ctx, field)
+			case "firstName":
+				return ec.fieldContext_Actor_firstName(ctx, field)
+			case "lastName":
+				return ec.fieldContext_Actor_lastName(ctx, field)
+			case "lastUpdate":
+				return ec.fieldContext_Actor_lastUpdate(ctx, field)
+			case "films":
+				return ec.fieldContext_Actor_films(ctx, field)
+			case "_filmsAggregate":
+				return ec.fieldContext_Actor__filmsAggregate(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Actor", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Category_categoryId(ctx context.Context, field graphql.CollectedField, obj *model.Category) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Category_categoryId(ctx, field)
 	if err != nil {
@@ -3372,8 +3922,12 @@ func (ec *executionContext) fieldContext_Film_language(ctx context.Context, fiel
 				return ec.fieldContext_Language_lastUpdate(ctx, field)
 			case "films":
 				return ec.fieldContext_Language_films(ctx, field)
+			case "stuff":
+				return ec.fieldContext_Language_stuff(ctx, field)
 			case "_filmsAggregate":
 				return ec.fieldContext_Language__filmsAggregate(ctx, field)
+			case "_stuffAggregate":
+				return ec.fieldContext_Language__stuffAggregate(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Language", field.Name)
 		},
@@ -4727,6 +5281,64 @@ func (ec *executionContext) fieldContext_Language_films(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Language_stuff(ctx context.Context, field graphql.CollectedField, obj *model.Language) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Language_stuff(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Language().Stuff(rctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.StuffOrdering), fc.Args["filter"].(*model.StuffFilterInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Stuff)
+	fc.Result = res
+	return ec.marshalOStuff2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuff(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Language_stuff(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Language",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Stuff_name(ctx, field)
+			case "languageId":
+				return ec.fieldContext_Stuff_languageId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Stuff", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Language_stuff_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Language__filmsAggregate(ctx context.Context, field graphql.CollectedField, obj *model.Language) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Language__filmsAggregate(ctx, field)
 	if err != nil {
@@ -4774,6 +5386,58 @@ func (ec *executionContext) fieldContext_Language__filmsAggregate(ctx context.Co
 				return ec.fieldContext_FilmsAggregate_min(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FilmsAggregate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Language__stuffAggregate(ctx context.Context, field graphql.CollectedField, obj *model.Language) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Language__stuffAggregate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StuffAggregate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.StuffsAggregate)
+	fc.Result = res
+	return ec.marshalNStuffsAggregate2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffsAggregate(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Language__stuffAggregate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Language",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext_StuffsAggregate_count(ctx, field)
+			case "max":
+				return ec.fieldContext_StuffsAggregate_max(ctx, field)
+			case "min":
+				return ec.fieldContext_StuffsAggregate_min(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StuffsAggregate", field.Name)
 		},
 	}
 	return fc, nil
@@ -5171,6 +5835,122 @@ func (ec *executionContext) fieldContext_Movie__actorsAggregate(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createActors(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createActors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateActors(rctx, fc.Args["inputs"].([]model.CreateActorInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ActorsPayload)
+	fc.Result = res
+	return ec.marshalOActorsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorsPayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createActors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "rows_affected":
+				return ec.fieldContext_ActorsPayload_rows_affected(ctx, field)
+			case "actors":
+				return ec.fieldContext_ActorsPayload_actors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ActorsPayload", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createActors_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteActors(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteActors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteActors(rctx, fc.Args["cascade"].(*bool), fc.Args["filter"].(*model.ActorFilterInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ActorsPayload)
+	fc.Result = res
+	return ec.marshalOActorsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorsPayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteActors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "rows_affected":
+				return ec.fieldContext_ActorsPayload_rows_affected(ctx, field)
+			case "actors":
+				return ec.fieldContext_ActorsPayload_actors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ActorsPayload", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteActors_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_movie(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_movie(ctx, field)
 	if err != nil {
@@ -5414,8 +6194,12 @@ func (ec *executionContext) fieldContext_Query_language(ctx context.Context, fie
 				return ec.fieldContext_Language_lastUpdate(ctx, field)
 			case "films":
 				return ec.fieldContext_Language_films(ctx, field)
+			case "stuff":
+				return ec.fieldContext_Language_stuff(ctx, field)
 			case "_filmsAggregate":
 				return ec.fieldContext_Language__filmsAggregate(ctx, field)
+			case "_stuffAggregate":
+				return ec.fieldContext_Language__stuffAggregate(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Language", field.Name)
 		},
@@ -5714,6 +6498,317 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Stuff_name(ctx context.Context, field graphql.CollectedField, obj *model.Stuff) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Stuff_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Stuff_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Stuff",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Stuff_languageId(ctx context.Context, field graphql.CollectedField, obj *model.Stuff) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Stuff_languageId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LanguageID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Stuff_languageId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Stuff",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StuffMin_name(ctx context.Context, field graphql.CollectedField, obj *model.StuffMin) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StuffMin_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StuffMin_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StuffMin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StuffMin_languageId(ctx context.Context, field graphql.CollectedField, obj *model.StuffMin) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StuffMin_languageId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LanguageID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StuffMin_languageId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StuffMin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StuffsAggregate_count(ctx context.Context, field graphql.CollectedField, obj *model.StuffsAggregate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StuffsAggregate_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StuffsAggregate_count(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StuffsAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StuffsAggregate_max(ctx context.Context, field graphql.CollectedField, obj *model.StuffsAggregate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StuffsAggregate_max(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Max, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.StuffMin)
+	fc.Result = res
+	return ec.marshalOStuffMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffMin(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StuffsAggregate_max(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StuffsAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_StuffMin_name(ctx, field)
+			case "languageId":
+				return ec.fieldContext_StuffMin_languageId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StuffMin", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StuffsAggregate_min(ctx context.Context, field graphql.CollectedField, obj *model.StuffsAggregate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StuffsAggregate_min(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Min, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.StuffMin)
+	fc.Result = res
+	return ec.marshalOStuffMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffMin(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StuffsAggregate_min(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StuffsAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_StuffMin_name(ctx, field)
+			case "languageId":
+				return ec.fieldContext_StuffMin_languageId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StuffMin", field.Name)
 		},
 	}
 	return fc, nil
@@ -7773,19 +8868,19 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
-		case "category":
+		case "categoryId":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
-			it.Category, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categoryId"))
+			it.CategoryID, err = ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "film":
+		case "name":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("film"))
-			it.Film, err = ec.unmarshalOFilmFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐFilmFilterInput(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7794,6 +8889,14 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastUpdate"))
 			it.LastUpdate, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "films":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("films"))
+			it.Films, err = ec.unmarshalOFilmFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐFilmFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7818,6 +8921,53 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
 			it.Not, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateActorInput(ctx context.Context, obj interface{}) (model.CreateActorInput, error) {
+	var it model.CreateActorInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "actorId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actorId"))
+			it.ActorID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "firstName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firstName"))
+			it.FirstName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+			it.LastName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastUpdate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastUpdate"))
+			it.LastUpdate, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8255,6 +9405,14 @@ func (ec *executionContext) unmarshalInputLanguageFilterInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "stuff":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("stuff"))
+			it.Stuff, err = ec.unmarshalOStuffFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "AND":
 			var err error
 
@@ -8474,6 +9632,92 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputStuffFilterInput(ctx context.Context, obj interface{}) (model.StuffFilterInput, error) {
+	var it model.StuffFilterInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "languageId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("languageId"))
+			it.LanguageID, err = ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "AND":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			it.And, err = ec.unmarshalOStuffFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "OR":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			it.Or, err = ec.unmarshalOStuffFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "NOT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			it.Not, err = ec.unmarshalOStuffFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputStuffOrdering(ctx context.Context, obj interface{}) (model.StuffOrdering, error) {
+	var it model.StuffOrdering
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "languageId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("languageId"))
+			it.LanguageID, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -8615,6 +9859,38 @@ func (ec *executionContext) _ActorsAggregate(ctx context.Context, sel ast.Select
 		case "min":
 
 			out.Values[i] = ec._ActorsAggregate_min(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var actorsPayloadImplementors = []string{"ActorsPayload"}
+
+func (ec *executionContext) _ActorsPayload(ctx context.Context, sel ast.SelectionSet, obj *model.ActorsPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, actorsPayloadImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ActorsPayload")
+		case "rows_affected":
+
+			out.Values[i] = ec._ActorsPayload_rows_affected(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "actors":
+
+			out.Values[i] = ec._ActorsPayload_actors(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -9039,32 +10315,56 @@ func (ec *executionContext) _Language(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Language_languageId(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 
 			out.Values[i] = ec._Language_name(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "lastUpdate":
 
 			out.Values[i] = ec._Language_lastUpdate(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "films":
 
 			out.Values[i] = ec._Language_films(ctx, field, obj)
 
+		case "stuff":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Language_stuff(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "_filmsAggregate":
 
 			out.Values[i] = ec._Language__filmsAggregate(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "_stuffAggregate":
+
+			out.Values[i] = ec._Language__stuffAggregate(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -9202,6 +10502,48 @@ func (ec *executionContext) _Movie(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
+			Object: field.Name,
+			Field:  field,
+		})
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createActors":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createActors(ctx, field)
+			})
+
+		case "deleteActors":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteActors(ctx, field)
+			})
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9392,6 +10734,109 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var stuffImplementors = []string{"Stuff"}
+
+func (ec *executionContext) _Stuff(ctx context.Context, sel ast.SelectionSet, obj *model.Stuff) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, stuffImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Stuff")
+		case "name":
+
+			out.Values[i] = ec._Stuff_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "languageId":
+
+			out.Values[i] = ec._Stuff_languageId(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var stuffMinImplementors = []string{"StuffMin"}
+
+func (ec *executionContext) _StuffMin(ctx context.Context, sel ast.SelectionSet, obj *model.StuffMin) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, stuffMinImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StuffMin")
+		case "name":
+
+			out.Values[i] = ec._StuffMin_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "languageId":
+
+			out.Values[i] = ec._StuffMin_languageId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var stuffsAggregateImplementors = []string{"StuffsAggregate"}
+
+func (ec *executionContext) _StuffsAggregate(ctx context.Context, sel ast.SelectionSet, obj *model.StuffsAggregate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, stuffsAggregateImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StuffsAggregate")
+		case "count":
+
+			out.Values[i] = ec._StuffsAggregate_count(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "max":
+
+			out.Values[i] = ec._StuffsAggregate_max(ctx, field, obj)
+
+		case "min":
+
+			out.Values[i] = ec._StuffsAggregate_min(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -9779,6 +11224,28 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNCreateActorInput2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCreateActorInput(ctx context.Context, v interface{}) (model.CreateActorInput, error) {
+	res, err := ec.unmarshalInputCreateActorInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateActorInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCreateActorInputᚄ(ctx context.Context, v interface{}) ([]model.CreateActorInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]model.CreateActorInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNCreateActorInput2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐCreateActorInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) marshalNFilmCategoriesAggregate2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐFilmCategoriesAggregate(ctx context.Context, sel ast.SelectionSet, v *model.FilmCategoriesAggregate) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -9902,6 +11369,16 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalNStuffsAggregate2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffsAggregate(ctx context.Context, sel ast.SelectionSet, v *model.StuffsAggregate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StuffsAggregate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -10276,6 +11753,13 @@ func (ec *executionContext) unmarshalOActorOrdering2ᚖgithubᚗcomᚋroneliᚋf
 	}
 	res, err := ec.unmarshalInputActorOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOActorsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐActorsPayload(ctx context.Context, sel ast.SelectionSet, v *model.ActorsPayload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ActorsPayload(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
@@ -10800,6 +12284,117 @@ func (ec *executionContext) unmarshalOStringListComparator2ᚖgithubᚗcomᚋron
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputStringListComparator(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOStuff2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuff(ctx context.Context, sel ast.SelectionSet, v []*model.Stuff) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOStuff2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuff(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOStuff2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuff(ctx context.Context, sel ast.SelectionSet, v *model.Stuff) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Stuff(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOStuffFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffFilterInput(ctx context.Context, v interface{}) ([]*model.StuffFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.StuffFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOStuffFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOStuffFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffFilterInput(ctx context.Context, v interface{}) (*model.StuffFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputStuffFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOStuffMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffMin(ctx context.Context, sel ast.SelectionSet, v *model.StuffMin) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._StuffMin(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOStuffOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffOrdering(ctx context.Context, v interface{}) ([]*model.StuffOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.StuffOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOStuffOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOStuffOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmovieᚋgraphᚋmodelᚐStuffOrdering(ctx context.Context, v interface{}) (*model.StuffOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputStuffOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

@@ -9,7 +9,7 @@ type Logger struct {
 }
 
 // NewZerologAdapter accepts a zerolog.Logger as input and returns a new custom fastgql
-// logging fascade as output.
+// logging facade as output.
 func NewZerologAdapter(logger zerolog.Logger) *Logger {
 	return &Logger{
 		logger: logger.With().Str("module", "fastgql").Logger(),

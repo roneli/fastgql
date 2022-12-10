@@ -2,6 +2,7 @@ package resolvergen
 
 import (
 	"bytes"
+	"fmt"
 	"go/types"
 	"io/ioutil"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/roneli/fastgql/pkg/codegen/rewrite"
+	"github.com/roneli/fastgql/pkg/schema/codegen/rewrite"
 
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/config"
@@ -169,7 +170,7 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 				//
 				// It serves as dependency injection for your app, add any dependencies you require here.`,
 			Template: `{{ reserveImport "context"  }}
-{{ reserveImport "github.com/roneli/fastgql/pkg/builders" }}
+{{ reserveImport "github.com/roneli/fastgql/pkg/execution/builders" }}
 {{ reserveImport "github.com/roneli/fastgql/pkg/execution" }}
 type {{.}} struct {
 	Cfg *builders.Config 
@@ -184,6 +185,11 @@ type {{.}} struct {
 		}
 	}
 	return nil
+}
+
+type fastGQLResolver struct {
+	*Resolver
+	Dialect string
 }
 
 func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
@@ -203,18 +209,23 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 		return buf, nil
 	}
 
+	if resolver.Field.Name == "Stuff" {
+		fmt.Println("lol")
+	}
+
 	baseFuncs := templates.Funcs()
 	baseFuncs["hasSuffix"] = strings.HasSuffix
 	baseFuncs["hasPrefix"] = strings.HasPrefix
 	baseFuncs["deref"] = deref
 
+	fResolver := fastGQLResolver{resolver, "postgres"}
 	if d := resolver.Field.TypeReference.Definition.Directives.ForName("generate"); d != nil {
 		if v := d.Arguments.ForName("wrapper"); v != nil && cast.ToBool(v.Value.Raw) {
 			t, err := template.New("").Funcs(baseFuncs).Parse(wrapperImpl)
 			if err != nil {
 				return buf, err
 			}
-			return buf, t.Execute(buf, resolver)
+			return buf, t.Execute(buf, fResolver)
 		}
 	}
 
@@ -225,8 +236,14 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 		}
 	}
 
+	if d := resolver.Field.TypeReference.Definition.Directives.ForName("dialect"); d != nil {
+		if v := d.Arguments.ForName("type"); v != nil && v.Value.String() != "" {
+			fResolver.Dialect = v.Value.Raw
+		}
+	}
+
 	t := template.New("").Funcs(baseFuncs)
-	fileName := resolveName("sql.tpl", 0)
+	fileName := resolveName("fastgql.tpl", 0)
 
 	b, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -238,7 +255,7 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 		panic(err)
 	}
 
-	return buf, t.Execute(buf, resolver)
+	return buf, t.Execute(buf, fResolver)
 }
 
 func deref(p types.Type) string {

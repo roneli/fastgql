@@ -11,8 +11,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/roneli/fastgql/pkg/codegen/code"
 	"github.com/roneli/fastgql/pkg/schema"
+	"github.com/roneli/fastgql/pkg/schema/codegen/code"
 
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/spf13/cobra"

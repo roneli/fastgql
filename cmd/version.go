@@ -3,8 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/roneli/fastgql/pkg/schema"
-
+	"github.com/roneli/fastgql/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +12,6 @@ var versionCmd = &cobra.Command{
 	Short: "fastgql version",
 	Long:  `print the version string`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(schema.Version)
+		fmt.Println(pkg.Version)
 	},
 }
