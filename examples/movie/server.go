@@ -6,18 +6,16 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/roneli/fastgql/pkg/execution/dialect/pgx"
-
-	"github.com/roneli/fastgql/pkg/execution/dialect/mongo"
-
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/roneli/fastgql/examples/movie/graph"
 	"github.com/roneli/fastgql/examples/movie/graph/generated"
 	"github.com/roneli/fastgql/internal/log/adapters"
 	"github.com/roneli/fastgql/pkg/execution"
 	"github.com/roneli/fastgql/pkg/execution/builders"
+	"github.com/roneli/fastgql/pkg/execution/builders/mongo"
+	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 	"github.com/rs/zerolog/log"
 )
 
@@ -46,7 +44,7 @@ func main() {
 	resolver.Cfg = cfg
 	resolver.Executor = execution.NewExecutor(map[string]execution.Driver{
 		"mongo":    mongo.NewDriver("mongo", cfg, "mongodb://root:example@127.0.0.1:27017/"),
-		"postgres": pgx.NewDriver("postgres", cfg, pool),
+		"postgres": sql.NewDriver("postgres", cfg, pool),
 	})
 	srv := handler.NewDefaultServer(executableSchema)
 

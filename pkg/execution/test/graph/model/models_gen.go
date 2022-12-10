@@ -149,7 +149,7 @@ type StringComparator struct {
 	Eq          *string   `json:"eq" db:"eq"`
 	Neq         *string   `json:"neq" db:"neq"`
 	Contains    []*string `json:"contains" db:"contains"`
-	NotContains []*string `json:"not_contains" db:"not_contains"`
+	NotContains []*string `json:"notContains" db:"notContains"`
 	Like        *string   `json:"like" db:"like"`
 	Ilike       *string   `json:"ilike" db:"ilike"`
 	Suffix      *string   `json:"suffix" db:"suffix"`
@@ -214,6 +214,12 @@ type UsersAggregate struct {
 
 type AggregateResult struct {
 	Count int `json:"count" db:"count"`
+}
+
+type ManyToManyRelation struct {
+	Table      *string   `json:"table" db:"table"`
+	Fields     []*string `json:"fields" db:"fields"`
+	References []*string `json:"references" db:"references"`
 }
 
 type OrderingTypes string

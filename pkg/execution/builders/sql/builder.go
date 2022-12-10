@@ -69,25 +69,26 @@ func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get input values: %w", err)
 	}
-	insert, err := b.buildInsert(tableDef, kv)
+	insertQuery, err := b.buildInsert(tableDef, kv)
 	if err != nil {
-		return "", nil, err
-	}
-	dataField, err := field.ForName(tableDef.name)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to find field definition %w", err)
-	}
-	queryHelper, err := b.buildQuery(tableDefinition{
-		name:   b.CaseConverter(field.Name),
-		schema: "",
-	}, dataField)
-	if err != nil {
-		return "", nil, errors.New("failed to build payload query")
+		return "", nil, fmt.Errorf("failed to build delete query: %w", err)
 	}
 	withTable := goqu.T(b.CaseConverter(field.Name))
-
-	sql, args, err := goqu.Select(queryHelper.SelectJsonAgg(dataField.Name),
-		goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), insert).ToSQL()
+	// Generate payload response
+	var cols []interface{}
+	for _, f := range field.Selections {
+		if f.Name == "rows_affected" {
+			cols = append(cols, goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable))
+			continue
+		}
+		qh, err := b.buildQuery(tableDefinition{name: b.CaseConverter(field.Name)}, f)
+		if err != nil {
+			return "", nil, errors.New("failed to build payload data query")
+		}
+		cols = append(cols, qh.SelectJsonAgg(f.Name))
+	}
+	sql, args, err := goqu.Select(cols...).With(withTable.GetTable(), insertQuery).ToSQL()
+	b.Logger.Debug("created insert query", "query", sql, "args", args, "error", err)
 	return sql, args, err
 }
 
@@ -98,26 +99,34 @@ func (b Builder) Delete(field builders.Field) (string, []interface{}, error) {
 		return "", nil, fmt.Errorf("failed to build delete query: %w", err)
 	}
 	withTable := goqu.T(b.CaseConverter(field.Name))
-	payloadField, err := field.ForName(tableDef.name)
-	if err == nil {
-		qh, err := b.buildQuery(tableDefinition{
-			name:   b.CaseConverter(field.Name),
-			schema: "",
-		}, payloadField)
-		if err != nil {
-			return "", nil, errors.New("failed to build payload query")
+	// Generate payload response
+	var cols []interface{}
+	for _, f := range field.Selections {
+		if f.Name == "rows_affected" {
+			cols = append(cols, goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable))
+			continue
 		}
-		return goqu.Select(qh.SelectJsonAgg(payloadField.Name),
-			goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), deleteQuery).ToSQL()
+		qh, err := b.buildQuery(tableDefinition{name: b.CaseConverter(field.Name)}, f)
+		if err != nil {
+			return "", nil, errors.New("failed to build payload data query")
+		}
+		cols = append(cols, qh.SelectJsonAgg(f.Name))
 	}
-	sql, args, err := goqu.Select(goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable)).With(withTable.GetTable(), deleteQuery).ToSQL()
+	sql, args, err := goqu.Select(cols...).With(withTable.GetTable(), deleteQuery).ToSQL()
 	b.Logger.Debug("created delete query", "query", sql, "args", args, "error", err)
 	return sql, args, err
 }
 
 func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
-	// TODO: get definition cleaner
-	query, err := b.buildQuery(getTableNameFromField(b.Schema, field.Definition), field)
+	var (
+		query *queryHelper
+		err   error
+	)
+	if strings.HasSuffix(field.Name, "Aggregate") && strings.HasPrefix(field.Name, "_") {
+		query, err = b.buildAggregate(getAggregateTableName(b.Schema, field.Field), field)
+	} else {
+		query, err = b.buildQuery(getTableNameFromField(b.Schema, field.Definition), field)
+	}
 	if err != nil {
 		return "", nil, err
 	}
@@ -126,20 +135,18 @@ func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 	return q, args, err
 }
 
-func (b Builder) Aggregate(field builders.Field) (string, []interface{}, error) {
-	query, err := b.buildAggregate(getAggregateTableName(b.Schema, field.Field), field)
-	if err != nil {
-		return "", nil, err
-	}
-	sql, args, err := query.ToSQL()
-	b.Logger.Debug("build aggregate query", "query", sql, "args", args, "error", err)
-	return sql, args, err
-}
-
 func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface{}) (*goqu.InsertDataset, error) {
 	b.Logger.Debug("building insert", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
+	// Substitute KV from GraphQL input into case conversion expected in database
+	for i, record := range kv {
+		newRecord := make(map[string]interface{})
+		for k, v := range record {
+			newRecord[b.CaseConverter(k)] = v
+		}
+		kv[i] = newRecord
+	}
 	return goqu.Dialect("postgres").Insert(table).Rows(kv).Prepared(true).Returning(goqu.Star()), nil
 }
 
@@ -155,7 +162,7 @@ func (b Builder) buildDelete(tableDef tableDefinition, field builders.Field) (*g
 	if !ok {
 		return nil, fmt.Errorf("expected filters map got %T", filterArg)
 	}
-	// Before we build the filter expression we require to get the Type defintion
+	// Before we build the filter expression we require to get the Type definition
 	filterExp, _ := b.buildFilterExp(tableHelper{table: tableDef.TableExpression().As(tableDef.name), alias: ""}, tableDef.objType, filters)
 	return q.Where(filterExp), nil
 }
@@ -187,7 +194,6 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 			if err := b.buildRelationAggregate(&query, childField); err != nil {
 				return nil, fmt.Errorf("failed to build relation for %s", childField.Name)
 			}
-
 		default:
 			b.Logger.Error("unknown field type", "tableDefinition", tableDef.name, "fieldName", childField.Name, "fieldType", childField.FieldType)
 			panic("unknown field type")

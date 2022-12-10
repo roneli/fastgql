@@ -69,10 +69,10 @@ type ComplexityRoot struct {
 
 	Post struct {
 		Categories          func(childComplexity int, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) int
-		CategoriesAggregate func(childComplexity int) int
+		CategoriesAggregate func(childComplexity int, filter *model.CategoryFilterInput) int
 		ID                  func(childComplexity int) int
 		Name                func(childComplexity int) int
-		User                func(childComplexity int) int
+		User                func(childComplexity int, filter *model.UserFilterInput) int
 	}
 
 	PostMin struct {
@@ -93,18 +93,18 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Categories          func(childComplexity int, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) int
-		CategoriesAggregate func(childComplexity int) int
+		CategoriesAggregate func(childComplexity int, filter *model.CategoryFilterInput) int
 		Posts               func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
-		PostsAggregate      func(childComplexity int) int
+		PostsAggregate      func(childComplexity int, filter *model.PostFilterInput) int
 		Users               func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
-		UsersAggregate      func(childComplexity int) int
+		UsersAggregate      func(childComplexity int, filter *model.UserFilterInput) int
 	}
 
 	User struct {
 		ID             func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Posts          func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
-		PostsAggregate func(childComplexity int) int
+		PostsAggregate func(childComplexity int, filter *model.PostFilterInput) int
 	}
 
 	UserMin struct {
@@ -131,9 +131,9 @@ type QueryResolver interface {
 	Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error)
 	Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
 	Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error)
-	PostsAggregate(ctx context.Context) (*model.PostsAggregate, error)
-	UsersAggregate(ctx context.Context) (*model.UsersAggregate, error)
-	CategoriesAggregate(ctx context.Context) (*model.CategoriesAggregate, error)
+	PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.PostsAggregate, error)
+	UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.UsersAggregate, error)
+	CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.CategoriesAggregate, error)
 }
 
 type executableSchema struct {
@@ -241,7 +241,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Post.CategoriesAggregate(childComplexity), true
+		args, err := ec.field_Post__categoriesAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Post.CategoriesAggregate(childComplexity, args["filter"].(*model.CategoryFilterInput)), true
 
 	case "Post.id":
 		if e.complexity.Post.ID == nil {
@@ -262,7 +267,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Post.User(childComplexity), true
+		args, err := ec.field_Post_user_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Post.User(childComplexity, args["filter"].(*model.UserFilterInput)), true
 
 	case "PostMin.id":
 		if e.complexity.PostMin.ID == nil {
@@ -330,7 +340,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.CategoriesAggregate(childComplexity), true
+		args, err := ec.field_Query__categoriesAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CategoriesAggregate(childComplexity, args["filter"].(*model.CategoryFilterInput)), true
 
 	case "Query.posts":
 		if e.complexity.Query.Posts == nil {
@@ -349,7 +364,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.PostsAggregate(childComplexity), true
+		args, err := ec.field_Query__postsAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PostsAggregate(childComplexity, args["filter"].(*model.PostFilterInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -368,7 +388,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.UsersAggregate(childComplexity), true
+		args, err := ec.field_Query__usersAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UsersAggregate(childComplexity, args["filter"].(*model.UserFilterInput)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -401,7 +426,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.User.PostsAggregate(childComplexity), true
+		args, err := ec.field_User__postsAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.PostsAggregate(childComplexity, args["filter"].(*model.PostFilterInput)), true
 
 	case "UserMin.id":
 		if e.complexity.UserMin.ID == nil {
@@ -466,6 +496,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputStringListComparator,
 		ec.unmarshalInputUserFilterInput,
 		ec.unmarshalInputUserOrdering,
+		ec.unmarshalInput_ManyToManyRelation,
 	)
 	first := true
 
@@ -744,13 +775,13 @@ input CreatePostInput {
 	name: String
 }
 `, BuiltIn: false},
-	{Name: "graph/common.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean) on OBJECT
+	{Name: "graph/common.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean = False) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 directive @generateMutations(create: Boolean = True, delete: Boolean = True) on OBJECT
-directive @relation(type: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+directive @table(name: String!, dialect: String!, schema: String) on OBJECT | INTERFACE
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean
@@ -785,7 +816,7 @@ input StringComparator {
 	eq: String
 	neq: String
 	contains: [String]
-	not_contains: [String]
+	notContains: [String]
 	like: String
 	ilike: String
 	suffix: String
@@ -802,6 +833,11 @@ input StringListComparator {
 }
 type _AggregateResult {
 	count: Int!
+}
+input _ManyToManyRelation {
+	table: String
+	fields: [String]
+	references: [String]
 }
 enum _OrderingTypes {
 	ASC
@@ -842,12 +878,22 @@ type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @g
 		Filter categories
 		"""
 		filter: CategoryFilterInput
-	): [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-	user: User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
+	): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user(
+		"""
+		Filter user
+		"""
+		filter: UserFilterInput
+	): User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
 	"""
 	categories Aggregate
 	"""
-	_categoriesAggregate: CategoriesAggregate!
+	_categoriesAggregate(
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput
+	): CategoriesAggregate!
 }
 type Query @generate {
 	posts(
@@ -916,17 +962,32 @@ type Query @generate {
 	"""
 	posts Aggregate
 	"""
-	_postsAggregate: PostsAggregate!
+	_postsAggregate(
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput
+	): PostsAggregate!
 	"""
 	users Aggregate
 	"""
-	_usersAggregate: UsersAggregate!
+	_usersAggregate(
+		"""
+		Filter _usersAggregate
+		"""
+		filter: UserFilterInput
+	): UsersAggregate!
 	"""
 	categories Aggregate
 	"""
-	_categoriesAggregate: CategoriesAggregate!
+	_categoriesAggregate(
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput
+	): CategoriesAggregate!
 }
-type User @generateFilterInput(name: "UserFilterInput") @table(name: "user") {
+type User @generateFilterInput(name: "UserFilterInput") @table(name: "users") {
 	id: Int!
 	name: String!
 	posts(
@@ -949,11 +1010,16 @@ type User @generateFilterInput(name: "UserFilterInput") @table(name: "user") {
 		Filter posts
 		"""
 		filter: PostFilterInput
-	): [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
+	): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 	"""
 	posts Aggregate
 	"""
-	_postsAggregate: PostsAggregate!
+	_postsAggregate(
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput
+	): PostsAggregate!
 }
 `, BuiltIn: false},
 }
@@ -1095,6 +1161,21 @@ func (ec *executionContext) field_Mutation_deletePosts_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Post__categoriesAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.CategoryFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1137,6 +1218,21 @@ func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawA
 	return args, nil
 }
 
+func (ec *executionContext) field_Post_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1149,6 +1245,51 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query__categoriesAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.CategoryFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query__postsAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PostFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query__usersAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -1275,6 +1416,21 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_User__postsAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PostFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -1883,60 +2039,8 @@ func (ec *executionContext) _Post_categories(ctx context.Context, field graphql.
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return obj.Categories, nil
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			relationType, err := ec.unmarshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐRelationType(ctx, "MANY_TO_MANY")
-			if err != nil {
-				return nil, err
-			}
-			baseTable, err := ec.unmarshalNString2string(ctx, "posts")
-			if err != nil {
-				return nil, err
-			}
-			refTable, err := ec.unmarshalNString2string(ctx, "categories")
-			if err != nil {
-				return nil, err
-			}
-			fields, err := ec.unmarshalNString2ᚕstringᚄ(ctx, []interface{}{"id"})
-			if err != nil {
-				return nil, err
-			}
-			references, err := ec.unmarshalNString2ᚕstringᚄ(ctx, []interface{}{"id"})
-			if err != nil {
-				return nil, err
-			}
-			manyToManyTable, err := ec.unmarshalOString2ᚖstring(ctx, "posts_to_categories")
-			if err != nil {
-				return nil, err
-			}
-			manyToManyFields, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"post_id"})
-			if err != nil {
-				return nil, err
-			}
-			manyToManyReferences, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"category_id"})
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.SqlRelation == nil {
-				return nil, errors.New("directive sqlRelation is not implemented")
-			}
-			return ec.directives.SqlRelation(ctx, obj, directive0, relationType, baseTable, refTable, fields, references, manyToManyTable, manyToManyFields, manyToManyReferences)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.([]*model.Category); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/roneli/fastgql/pkg/execution/test/graph/model.Category`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return obj.Categories, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1993,60 +2097,8 @@ func (ec *executionContext) _Post_user(ctx context.Context, field graphql.Collec
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return obj.User, nil
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			relationType, err := ec.unmarshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐRelationType(ctx, "ONE_TO_ONE")
-			if err != nil {
-				return nil, err
-			}
-			baseTable, err := ec.unmarshalNString2string(ctx, "posts")
-			if err != nil {
-				return nil, err
-			}
-			refTable, err := ec.unmarshalNString2string(ctx, "user")
-			if err != nil {
-				return nil, err
-			}
-			fields, err := ec.unmarshalNString2ᚕstringᚄ(ctx, []interface{}{"user_id"})
-			if err != nil {
-				return nil, err
-			}
-			references, err := ec.unmarshalNString2ᚕstringᚄ(ctx, []interface{}{"id"})
-			if err != nil {
-				return nil, err
-			}
-			manyToManyTable, err := ec.unmarshalOString2ᚖstring(ctx, "")
-			if err != nil {
-				return nil, err
-			}
-			manyToManyFields, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{})
-			if err != nil {
-				return nil, err
-			}
-			manyToManyReferences, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{})
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.SqlRelation == nil {
-				return nil, errors.New("directive sqlRelation is not implemented")
-			}
-			return ec.directives.SqlRelation(ctx, obj, directive0, relationType, baseTable, refTable, fields, references, manyToManyTable, manyToManyFields, manyToManyReferences)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.User); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/roneli/fastgql/pkg/execution/test/graph/model.User`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2079,6 +2131,17 @@ func (ec *executionContext) fieldContext_Post_user(ctx context.Context, field gr
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Post_user_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -2131,6 +2194,17 @@ func (ec *executionContext) fieldContext_Post__categoriesAggregate(ctx context.C
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CategoriesAggregate", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Post__categoriesAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -2680,7 +2754,7 @@ func (ec *executionContext) _Query__postsAggregate(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().PostsAggregate(rctx)
+		return ec.resolvers.Query().PostsAggregate(rctx, fc.Args["filter"].(*model.PostFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2715,6 +2789,17 @@ func (ec *executionContext) fieldContext_Query__postsAggregate(ctx context.Conte
 			return nil, fmt.Errorf("no field named %q was found under type PostsAggregate", field.Name)
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query__postsAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
 	return fc, nil
 }
 
@@ -2732,7 +2817,7 @@ func (ec *executionContext) _Query__usersAggregate(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UsersAggregate(rctx)
+		return ec.resolvers.Query().UsersAggregate(rctx, fc.Args["filter"].(*model.UserFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2767,6 +2852,17 @@ func (ec *executionContext) fieldContext_Query__usersAggregate(ctx context.Conte
 			return nil, fmt.Errorf("no field named %q was found under type UsersAggregate", field.Name)
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query__usersAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
 	return fc, nil
 }
 
@@ -2784,7 +2880,7 @@ func (ec *executionContext) _Query__categoriesAggregate(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CategoriesAggregate(rctx)
+		return ec.resolvers.Query().CategoriesAggregate(rctx, fc.Args["filter"].(*model.CategoryFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2818,6 +2914,17 @@ func (ec *executionContext) fieldContext_Query__categoriesAggregate(ctx context.
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CategoriesAggregate", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query__categoriesAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -3052,60 +3159,8 @@ func (ec *executionContext) _User_posts(ctx context.Context, field graphql.Colle
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return obj.Posts, nil
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			relationType, err := ec.unmarshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐRelationType(ctx, "ONE_TO_MANY")
-			if err != nil {
-				return nil, err
-			}
-			baseTable, err := ec.unmarshalNString2string(ctx, "user")
-			if err != nil {
-				return nil, err
-			}
-			refTable, err := ec.unmarshalNString2string(ctx, "posts")
-			if err != nil {
-				return nil, err
-			}
-			fields, err := ec.unmarshalNString2ᚕstringᚄ(ctx, []interface{}{"id"})
-			if err != nil {
-				return nil, err
-			}
-			references, err := ec.unmarshalNString2ᚕstringᚄ(ctx, []interface{}{"user_id"})
-			if err != nil {
-				return nil, err
-			}
-			manyToManyTable, err := ec.unmarshalOString2ᚖstring(ctx, "")
-			if err != nil {
-				return nil, err
-			}
-			manyToManyFields, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{})
-			if err != nil {
-				return nil, err
-			}
-			manyToManyReferences, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{})
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.SqlRelation == nil {
-				return nil, errors.New("directive sqlRelation is not implemented")
-			}
-			return ec.directives.SqlRelation(ctx, obj, directive0, relationType, baseTable, refTable, fields, references, manyToManyTable, manyToManyFields, manyToManyReferences)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.([]*model.Post); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/roneli/fastgql/pkg/execution/test/graph/model.Post`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return obj.Posts, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3203,6 +3258,17 @@ func (ec *executionContext) fieldContext_User__postsAggregate(ctx context.Contex
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PostsAggregate", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_User__postsAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -5738,10 +5804,10 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
-		case "not_contains":
+		case "notContains":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not_contains"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notContains"))
 			it.NotContains, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
@@ -5940,6 +6006,45 @@ func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			it.Name, err = ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInput_ManyToManyRelation(ctx context.Context, obj interface{}) (model.ManyToManyRelation, error) {
+	var it model.ManyToManyRelation
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "table":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("table"))
+			it.Table, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fields":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fields"))
+			it.Fields, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "references":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("references"))
+			it.References, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

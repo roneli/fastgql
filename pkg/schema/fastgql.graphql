@@ -16,9 +16,6 @@ input _ManyToManyRelation {
 # used to skip generate on a certain field, this should be used if we use recursive = True in @generate
 directive @skipGenerate(resolver: Boolean = True) repeatable on FIELD_DEFINITION
 
-# Used if Object/Interface type name is different then the actual table name
-directive @tableName(name: String!, schema: String, database: String) repeatable  on OBJECT | INTERFACE
-
 # Generate filter input on an object
 directive @generateFilterInput(name: String!, description: String) repeatable on OBJECT | INTERFACE
 

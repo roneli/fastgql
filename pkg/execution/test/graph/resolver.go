@@ -11,5 +11,5 @@ import (
 
 type Resolver struct {
 	Cfg      *builders.Config
-	Executor execution.Querier
+	Executor execution.Executor
 }

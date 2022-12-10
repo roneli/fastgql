@@ -28,21 +28,21 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error) {
 	panic(fmt.Errorf("not implemented"))
 }
-func (r *queryResolver) PostsAggregate(ctx context.Context) (*model.PostsAggregate, error) {
+func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.PostsAggregate, error) {
 	var data *model.PostsAggregate
 	if err := r.Executor.Scan(ctx, "postgres", &data); err != nil {
 		return nil, err
 	}
 	return data, nil
 }
-func (r *queryResolver) UsersAggregate(ctx context.Context) (*model.UsersAggregate, error) {
+func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.UsersAggregate, error) {
 	var data *model.UsersAggregate
 	if err := r.Executor.Scan(ctx, "postgres", &data); err != nil {
 		return nil, err
 	}
 	return data, nil
 }
-func (r *queryResolver) CategoriesAggregate(ctx context.Context) (*model.CategoriesAggregate, error) {
+func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.CategoriesAggregate, error) {
 	var data *model.CategoriesAggregate
 	if err := r.Executor.Scan(ctx, "postgres", &data); err != nil {
 		return nil, err

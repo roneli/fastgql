@@ -1,18 +1,29 @@
+### GEN 2
 
-
-directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+# Table directive is defined on OBJECTS, if no table directive is defined defaults are assumed
+# i.e <type_name>, "postgres", ""
+directive @table(name: String!, dialect: String!, schema: String) on OBJECT | INTERFACE
 
 # Relation directive defines relations cross tables and dialects
-directive @relation(type: _relationType!,  baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 
+input _ManyToManyRelation {
+    table: String
+    fields: [String]
+    references: [String]
+}
+
+# used to skip generate on a certain field, this should be used if we use recursive = True in @generate
+directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 
 # Generate filter input on an object
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 
 # Generate arguments for a given field or all object fields
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean) on OBJECT
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True,
+    recursive: Boolean = True, wrapper:Boolean = False) repeatable  on OBJECT
 
-directive @generateMutations(create: Boolean = True, delete: Boolean = True) on OBJECT
+directive @generateMutations(create: Boolean = True, delete: Boolean = True)   on OBJECT
 
 enum _relationType {
     ONE_TO_ONE
@@ -22,8 +33,6 @@ enum _relationType {
 
 directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!,
     references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-
-directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 
 
 enum _OrderingTypes {
@@ -41,7 +50,7 @@ input StringComparator {
     eq: String
     neq: String
     contains: [String]
-    not_contains: [String]
+    notContains: [String]
     like: String
     ilike: String
     suffix: String

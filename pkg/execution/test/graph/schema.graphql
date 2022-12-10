@@ -1,15 +1,15 @@
-type User @generateFilterInput(name: "UserFilterInput") @table(name: "user"){
+type User @generateFilterInput(name: "UserFilterInput") @table(name: "users"){
     id: Int!
     name: String!
-    posts: [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
+    posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 }
 
 type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @generateMutations(create: true, delete: true) {
     id: Int!
     name: String
-    categories: [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"]
+    categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"]
         manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-    user: User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
+    user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
 }
 
 

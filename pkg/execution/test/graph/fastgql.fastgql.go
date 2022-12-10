@@ -11,18 +11,18 @@ import (
 )
 
 func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.CreatePostInput) (*model.PostsPayload, error) {
-	var data *model.PostsPayload
+	var data model.PostsPayload
 	if err := r.Executor.Scan(ctx, "postgres", &data); err != nil {
 		return nil, err
 	}
-	return data, nil
+	return &data, nil
 }
 func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model.PostFilterInput) (*model.PostsPayload, error) {
-	var data *model.PostsPayload
+	var data model.PostsPayload
 	if err := r.Executor.Scan(ctx, "postgres", &data); err != nil {
 		return nil, err
 	}
-	return data, nil
+	return &data, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

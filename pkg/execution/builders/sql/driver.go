@@ -1,26 +1,24 @@
-package pgx
+package sql
 
 import (
 	"context"
 	"reflect"
 
-	"github.com/roneli/fastgql/pkg/execution/builders"
-	"github.com/roneli/fastgql/pkg/execution/builders/sql"
-
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/roneli/fastgql/pkg/execution/builders"
 )
 
 // Driver is a dialect.Driver implementation for SQL based databases.
 type Driver struct {
-	builder sql.Builder
+	builder Builder
 	pool    *pgxpool.Pool
 	dialect string
 }
 
 // NewDriver creates a new Driver with the given Conn and dialect.
 func NewDriver(dialect string, cfg *builders.Config, pool *pgxpool.Pool) *Driver {
-	return &Driver{dialect: dialect, builder: sql.NewBuilder(cfg), pool: pool}
+	return &Driver{dialect: dialect, builder: NewBuilder(cfg), pool: pool}
 }
 
 func (d Driver) Scan(ctx context.Context, model interface{}) error {

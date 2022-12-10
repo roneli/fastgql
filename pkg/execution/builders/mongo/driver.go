@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/roneli/fastgql/pkg/execution/builders"
-	mb "github.com/roneli/fastgql/pkg/execution/builders/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +13,7 @@ import (
 // Driver is a dialect.Driver implementation for SQL based databases.
 type Driver struct {
 	client  *mongo.Client
-	builder mb.Builder
+	builder Builder
 	dialect string
 }
 
@@ -24,7 +23,7 @@ func NewDriver(dialect string, cfg *builders.Config, uri string) *Driver {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &Driver{dialect: dialect, builder: mb.NewBuilder(cfg), client: client}
+	return &Driver{dialect: dialect, builder: NewBuilder(cfg), client: client}
 }
 
 func (d Driver) Scan(ctx context.Context, model interface{}) error {

@@ -1,6 +1,7 @@
 {
   "name": "GraphQL Schema",
-  "includes": ["schema_simple.graphql"],
+  "includes": ["*"],
+  "excludes": ["augmented_schema.graphql"],
   "extensions": {
     "endpoints": {
       "Default GraphQL Endpoint": {

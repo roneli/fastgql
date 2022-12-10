@@ -15,13 +15,13 @@
 </div>
 
 
-|                  | Postgres | Mongo |
-|------------------|----------|-------|
-| Read             | 👍       | 👍    |
-| Read - Aggregate | 👍       | 🚧    |
-| Insert           | 👍       | ⛔️    |
-| Update           | 🚧       | ⛔️    |
-| Delete           | 👍       | ⛔️    |
+| Supported Builders | Postgres | Mongo |
+|--------------------|----------|-------|
+| Read               | 👍       | 👍    |
+| Read - Aggregate   | 👍       | 🚧    |
+| Insert             | 👍       | ⛔️    |
+| Update             | 🚧       | ⛔️    |
+| Delete             | 👍       | ⛔️    |
 
 ## What is fastGQL?
 

@@ -1,57 +1,76 @@
-package execution
+package execution_test
 
 import (
+	"bytes"
 	"context"
-	"os"
-	"path/filepath"
+	"encoding/json"
+	"net/http/httptest"
 	"testing"
-	"time"
 
-	"github.com/roneli/fastgql/pkg/schema"
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
+
+	"github.com/roneli/fastgql/internal/log/adapters"
+	"github.com/roneli/fastgql/pkg/execution"
+	"github.com/roneli/fastgql/pkg/execution/builders"
+	"github.com/roneli/fastgql/pkg/execution/builders/sql"
+	"github.com/roneli/fastgql/pkg/execution/test/graph"
+	"github.com/roneli/fastgql/pkg/execution/test/graph/generated"
 )
 
-// setupPostgres creates an instance of the postgres container type
-func setupPostgres(ctx context.Context) (testcontainers.Container, error) {
-	req := testcontainers.ContainerRequest{
-		Image:        "postgres:14-alpine",
-		Env:          map[string]string{},
-		ExposedPorts: []string{"5432/tcp"},
-		Cmd:          []string{"postgres", "-c", "fsync=off"},
-		WaitingFor:   wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(5 * time.Second),
-	}
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return container, nil
-}
+const defaultPGConnection = "postgresql://localhost/postgres?user=postgres&password=password"
 
-func cleanupTestDirectory(dir string) error {
-	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if filepath.Ext(path) == ".go" { // if the file has a .go extension
-			err := os.Remove(path) // delete the file
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
+// Test Postgres Graph Sanity checks, this assumes that the posgresql exists
+// NOTE: run init.sql on the postgres so data will be seeded
 func TestPostgresGraph(t *testing.T) {
-	require.Nil(t, cleanupTestDirectory("."))
-	// first generate the graphQL server code
-	err := schema.Generate("gqlgen.yml", true)
+	tt := []struct {
+		name       string
+		query      *graphql.RawParams
+		want       string
+		statusCode int
+	}{
+		{
+			name:       "BaseQuery",
+			query:      &graphql.RawParams{Query: `query { users { name } }`},
+			want:       "{\"data\":{\"users\":[{\"name\":\"userA\"},{\"name\":\"userB\"}]}}",
+			statusCode: 200,
+		},
 
-	require.Nil(t, err)
+		{
+			name:       "FetchPosts",
+			query:      &graphql.RawParams{Query: `query { posts { name } }`},
+			want:       "{\"data\":{\"posts\":[{\"name\":\"postA\"},{\"name\":\"postB\"},{\"name\":\"postC\"}]}}",
+			statusCode: 200,
+		},
+	}
+
+	pool, err := pgxpool.Connect(context.Background(), defaultPGConnection)
+	if err != nil {
+		panic(err)
+	}
+	resolver := &graph.Resolver{}
+	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
+	// Set configuration
+	cfg := &builders.Config{Schema: executableSchema.Schema(), Logger: adapters.NewZerologAdapter(log.Logger)}
+	resolver.Cfg = cfg
+	resolver.Executor = execution.NewExecutor(map[string]execution.Driver{
+		"postgres": sql.NewDriver("postgres", cfg, pool),
+	})
+	graphServer := handler.NewDefaultServer(executableSchema)
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			data, err := json.Marshal(tc.query)
+			require.Nil(t, err)
+			request := httptest.NewRequest("POST", "/", bytes.NewBuffer(data))
+			request.Header.Add("Content-Type", "application/json")
+			responseRecorder := httptest.NewRecorder()
+			graphServer.ServeHTTP(responseRecorder, request)
+			assert.Equal(t, tc.want, responseRecorder.Body.String())
+		})
+	}
 
 }
