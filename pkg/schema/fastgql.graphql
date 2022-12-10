@@ -2,19 +2,13 @@
 
 # Table directive is defined on OBJECTS, if no table directive is defined defaults are assumed
 # i.e <type_name>, "postgres", ""
-directive @table(name: String!, dialect: String!, schema: String) on OBJECT | INTERFACE
+directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
 
 # Relation directive defines relations cross tables and dialects
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 
-input _ManyToManyRelation {
-    table: String
-    fields: [String]
-    references: [String]
-}
-
 # used to skip generate on a certain field, this should be used if we use recursive = True in @generate
-directive @skipGenerate(resolver: Boolean = True) repeatable on FIELD_DEFINITION
+directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 
 # Generate filter input on an object
 directive @generateFilterInput(name: String!, description: String) repeatable on OBJECT | INTERFACE
@@ -23,7 +17,7 @@ directive @generateFilterInput(name: String!, description: String) repeatable on
 directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True,
     recursive: Boolean = True, wrapper:Boolean = False) repeatable  on OBJECT
 
-directive @generateMutations(create: Boolean = True, delete: Boolean = True) repeatable  on OBJECT
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 
 enum _relationType {
     ONE_TO_ONE
@@ -31,11 +25,11 @@ enum _relationType {
     MANY_TO_MANY
 }
 
-directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!,
-    references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-
-directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
-
+input _ManyToManyRelation {
+    table: String
+    fields: [String]
+    references: [String]
+}
 
 enum _OrderingTypes {
     ASC

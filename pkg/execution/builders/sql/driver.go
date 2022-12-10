@@ -35,6 +35,8 @@ func (d Driver) Scan(ctx context.Context, model interface{}) error {
 		query, args, err = d.builder.Create(field)
 	case builders.DeleteOperation:
 		query, args, err = d.builder.Delete(field)
+	case builders.UpdateOperation:
+		query, args, err = d.builder.Update(field)
 	}
 	if err != nil {
 		return err

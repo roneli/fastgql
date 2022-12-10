@@ -24,11 +24,11 @@ const (
 type OperationType string
 
 const (
-	QueryOperation     OperationType = "query"
-	AggregateOperation OperationType = "aggregate"
-	InsertOperation    OperationType = "insert"
-	DeleteOperation    OperationType = "delete"
-	UnknownOperation   OperationType = "unknown"
+	QueryOperation   OperationType = "query"
+	InsertOperation  OperationType = "insert"
+	DeleteOperation  OperationType = "delete"
+	UpdateOperation  OperationType = "update"
+	UnknownOperation OperationType = "unknown"
 )
 
 type Field struct {
@@ -59,20 +59,6 @@ func NewField(parent *Field, field *ast.Field, schema *ast.Schema, args map[stri
 	}
 }
 
-func parseFieldType(field *ast.Field, typeDef *ast.Definition) fieldType {
-	switch {
-	case strings.HasSuffix(field.Name, "Aggregate"):
-		return TypeAggregate
-	case typeDef.IsCompositeType():
-		if d := field.Definition.Directives.ForName("relation"); d != nil {
-			return TypeRelation
-		}
-		return TypeObject
-	default:
-		return TypeScalar
-	}
-}
-
 func (f Field) ForName(name string) (Field, error) {
 	for _, s := range f.Selections {
 		if s.Name == name {
@@ -80,10 +66,6 @@ func (f Field) ForName(name string) (Field, error) {
 		}
 	}
 	return Field{}, fmt.Errorf("field doesn't exist")
-}
-
-func GetFilterInput(s *ast.Schema, f *ast.Definition) *ast.Definition {
-	return s.Types[fmt.Sprintf("%sFilterInput", f.Name)]
 }
 
 func (f Field) GetTypeName() string {
@@ -106,13 +88,8 @@ func (f Field) Table() *TableDirective {
 	}
 }
 
-func getTypeName(f *ast.Field) string {
-	typeName := f.Definition.Type.Name()
-	if strings.HasSuffix(f.Name, "Aggregate") {
-		originalFieldName := strings.Split(f.Name, "Aggregate")[0][1:]
-		typeName = f.ObjectDefinition.Fields.ForName(originalFieldName).Type.Name()
-	}
-	return typeName
+func GetFilterInput(s *ast.Schema, f *ast.Definition) *ast.Definition {
+	return s.Types[fmt.Sprintf("%sFilterInput", f.Name)]
 }
 
 func CollectOrdering(ordering interface{}) ([]OrderField, error) {
@@ -132,17 +109,6 @@ func CollectOrdering(ordering interface{}) ([]OrderField, error) {
 	default:
 		panic(fmt.Sprintf("unknown ordering type %v", orderings))
 	}
-}
-
-func buildOrderingHelper(argMap map[string]interface{}) []OrderField {
-	orderFields := make([]OrderField, 0)
-	for k, v := range argMap {
-		orderFields = append(orderFields, OrderField{
-			Key:  k,
-			Type: OrderingTypes(cast.ToString(v)),
-		})
-	}
-	return orderFields
 }
 
 func CollectFields(ctx context.Context, schema *ast.Schema) Field {
@@ -174,10 +140,11 @@ func GetOperationType(ctx context.Context) OperationType {
 			return DeleteOperation
 		case strings.HasPrefix(field.Name, "create"):
 			return InsertOperation
+		case strings.HasPrefix(field.Name, "update"):
+			return UpdateOperation
 		}
 		return UnknownOperation
 	}
-
 	return QueryOperation
 }
 
@@ -187,7 +154,7 @@ func GetAggregateField(parentField, aggField Field) Field {
 	return f
 }
 
-func CollectFromQuery(field *ast.Field, doc *ast.QueryDocument, variables map[string]interface{}, arguments map[string]interface{}) Field {
+func CollectFromQuery(field *ast.Field, _ *ast.QueryDocument, _ map[string]interface{}, arguments map[string]interface{}) Field {
 
 	// TODO: fix
 	return Field{
@@ -195,6 +162,15 @@ func CollectFromQuery(field *ast.Field, doc *ast.QueryDocument, variables map[st
 		FieldType: TypeObject,
 		Arguments: arguments,
 	}
+}
+
+func getTypeName(f *ast.Field) string {
+	typeName := f.Definition.Type.Name()
+	if strings.HasSuffix(f.Name, "Aggregate") {
+		originalFieldName := strings.Split(f.Name, "Aggregate")[0][1:]
+		typeName = f.ObjectDefinition.Fields.ForName(originalFieldName).Type.Name()
+	}
+	return typeName
 }
 
 func collectFields(parent *Field, schema *ast.Schema, opCtx *graphql.OperationContext, visited map[string]bool) []Field {
@@ -317,4 +293,29 @@ func resolveArguments(f *ast.Field, variables map[string]interface{}) map[string
 		return variables
 	}
 	return f.ArgumentMap(variables)
+}
+
+func buildOrderingHelper(argMap map[string]interface{}) []OrderField {
+	orderFields := make([]OrderField, 0)
+	for k, v := range argMap {
+		orderFields = append(orderFields, OrderField{
+			Key:  k,
+			Type: OrderingTypes(cast.ToString(v)),
+		})
+	}
+	return orderFields
+}
+
+func parseFieldType(field *ast.Field, typeDef *ast.Definition) fieldType {
+	switch {
+	case strings.HasSuffix(field.Name, "Aggregate"):
+		return TypeAggregate
+	case typeDef.IsCompositeType():
+		if d := field.Definition.Directives.ForName("relation"); d != nil {
+			return TypeRelation
+		}
+		return TypeObject
+	default:
+		return TypeScalar
+	}
 }

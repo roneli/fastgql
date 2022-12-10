@@ -24,6 +24,13 @@ func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filte
 	}
 	return &data, nil
 }
+func (r *mutationResolver) UpdatePosts(ctx context.Context, input model.UpdatePostInput, filter *model.PostFilterInput) (*model.PostsPayload, error) {
+	var data model.PostsPayload
+	if err := r.Executor.Scan(ctx, "postgres", &data); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
 
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }

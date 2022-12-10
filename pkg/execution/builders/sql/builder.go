@@ -117,6 +117,31 @@ func (b Builder) Delete(field builders.Field) (string, []interface{}, error) {
 	return sql, args, err
 }
 
+func (b Builder) Update(field builders.Field) (string, []interface{}, error) {
+	tableDef := getTableNamePrefix(b.Schema, "update", field.Field)
+	updateQuery, err := b.buildUpdate(tableDef, field)
+	if err != nil {
+		return "", nil, err
+	}
+	withTable := goqu.T(b.CaseConverter(field.Name))
+	// Generate payload response
+	var cols []interface{}
+	for _, f := range field.Selections {
+		if f.Name == "rows_affected" {
+			cols = append(cols, goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable))
+			continue
+		}
+		qh, err := b.buildQuery(tableDefinition{name: b.CaseConverter(field.Name)}, f)
+		if err != nil {
+			return "", nil, errors.New("failed to build payload data query")
+		}
+		cols = append(cols, qh.SelectJsonAgg(f.Name))
+	}
+	sql, args, err := goqu.Select(cols...).With(withTable.GetTable(), updateQuery).ToSQL()
+	b.Logger.Debug("created update query", "query", sql, "args", args, "error", err)
+	return sql, args, err
+}
+
 func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 	var (
 		query *queryHelper
@@ -133,6 +158,39 @@ func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 	q, args, err := query.SelectRow(true).ToSQL()
 	b.Logger.Debug("created query", "query", q, "args", args, "error", err)
 	return q, args, err
+}
+
+func (b Builder) buildUpdate(tableDef tableDefinition, field builders.Field) (*goqu.UpdateDataset, error) {
+	b.Logger.Debug("building update", "tableDefinition", tableDef.name)
+	tableAlias := b.TableNameGenerator.Generate(6)
+	input, ok := field.Arguments["input"]
+	if !ok {
+		return nil, errors.New("missing input argument for update")
+	}
+	kv, err := getInputValues(input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get input values: %w", err)
+	}
+	// Substitute KV from GraphQL input into case conversion expected in database
+	newRecord := make(map[string]interface{})
+	for k, v := range kv[0] {
+		newRecord[b.CaseConverter(k)] = v
+	}
+	table := tableDef.TableExpression().As(tableAlias)
+	q := goqu.Dialect("postgres").Update(table).Set(newRecord).Prepared(true).Returning(goqu.Star())
+	// if not filter is defined we will just return the query
+	filterArg, ok := field.Arguments["filter"]
+	if !ok {
+		return q, nil
+	}
+	filters, ok := filterArg.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("expected filters map got %T", filterArg)
+	}
+	// Before we build the filter expression we require to get the Type definition
+	// use the table be set Alias as the Alias used in the Update query
+	filterExp, _ := b.buildFilterExp(tableHelper{table: tableDef.TableExpression().As(tableAlias)}, tableDef.objType, filters)
+	return q.Where(filterExp), nil
 }
 
 func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface{}) (*goqu.InsertDataset, error) {

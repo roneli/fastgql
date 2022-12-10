@@ -4,7 +4,7 @@ type User @generateFilterInput(name: "UserFilterInput") @table(name: "users"){
     posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 }
 
-type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @generateMutations(create: true, delete: true) {
+type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @generateMutations(create: true, delete: true, update: true) {
     id: Int!
     name: String
     categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"]

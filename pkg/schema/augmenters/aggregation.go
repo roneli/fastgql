@@ -12,8 +12,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-type Aggregation struct {
-}
+type Aggregation struct{}
 
 func (a Aggregation) DirectiveName() string {
 	return "generate"
@@ -36,7 +35,6 @@ func (a Aggregation) Augment(s *ast.Schema) error {
 }
 
 func (a Aggregation) addAggregation(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
-
 	for _, f := range obj.Fields {
 		if gql.IsScalarListType(s, f.Type) {
 			continue
