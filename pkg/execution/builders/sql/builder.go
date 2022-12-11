@@ -75,19 +75,11 @@ func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 	}
 	withTable := goqu.T(b.CaseConverter(field.Name))
 	// Generate payload response
-	var cols []interface{}
-	for _, f := range field.Selections {
-		if f.Name == "rows_affected" {
-			cols = append(cols, goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable))
-			continue
-		}
-		qh, err := b.buildQuery(tableDefinition{name: b.CaseConverter(field.Name)}, f)
-		if err != nil {
-			return "", nil, errors.New("failed to build payload data query")
-		}
-		cols = append(cols, qh.SelectJsonAgg(f.Name))
+	q, err := b.buildPayloadQuery(withTable, insertQuery, field)
+	if err != nil {
+		return "", nil, err
 	}
-	sql, args, err := goqu.Select(cols...).With(withTable.GetTable(), insertQuery).ToSQL()
+	sql, args, err := q.ToSQL()
 	b.Logger.Debug("created insert query", "query", sql, "args", args, "error", err)
 	return sql, args, err
 }
@@ -100,19 +92,11 @@ func (b Builder) Delete(field builders.Field) (string, []interface{}, error) {
 	}
 	withTable := goqu.T(b.CaseConverter(field.Name))
 	// Generate payload response
-	var cols []interface{}
-	for _, f := range field.Selections {
-		if f.Name == "rows_affected" {
-			cols = append(cols, goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable))
-			continue
-		}
-		qh, err := b.buildQuery(tableDefinition{name: b.CaseConverter(field.Name)}, f)
-		if err != nil {
-			return "", nil, errors.New("failed to build payload data query")
-		}
-		cols = append(cols, qh.SelectJsonAgg(f.Name))
+	q, err := b.buildPayloadQuery(withTable, deleteQuery, field)
+	if err != nil {
+		return "", nil, err
 	}
-	sql, args, err := goqu.Select(cols...).With(withTable.GetTable(), deleteQuery).ToSQL()
+	sql, args, err := q.ToSQL()
 	b.Logger.Debug("created delete query", "query", sql, "args", args, "error", err)
 	return sql, args, err
 }
@@ -125,19 +109,11 @@ func (b Builder) Update(field builders.Field) (string, []interface{}, error) {
 	}
 	withTable := goqu.T(b.CaseConverter(field.Name))
 	// Generate payload response
-	var cols []interface{}
-	for _, f := range field.Selections {
-		if f.Name == "rows_affected" {
-			cols = append(cols, goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable))
-			continue
-		}
-		qh, err := b.buildQuery(tableDefinition{name: b.CaseConverter(field.Name)}, f)
-		if err != nil {
-			return "", nil, errors.New("failed to build payload data query")
-		}
-		cols = append(cols, qh.SelectJsonAgg(f.Name))
+	q, err := b.buildPayloadQuery(withTable, updateQuery, field)
+	if err != nil {
+		return "", nil, err
 	}
-	sql, args, err := goqu.Select(cols...).With(withTable.GetTable(), updateQuery).ToSQL()
+	sql, args, err := q.ToSQL()
 	b.Logger.Debug("created update query", "query", sql, "args", args, "error", err)
 	return sql, args, err
 }
@@ -264,6 +240,23 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 	}
 
 	return &query, nil
+}
+
+func (b Builder) buildPayloadQuery(withTable exp.IdentifierExpression, baseQuery exp.Expression, field builders.Field) (*goqu.SelectDataset, error) {
+	// Generate payload response
+	cols := make([]interface{}, 0, len(field.Selections))
+	for _, f := range field.Selections {
+		if f.Name == "rows_affected" {
+			cols = append(cols, goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable))
+			continue
+		}
+		qh, err := b.buildQuery(tableDefinition{name: b.CaseConverter(field.Name)}, f)
+		if err != nil {
+			return nil, errors.New("failed to build payload data query")
+		}
+		cols = append(cols, qh.SelectJsonAgg(f.Name))
+	}
+	return goqu.Select(cols...).With(withTable.GetTable(), baseQuery), nil
 }
 
 func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {

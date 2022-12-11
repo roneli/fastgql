@@ -36,7 +36,7 @@ func Like(field, _ string, value interface{}) bson.E {
 }
 
 func ILike(field, _ string, value interface{}) bson.E {
-	return bson.E{Key: field, Value: bson.D{{Key: "$regex", Value: value}, {"$options", "i"}}}
+	return bson.E{Key: field, Value: bson.D{{Key: "$regex", Value: value}, {Key: "$options", Value: "i"}}}
 }
 
 func In(field, _ string, value interface{}) bson.E {

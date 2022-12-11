@@ -9,7 +9,9 @@ import (
 	"github.com/iancoleman/strcase"
 )
 
-const filterCtx = "filter_context"
+const filterCtx FilterContext = "filter_context"
+
+type FilterContext string
 
 type FilterFieldContext struct {
 	Filters map[string]interface{}

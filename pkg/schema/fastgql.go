@@ -62,7 +62,7 @@ func (f FastGqlPlugin) MarkResolvers(c *config.Config) error {
 						Fields: map[string]config.TypeMapField{},
 					}
 				}
-				log.Printf("Settting create resolver for %s.%s \n", schemaType.Name, f.Name)
+				log.Printf("Setting create resolver for %s.%s \n", schemaType.Name, f.Name)
 				c.Models[schemaType.Name].Fields[f.Name] = config.TypeMapField{
 					FieldName: f.Name,
 					Resolver:  true,

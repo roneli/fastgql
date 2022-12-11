@@ -53,12 +53,8 @@ func (t tableDefinition) String() string {
 	return fmt.Sprintf(`"%s"`, t.name)
 }
 
-/*
-parseRelationDirective parses the sqlRelation directive to connect graphQL Resources with SQL relations, this directive
-is also important for creating relational filters.
-directive @sqlRelation(relationType: _relationType!, baseTable: String!, refTable: String!, fields: [String!]!,
-    references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-*/
+// parseRelationDirective parses the sqlRelation directive to connect graphQL Resources with SQL relations, this directive
+// is also important for creating relational filters.
 func parseRelationDirective(d *ast.Directive) relation {
 	relType := d.Arguments.ForName("type").Value.Raw
 	return relation{

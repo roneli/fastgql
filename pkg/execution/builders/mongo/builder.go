@@ -68,11 +68,11 @@ func (b Builder) buildPagination(field builders.Field) []bson.D {
 	var pagination []bson.D
 	if offset, ok := field.Arguments["offset"]; ok {
 		b.Logger.Debug("adding pagination offset", "offset", offset)
-		pagination = append(pagination, bson.D{{"$skip", cast.ToUint(offset)}})
+		pagination = append(pagination, bson.D{{Key: "$skip", Value: cast.ToUint(offset)}})
 	}
 	if limit, ok := field.Arguments["limit"]; ok {
 		b.Logger.Debug("adding pagination limit", "limit", limit)
-		pagination = append(pagination, bson.D{{"$limit", cast.ToUint(limit)}})
+		pagination = append(pagination, bson.D{{Key: "$limit", Value: cast.ToUint(limit)}})
 	}
 	return pagination
 }
@@ -90,7 +90,7 @@ func (b Builder) buildFilter(field builders.Field) (bson.D, error) {
 	if err != nil {
 		return bson.D{}, err
 	}
-	return bson.D{{"$match", f}}, nil
+	return bson.D{{Key: "$match", Value: f}}, nil
 }
 
 func (b Builder) buildFilterExp(_ builders.Field, filters map[string]interface{}) (bson.D, error) {
@@ -131,7 +131,7 @@ func (b Builder) buildProjection(field builders.Field) (bson.D, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to build projection: %w", err)
 	}
-	return bson.D{{"$project", p}}, nil
+	return bson.D{{Key: "$project", Value: p}}, nil
 }
 
 func (b Builder) doBuildProjection(field builders.Field) (bson.M, error) {
@@ -160,7 +160,7 @@ func (b Builder) doBuildProjection(field builders.Field) (bson.M, error) {
 				projection[k] = v
 			}
 		default:
-			//b.Logger.ErrorResponse("unknown field type", "tableDefinition", tableDef.name, "fieldName", childField.Name, "fieldType", childField.FieldType)
+			b.Logger.Error("unknown field type", "fieldName", childField.Name, "fieldType", childField.FieldType)
 			panic("unknown field type")
 		}
 	}
@@ -168,16 +168,16 @@ func (b Builder) doBuildProjection(field builders.Field) (bson.M, error) {
 }
 
 func (b Builder) buildProjectionAggregate(parentField, field builders.Field) (bson.M, error) {
-
 	var ap = make(bson.M, len(field.Selections))
 	naf := builders.GetAggregateField(parentField, field)
 	f := fmt.Sprintf("$%s", naf.Name)
-
 	for _, s := range field.Selections {
 		switch s.Name {
 		//   count: {"$size": {"$cond": {if: {"$isArray": "$films"}, then: "$films", else: []}}}
 		case "count":
-			ap[field.Name+".count"] = bson.D{{"$size", bson.M{"$cond": bson.M{"if": bson.D{{"$isArray", f}}, "then": f, "else": bson.A{}}}}}
+			ap[field.Name+".count"] = bson.D{{Key: "$size", Value: bson.M{"$cond": bson.M{"if": bson.D{{Key: "$isArray", Value: f}}, "then": f, "else": bson.A{}}}}}
+		default:
+			panic("unknown aggregation selection")
 		}
 	}
 	return ap, nil
