@@ -1,7 +1,6 @@
 package imports
 
 import (
-	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestPrune(t *testing.T) {
 }
 
 func mustReadFile(filename string) []byte {
-	b, err := ioutil.ReadFile(filename)
+	b, err := os.ReadFile(filename)
 	if err != nil {
 		panic(err)
 	}

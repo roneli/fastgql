@@ -13,7 +13,6 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
     - depguard
     - dupl
     - errcheck
@@ -26,11 +25,9 @@ linters:
     - misspell
     - nakedret
     - prealloc
-    - staticcheck
     - structcheck
     - unconvert
     - unused
-    - varcheck
 
 issues:
   exclude-rules:

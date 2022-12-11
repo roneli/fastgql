@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -150,7 +149,7 @@ func initConfig(configFilename string, pkgName string) error {
 		panic(err)
 	}
 
-	if err := ioutil.WriteFile(configFilename, buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(configFilename, buf.Bytes(), 0644); err != nil {
 		return fmt.Errorf("unable to write cfg file: " + err.Error())
 	}
 
@@ -163,7 +162,7 @@ func initFastgqlSchema() error {
 		return fmt.Errorf("unable to create schema dir: " + err.Error())
 	}
 
-	if err := ioutil.WriteFile("graph/fastgql.graphql", []byte(strings.TrimSpace(schema.FastGQLSchema)), 0644); err != nil {
+	if err := os.WriteFile("graph/fastgql.graphql", []byte(strings.TrimSpace(schema.FastGQLSchema)), 0644); err != nil {
 		return fmt.Errorf("unable to write schema file: " + err.Error())
 	}
 	return nil
@@ -180,7 +179,7 @@ func initSchema(schemaFilename string) error {
 		return fmt.Errorf("unable to create schema dir: " + err.Error())
 	}
 
-	if err = ioutil.WriteFile(schemaFullPath, []byte(strings.TrimSpace(schemaDefault)), 0644); err != nil {
+	if err = os.WriteFile(schemaFullPath, []byte(strings.TrimSpace(schemaDefault)), 0644); err != nil {
 		return fmt.Errorf("unable to write schema file: " + err.Error())
 	}
 	return nil

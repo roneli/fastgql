@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/types"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -245,7 +244,7 @@ func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
 	t := template.New("").Funcs(baseFuncs)
 	fileName := resolveName("fastgql.tpl", 0)
 
-	b, err := ioutil.ReadFile(fileName)
+	b, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}
