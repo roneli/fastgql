@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"

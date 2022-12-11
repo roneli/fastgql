@@ -16,26 +16,26 @@ func TestPackages(t *testing.T) {
 
 	t.Run("name for unknown package makes name only load", func(t *testing.T) {
 		p := initialState(t)
-		require.Equal(t, "c", p.NameForPackage("github.com/roneli/fastgql/pkg/codegen/code/testdata/c"))
+		require.Equal(t, "c", p.NameForPackage("github.com/roneli/fastgql/pkg/schema/codegen/code/testdata/c"))
 		require.Equal(t, 1, p.numLoadCalls)
 		require.Equal(t, 1, p.numNameCalls)
 	})
 
 	t.Run("evicting a package causes it to load again", func(t *testing.T) {
 		p := initialState(t)
-		p.Evict("github.com/roneli/fastgql/pkg/codegen/code/testdata/b")
-		require.Equal(t, "a", p.Load("github.com/roneli/fastgql/pkg/codegen/code/testdata/a").Name)
+		p.Evict("github.com/roneli/fastgql/pkg/schema/codegen/code/testdata/b")
+		require.Equal(t, "a", p.Load("github.com/roneli/fastgql/pkg/schema/codegen/code/testdata/a").Name)
 		require.Equal(t, 1, p.numLoadCalls)
-		require.Equal(t, "b", p.Load("github.com/roneli/fastgql/pkg/codegen/code/testdata/b").Name)
+		require.Equal(t, "b", p.Load("github.com/roneli/fastgql/pkg/schema/codegen/code/testdata/b").Name)
 		require.Equal(t, 2, p.numLoadCalls)
 	})
 
 	t.Run("evicting a package also evicts its dependencies", func(t *testing.T) {
 		p := initialState(t)
-		p.Evict("github.com/roneli/fastgql/pkg/codegen/code/testdata/a")
-		require.Equal(t, "a", p.Load("github.com/roneli/fastgql/pkg/codegen/code/testdata/a").Name)
+		p.Evict("github.com/roneli/fastgql/pkg/schema/codegen/code/testdata/a")
+		require.Equal(t, "a", p.Load("github.com/roneli/fastgql/pkg/schema/codegen/code/testdata/a").Name)
 		require.Equal(t, 2, p.numLoadCalls)
-		require.Equal(t, "b", p.Load("github.com/roneli/fastgql/pkg/codegen/code/testdata/b").Name)
+		require.Equal(t, "b", p.Load("github.com/roneli/fastgql/pkg/schema/codegen/code/testdata/b").Name)
 		require.Equal(t, 3, p.numLoadCalls)
 	})
 }
@@ -53,8 +53,8 @@ func TestNameForPackage(t *testing.T) {
 func initialState(t *testing.T) *Packages {
 	p := &Packages{}
 	pkgs := p.LoadAll(
-		"github.com/roneli/fastgql/pkg/codegen/code/testdata/a",
-		"github.com/roneli/fastgql/pkg/codegen/code/testdata/b",
+		"github.com/roneli/fastgql/pkg/schema/codegen/code/testdata/a",
+		"github.com/roneli/fastgql/pkg/schema/codegen/code/testdata/b",
 	)
 	require.Nil(t, p.Errors())
 

@@ -15,17 +15,17 @@ func TestImportPathForDir(t *testing.T) {
 
 	require.NoError(t, err)
 
-	assert.Equal(t, "github.com/roneli/fastgql/pkg/codegen/code", ImportPathForDir(wd))
-	assert.Equal(t, "github.com/roneli/fastgql/pkg/api", ImportPathForDir(filepath.Join(wd, "..", "..", "api")))
+	assert.Equal(t, "github.com/roneli/fastgql/pkg/schema/codegen/code", ImportPathForDir(wd))
+	assert.Equal(t, "github.com/roneli/fastgql/pkg/schema/api", ImportPathForDir(filepath.Join(wd, "..", "..", "api")))
 
 	// doesnt contain go code, but should still give a valid import path
-	assert.Equal(t, "github.com/roneli/fastgql/pkg/docs", ImportPathForDir(filepath.Join(wd, "..", "..", "docs")))
+	assert.Equal(t, "github.com/roneli/fastgql/pkg/schema/docs", ImportPathForDir(filepath.Join(wd, "..", "..", "docs")))
 
 	// directory does not exist
-	assert.Equal(t, "github.com/roneli/fastgql/pkg/dos", ImportPathForDir(filepath.Join(wd, "..", "..", "dos")))
+	assert.Equal(t, "github.com/roneli/fastgql/pkg/schema/dos", ImportPathForDir(filepath.Join(wd, "..", "..", "dos")))
 
 	// out of module
-	assert.Equal(t, "", ImportPathForDir(filepath.Join(wd, "..", "..", "..", "..")))
+	assert.Equal(t, "", ImportPathForDir(filepath.Join(wd, "..", "..", "..", "..", "..")))
 
 	if runtime.GOOS == "windows" {
 		assert.Equal(t, "", ImportPathForDir("C:/doesnotexist"))
@@ -41,5 +41,5 @@ func TestNameForDir(t *testing.T) {
 	assert.Equal(t, "tmp", NameForDir("/tmp"))
 	assert.Equal(t, "code", NameForDir(wd))
 	assert.Equal(t, "codegen", NameForDir(wd+"/.."))
-	assert.Equal(t, "pkg", NameForDir(wd+"/../.."))
+	assert.Equal(t, "schema", NameForDir(wd+"/../.."))
 }
