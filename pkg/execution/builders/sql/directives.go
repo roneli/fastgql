@@ -23,8 +23,6 @@ const (
 
 type relation struct {
 	relType              RelationType
-	baseTable            string
-	referenceTable       string
 	fields               []string
 	references           []string
 	manyToManyTable      string
@@ -61,8 +59,6 @@ func parseRelationDirective(d *ast.Directive) relation {
 		relType:              RelationType(relType),
 		fields:               cast.ToStringSlice(gql.GetDirectiveValue(d, "fields")),
 		references:           cast.ToStringSlice(gql.GetDirectiveValue(d, "references")),
-		baseTable:            cast.ToString(gql.GetDirectiveValue(d, "baseTable")),
-		referenceTable:       cast.ToString(gql.GetDirectiveValue(d, "refTable")),
 		manyToManyTable:      cast.ToString(gql.GetDirectiveValue(d, "manyToManyTable")),
 		manyToManyFields:     cast.ToStringSlice(gql.GetDirectiveValue(d, "manyToManyFields")),
 		manyToManyReferences: cast.ToStringSlice(gql.GetDirectiveValue(d, "manyToManyReferences")),

@@ -516,9 +516,9 @@ func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, r
 		relationTableName := b.TableNameGenerator.Generate(6)
 		jExps := buildJoinCondition(parentTable.alias, rel.fields, fq.alias, rel.references)
 		jExps = append(jExps, buildJoinCondition(parentTable.alias, rel.fields, relationTableName, rel.fields)...)
-		fq.SelectDataset = fq.InnerJoin(goqu.T(rel.baseTable).Schema(td.Schema).As(relationTableName), goqu.On(jExps...))
+		fq.SelectDataset = fq.InnerJoin(goqu.T(td.Name).Schema(td.Schema).As(relationTableName), goqu.On(jExps...))
 	case OneToMany:
-		fq.SelectDataset = fq.InnerJoin(goqu.T(rel.baseTable).Schema(td.Schema).As(b.TableNameGenerator.Generate(6)),
+		fq.SelectDataset = fq.InnerJoin(goqu.T(td.Name).Schema(td.Schema).As(b.TableNameGenerator.Generate(6)),
 			goqu.On(buildJoinCondition(parentTable.alias, rel.fields, fq.alias, rel.references)...))
 	default:
 		panic("unknown relation type")

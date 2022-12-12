@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/roneli/fastgql/pkg/execution/builders"
 	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 
@@ -181,7 +182,14 @@ func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Bui
 	assert.Nil(t, errs)
 	def := doc.Operations.ForName("")
 	sel := def.SelectionSet[0].(*ast.Field)
-	field := builders.CollectFromQuery(sel, doc, make(map[string]interface{}), sel.ArgumentMap(nil))
+	opCtx := &graphql.OperationContext{
+		RawQuery:      testCase.GraphQLQuery,
+		Variables:     make(map[string]interface{}),
+		OperationName: "",
+		Doc:           doc,
+		Stats:         graphql.Stats{},
+	}
+	field := builders.CollectFromQuery(sel, augmentedSchema, opCtx, sel.ArgumentMap(nil))
 	query, args, err := caller(builder, field)
 	assert.Nil(t, err)
 	if testCase.ExpectedArguments == nil {

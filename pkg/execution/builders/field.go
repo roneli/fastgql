@@ -154,14 +154,10 @@ func GetAggregateField(parentField, aggField Field) Field {
 	return f
 }
 
-func CollectFromQuery(field *ast.Field, _ *ast.QueryDocument, _ map[string]interface{}, arguments map[string]interface{}) Field {
-
-	// TODO: fix
-	return Field{
-		Field:     field,
-		FieldType: TypeObject,
-		Arguments: arguments,
-	}
+func CollectFromQuery(field *ast.Field, schema *ast.Schema, opCtx *graphql.OperationContext, args map[string]interface{}) Field {
+	f := NewField(nil, field, schema, args)
+	f.Selections = collectFields(&f, schema, opCtx, make(map[string]bool))
+	return f
 }
 
 func getTypeName(f *ast.Field) string {
