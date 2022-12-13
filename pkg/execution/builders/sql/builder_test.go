@@ -133,14 +133,14 @@ func TestBuilder_Delete(t *testing.T) {
 			Name:              "simple_delete",
 			SchemaFile:        "testdata/schema_simple.graphql",
 			GraphQLQuery:      `mutation { deletePosts() { rows_affected posts { name id } } }`,
-			ExpectedSQL:       `WITH delete_posts AS (DELETE FROM "posts" RETURNING *) SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq0"."name", 'id', "sq0"."id")), '[]'::jsonb) AS "posts" FROM "delete_posts" AS "sq0") AS "posts", (SELECT COUNT(*) AS "rows_affected" FROM "delete_posts")`,
+			ExpectedSQL:       `WITH delete_posts AS (DELETE FROM "posts" RETURNING *) SELECT (SELECT COUNT(*) AS "rows_affected" FROM "delete_posts"), (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq0"."name", 'id', "sq0"."id")), '[]'::jsonb) AS "posts" FROM "delete_posts" AS "sq0") AS "posts"`,
 			ExpectedArguments: []interface{}{},
 		},
 		{
 			Name:              "delete_with_filter",
 			SchemaFile:        "testdata/schema_simple.graphql",
 			GraphQLQuery:      "mutation{deletePosts(filter: {id: {eq: 1}}) {rows_affected  posts {name id}}}",
-			ExpectedSQL:       `WITH delete_posts AS (DELETE FROM "posts" WHERE ("posts"."id" = 1) RETURNING *) SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq0"."name", 'id', "sq0"."id")), '[]'::jsonb) AS "posts" FROM "delete_posts" AS "sq0") AS "posts", (SELECT COUNT(*) AS "rows_affected" FROM "delete_posts")`,
+			ExpectedSQL:       `WITH delete_posts AS (DELETE FROM "posts" WHERE ("posts"."id" = 1) RETURNING *) SELECT (SELECT COUNT(*) AS "rows_affected" FROM "delete_posts"), (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq0"."name", 'id', "sq0"."id")), '[]'::jsonb) AS "posts" FROM "delete_posts" AS "sq0") AS "posts"`,
 			ExpectedArguments: []interface{}{},
 		},
 	}
