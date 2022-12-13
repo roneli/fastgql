@@ -31,11 +31,22 @@ const (
 	UnknownOperation OperationType = "unknown"
 )
 
+type Fields []Field
+
+func (ff Fields) HasSelection(sel string) bool {
+	for _, f := range ff {
+		if f.Name == sel {
+			return true
+		}
+	}
+	return false
+}
+
 type Field struct {
 	// Original *ast.Field
 	*ast.Field
 	// Field sub selection, if field type is TypeScalar, selections will be empty
-	Selections []Field
+	Selections Fields
 	// FieldType i.e Scalar/Relation/Aggregate/Object etc'
 	FieldType fieldType
 	// Arguments passed to this field if any.

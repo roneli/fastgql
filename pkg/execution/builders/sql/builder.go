@@ -245,9 +245,10 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 func (b Builder) buildPayloadQuery(withTable exp.IdentifierExpression, baseQuery exp.Expression, field builders.Field) (*goqu.SelectDataset, error) {
 	// Generate payload response
 	cols := make([]interface{}, 0, len(field.Selections))
+	hasRowsAffected := false
 	for _, f := range field.Selections {
 		if f.Name == "rows_affected" {
-			cols = append(cols, goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable))
+			hasRowsAffected = true
 			continue
 		}
 		qh, err := b.buildQuery(tableDefinition{name: b.CaseConverter(field.Name)}, f)
@@ -255,6 +256,9 @@ func (b Builder) buildPayloadQuery(withTable exp.IdentifierExpression, baseQuery
 			return nil, errors.New("failed to build payload data query")
 		}
 		cols = append(cols, qh.SelectJsonAgg(f.Name))
+	}
+	if hasRowsAffected {
+		cols = append(cols, goqu.Select(goqu.COUNT(goqu.Star()).As("rows_affected")).From(withTable))
 	}
 	return goqu.Select(cols...).With(withTable.GetTable(), baseQuery), nil
 }
