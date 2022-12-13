@@ -1,11 +1,11 @@
-type User @generateFilterInput(name: "UserFilterInput") @table(name: "user", schema: "app"){
+type User @generateFilterInput(name: "UserFilterInput") @table(name: "users", schema: "app"){
     id: Int!
     name: String!
     posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
     someOtherName: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 }
 
-type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @generateMutations(create: true, delete: true) {
+type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @generateMutations(create: true, delete: true, update: true) {
     id: Int!
     name: String
     categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"]
@@ -13,7 +13,8 @@ type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @g
     user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
 }
 
-type Category @generateFilterInput(name: "CategoryFilterInput"){
+
+type Category @table(name:"categories", schema:"") @generateFilterInput(name: "CategoryFilterInput") {
     id: Int!
     name: String
 }
@@ -23,6 +24,7 @@ type Query @generate {
     users: [User]
     categories: [Category] @skipGenerate
 }
+
 
 enum _relationType {
     ONE_TO_ONE

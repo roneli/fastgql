@@ -32,6 +32,12 @@ type tableHelper struct {
 	alias string
 }
 
+func (t tableHelper) Name() string {
+	schema := t.table.GetAs().GetSchema()
+	table := t.table.GetAs().GetTable()
+	return fmt.Sprintf("\"%s\".\"%s\"", schema, table)
+}
+
 func (q queryHelper) Table() tableHelper {
 	return tableHelper{
 		table: q.table,
