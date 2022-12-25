@@ -5,7 +5,7 @@
 {{ reserveImport "github.com/99designs/gqlgen/graphql/playground" }}
 {{ reserveImport "github.com/99designs/gqlgen/graphql/handler" }}
 {{ reserveImport "github.com/jackc/pgx/v4/pgxpool" }}
-{{ reserveImport "github.com/roneli/fastgql/pkg/builders" }}
+{{ reserveImport "github.com/roneli/fastgql/pkg/execution/builders" }}
 
 
 const defaultPort = "8080"
@@ -30,7 +30,9 @@ func main() {
     resolver :=  &{{ lookupImport .ResolverPackageName}}.Resolver{Executor: pool}
     executableSchema := {{ lookupImport .ExecPackageName }}.NewExecutableSchema({{ lookupImport .ExecPackageName}}.Config{Resolvers:resolver})
     resolver.Cfg = &builders.Config{Schema: executableSchema.Schema()}
-
+    resolver.Executor = execution.NewExecutor(map[string]execution.Driver{
+        "postgres": pgx.NewDriver("postgres", cfg, pool),
+    })
 	srv := handler.NewDefaultServer(executableSchema)
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))

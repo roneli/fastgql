@@ -10,7 +10,7 @@ import (
 )
 
 // FormatSchema into multiple sources, the original format schema from gqlparser lib saves all in one file,
-// in this case after augmentation we want to keep all original files and structure and all added defenitions to put in
+// in this case after augmentation we want to keep all original files and structure and all added definitions to put in
 // fastgql.graphql file.
 func FormatSchema(schema *ast.Schema) []*ast.Source {
 	if schema == nil {

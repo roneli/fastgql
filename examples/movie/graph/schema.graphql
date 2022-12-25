@@ -1,29 +1,36 @@
 
-type Language @tableName(name:"language", schema: "movies") @generateFilterInput(name:"LanguageFilterInput") {
+type Stuff @table(name: "stuff", schema: "movies", dialect: "mongo") @generateFilterInput(name: "StuffFilterInput") {
+    name: String!
+    languageId: String
+}
+
+type Language @table(name:"language", schema: "movies") @generateFilterInput(name:"LanguageFilterInput") {
     languageId: Int!
     name: String!
     lastUpdate: String!
-
     "Get all flims by language"
-    films: [Film] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
+    films: [Film] @relation(type: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
+
+    stuff: [Stuff] @relation(type: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
+
 }
 
-type Category @tableName(name:"category", schema: "movies") @generateFilterInput(name:"CategoryFilterInput") {
+type Category @table(name:"category", schema: "movies") @generateFilterInput(name:"CategoryFilterInput") {
     categoryId: Int!
     name: String!
     lastUpdate: String!
 
     "Get all flims by language"
-    films: [Film] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
+    films: [Film] @relation(type: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
 }
 
-type FilmCategory @tableName(name: "film_category", schema: "movies") @generateFilterInput(name:"CategoryFilterInput") {
-    category: Category @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film_category", refTable: "category", fields: ["category_id"], references: ["category_id"])
-    film: Film @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film_category", refTable: "film", fields: ["film_id"], references: ["film_id"])
+type FilmCategory @table(name: "film_category", schema: "movies") @generateFilterInput(name:"CategoryFilterInput") {
+    category: Category @relation(type: ONE_TO_ONE, baseTable: "film_category", refTable: "category", fields: ["category_id"], references: ["category_id"])
+    film: Film @relation(type: ONE_TO_ONE, baseTable: "film_category", refTable: "film", fields: ["film_id"], references: ["film_id"])
     lastUpdate: String!
 }
 
-type Film @tableName(name:"film", schema: "movies") @generateFilterInput(name:"FilmFilterInput") {
+type Film @table(name:"film", schema: "movies") @generateFilterInput(name:"FilmFilterInput") {
     filmId: Int!
     title: String!
     description: String!
@@ -37,9 +44,9 @@ type Film @tableName(name:"film", schema: "movies") @generateFilterInput(name:"F
     fulltext: String!
 
     # Relations
-    categories: [FilmCategory]  @sqlRelation(relationType: ONE_TO_MANY, baseTable: "film", refTable: "film_category", fields: ["film_id"], references: ["film_id"])
-    language: Language! @sqlRelation(relationType: ONE_TO_ONE, baseTable: "film", refTable: "language", fields: ["language_id"], references: ["language_id"])
-    actors: [Actor]  @sqlRelation(relationType: MANY_TO_MANY, baseTable: "film", refTable: "actor", fields: ["film_id"], references: ["actor_id"]
+    categories: [FilmCategory]  @relation(type: ONE_TO_MANY, baseTable: "film", refTable: "film_category", fields: ["film_id"], references: ["film_id"])
+    language: Language! @relation(type: ONE_TO_ONE, baseTable: "film", refTable: "language", fields: ["language_id"], references: ["language_id"])
+    actors: [Actor]  @relation(type: MANY_TO_MANY, baseTable: "film", refTable: "actor", fields: ["film_id"], references: ["actor_id"]
         manyToManyTable: "film_actor", manyToManyFields: ["film_id"], manyToManyReferences: ["actor_id"])
 }
 

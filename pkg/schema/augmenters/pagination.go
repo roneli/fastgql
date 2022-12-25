@@ -1,6 +1,7 @@
 package augmenters
 
 import (
+	"log"
 	"strings"
 
 	"github.com/roneli/fastgql/pkg/schema/gql"
@@ -9,6 +10,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// Pagination Augmenter allows adding pagination (limit/offset) augmenting any objects' field with @generate if it's a List
 type Pagination struct{}
 
 func (p Pagination) DirectiveName() string {
@@ -45,7 +47,7 @@ func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, parent *as
 			}
 			continue
 		}
-
+		log.Printf("adding pagination to field %s@%s\n", f.Name, obj.Name)
 		f.Arguments = append(f.Arguments,
 			&ast.ArgumentDefinition{Description: "Limit",
 				Name:         "limit",
@@ -60,6 +62,7 @@ func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, parent *as
 			},
 		)
 		if recursive && fieldType.IsCompositeType() {
+			log.Printf("adding recursive pagination to field %s@%s\n", f.Name, obj.Name)
 			p.addPagination(s, fieldType, obj, recursive)
 		}
 	}

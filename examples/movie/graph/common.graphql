@@ -1,5 +1,10 @@
-# Used if Object/Interface type name is different then the actual table name
-directive @tableName(name: String!, schema: String) on OBJECT | INTERFACE
+
+
+directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+
+# Relation directive defines relations cross tables and dialects
+directive @relation(type: _relationType!,  baseTable: String!, refTable: String!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+
 
 # Generate filter input on an object
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE

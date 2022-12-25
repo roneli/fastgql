@@ -2,6 +2,7 @@ package augmenters
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/roneli/fastgql/pkg/schema/gql"
@@ -125,6 +126,7 @@ func (fa FilterArguments) Augment(s *ast.Schema) error {
 		args := d.ArgumentMap(nil)
 		recursive := cast.ToBool(args["recursive"])
 		if addFilters, ok := args["filter"]; ok && cast.ToBool(addFilters) {
+			log.Printf("building adding filter arguments for %s\n", v.Name)
 			fa.addFilter(s, v, nil, recursive)
 		}
 	}
@@ -139,13 +141,14 @@ func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, parent *
 		}
 
 		fieldType := s.Types[f.Type.Name()]
-		if gql.IsScalarListType(s, f.Type) || !gql.IsListType(f.Type) {
+		if gql.IsScalarListType(s, f.Type) {
 			if recursive && fieldType.IsCompositeType() && fieldType != parent {
 				fa.addFilter(s, fieldType, obj, recursive)
 			}
 			continue
 		}
 
+		log.Printf("building adding filters for field %s\n", f.Name)
 		var typeName string
 		if strings.HasSuffix(f.Name, "Aggregate") {
 			fieldName := strings.Split(f.Name, "Aggregate")[0][1:]
