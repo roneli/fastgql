@@ -5,15 +5,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/roneli/fastgql/pkg/schema/augmenters"
 	"github.com/roneli/fastgql/pkg/schema/gql"
-	"github.com/roneli/fastgql/pkg/schema/plugin"
-	"github.com/roneli/fastgql/pkg/schema/plugin/resolvergen"
-	"github.com/roneli/fastgql/pkg/schema/plugin/servergen"
-
-	"github.com/99designs/gqlgen/api"
-	"github.com/99designs/gqlgen/codegen/config"
-	"github.com/99designs/gqlgen/plugin/modelgen"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -22,6 +16,14 @@ var (
 	FastGQLSchema     string
 	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "generateMutations"}
 	baseDialect       = "postgres"
+	defaultAugmenters = []augmenters.Augmenter{
+		augmenters.Pagination{},
+		augmenters.Ordering{},
+		augmenters.Aggregation{},
+		augmenters.FilterInput{},
+		augmenters.FilterArguments{},
+		augmenters.Mutations{},
+	}
 )
 
 // FastGqlPlugin augments and extends the original schema
@@ -104,56 +106,14 @@ func (f FastGqlPlugin) MarkResolvers(c *config.Config) error {
 	return nil
 }
 
-// TODO: make this configurable
-func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema) []*ast.Source {
-	_ = augmenters.Pagination{}.Augment(schema)
-	_ = augmenters.Ordering{}.Augment(schema)
-	_ = augmenters.Aggregation{}.Augment(schema)
-	_ = augmenters.FilterInput{}.Augment(schema)
-	_ = augmenters.FilterArguments{}.Augment(schema)
-	_ = augmenters.Mutations{}.Augment(schema)
-	return FormatSchema(schema)
-}
-
-func Generate(configPath string, generateServer bool, sources ...*ast.Source) error {
-	cfg, err := config.LoadConfig(configPath)
-	if err != nil {
-		return err
+// CreateAugmented augments *ast.Schema returning []*ast.Source files that are augmented with filters, mutations etc'
+// so gqlgen can generate an augmented fastGQL server
+func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters []augmenters.Augmenter) ([]*ast.Source, error) {
+	for _, a := range augmenters {
+		if err := a.Augment(schema); err != nil {
+			return nil, fmt.Errorf("augmenter %s failed: %w", a.Name(), err)
+		}
 	}
-	if sources != nil {
-		cfg.Sources = append(cfg.Sources, sources...)
-	}
-	err = cfg.LoadSchema()
-	if err != nil {
-		return err
-	}
-	fgqlPlugin := FastGqlPlugin{}
-	srcs := fgqlPlugin.CreateAugmented(cfg.Schema)
-
-	// Load config again
-	cfg, err = config.LoadConfig(configPath)
-	if err != nil {
-		return err
-	}
-	cfg.Sources = srcs
-
-	// Attaching the mutation function onto modelgen plugin
-	modelgenPlugin := modelgen.Plugin{
-		MutateHook: plugin.MutateHook,
-	}
-
-	// skip validation for now, as after code generation we need to mod tidy again
-	cfg.SkipValidation = true
-
-	if generateServer {
-		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(resolvergen.New()),
-			api.AddPlugin(fgqlPlugin), api.AddPlugin(servergen.New("server.go")))
-	} else {
-		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(resolvergen.New()), api.AddPlugin(fgqlPlugin))
-	}
-
-	if err != nil {
-		return err
-	}
-	return nil
+	// Format augmented schema to *.graphql files
+	return FormatSchema(schema), nil
 }

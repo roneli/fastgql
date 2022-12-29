@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/roneli/fastgql/internal/log"
-	"github.com/roneli/fastgql/pkg/execution/builders"
-	"github.com/roneli/fastgql/pkg/schema"
-
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
+	"github.com/roneli/fastgql/pkg/execution/builders"
+	"github.com/roneli/fastgql/pkg/log"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 
@@ -364,13 +362,13 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 	for k, v := range filters {
 		keyType := filterInputDef.Fields.ForName(k).Type
 		switch {
-		case k == string(schema.LogicalOperatorAND) || k == string(schema.LogicalOperatorOR):
+		case k == string(builders.LogicalOperatorAND) || k == string(builders.LogicalOperatorOR):
 			vv, ok := v.([]interface{})
 			if !ok {
 				return nil, fmt.Errorf("fatal value of logical list exp not list")
 			}
 			logicalType := exp.AndType
-			if k == string(schema.LogicalOperatorOR) {
+			if k == string(builders.LogicalOperatorOR) {
 				logicalType = exp.OrType
 			}
 			logicalExp, err := b.buildFilterLogicalExp(table, astDefinition, vv, logicalType)
@@ -378,7 +376,7 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 				return nil, err
 			}
 			expBuilder = expBuilder.Append(logicalExp)
-		case k == string(schema.LogicalOperatorNot):
+		case k == string(builders.LogicalOperatorNot):
 			filterExp, err := b.buildFilterExp(table, astDefinition, filters)
 			if err != nil {
 				return nil, err

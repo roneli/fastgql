@@ -17,6 +17,10 @@ func (o Ordering) DirectiveName() string {
 	return "generate"
 }
 
+func (p Ordering) Name() string {
+	return "ordering"
+}
+
 func (o Ordering) Augment(s *ast.Schema) error {
 	for _, v := range s.Types {
 		d := v.Directives.ForName(o.DirectiveName())

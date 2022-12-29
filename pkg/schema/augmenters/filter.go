@@ -18,8 +18,12 @@ type createdInputDef struct {
 
 type FilterInput struct{}
 
+func (f FilterInput) DirectiveName() string {
+	return "filterInput"
+}
+
 func (f FilterInput) Name() string {
-	return "generateFilterInput"
+	return "filterInput"
 }
 
 func (f FilterInput) Augment(s *ast.Schema) error {
@@ -90,11 +94,10 @@ func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, obje
 
 // initInputs initialize all filter inputs before adding fields to avoid recursive reference
 func (f FilterInput) initInputs(s *ast.Schema) []*createdInputDef {
-
 	defs := make([]*createdInputDef, 0)
 	for _, obj := range s.Types {
 		// Check if object has a generateFilterInput directive
-		d := obj.Directives.ForName(f.Name())
+		d := obj.Directives.ForName(f.DirectiveName())
 		if d == nil {
 			continue
 		}
@@ -111,6 +114,10 @@ func (f FilterInput) initInputs(s *ast.Schema) []*createdInputDef {
 }
 
 type FilterArguments struct{}
+
+func (fa FilterArguments) Name() string {
+	return "filterArguments"
+}
 
 func (fa FilterArguments) DirectiveName() string {
 	return "generate"

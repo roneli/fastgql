@@ -13,6 +13,10 @@ import (
 // Pagination Augmenter allows adding pagination (limit/offset) augmenting any objects' field with @generate if it's a List
 type Pagination struct{}
 
+func (p Pagination) Name() string {
+	return "pagination"
+}
+
 func (p Pagination) DirectiveName() string {
 	return "generate"
 }

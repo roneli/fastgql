@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"unsafe"
 
-	"github.com/roneli/fastgql/internal/log"
+	"github.com/roneli/fastgql/pkg/log"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"

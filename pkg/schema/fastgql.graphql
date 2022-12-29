@@ -15,6 +15,7 @@ directive @generateFilterInput(name: String!, description: String) repeatable on
 directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True,
     recursive: Boolean = True, wrapper:Boolean = False) repeatable  on OBJECT
 
+# Generate mutations object
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 
 enum _relationType {
@@ -73,6 +74,26 @@ input IntListComparator {
     overlap: [Int]
     isNull: Boolean
 }
+
+input FloatComparator {
+    eq: Float
+    neq: Float
+    gt: Float
+    gte: Float
+    lt: Float
+    lte: Float
+    isNull: Boolean
+}
+
+input FloatListComparator {
+    eq: [Float]
+    neq: [Float]
+    contains: [Float]
+    contained: [Float]
+    overlap: [Float]
+    isNull: Boolean
+}
+
 
 input BooleanComparator {
     eq: Boolean

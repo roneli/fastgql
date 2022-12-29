@@ -3,13 +3,12 @@ package mongo
 import (
 	"fmt"
 
+	"github.com/roneli/fastgql/pkg/log"
 	"github.com/spf13/cast"
 
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/roneli/fastgql/internal/log"
 	"github.com/roneli/fastgql/pkg/execution/builders"
-	"github.com/roneli/fastgql/pkg/schema"
 	"github.com/vektah/gqlparser/v2/ast"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -97,9 +96,9 @@ func (b Builder) buildFilterExp(_ builders.Field, filters map[string]interface{}
 	var allFilters bson.D
 	for k, v := range filters {
 		switch {
-		case k == string(schema.LogicalOperatorAND) || k == string(schema.LogicalOperatorOR):
+		case k == string(builders.LogicalOperatorAND) || k == string(builders.LogicalOperatorOR):
 			panic("not implemented")
-		case k == string(schema.LogicalOperatorNot):
+		case k == string(builders.LogicalOperatorNot):
 			panic("not implemented")
 		default:
 			opMap, ok := v.(map[string]interface{})

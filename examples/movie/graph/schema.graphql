@@ -10,9 +10,7 @@ type Language @table(name:"language", schema: "movies") @generateFilterInput(nam
     lastUpdate: String!
     "Get all flims by language"
     films: [Film] @relation(type: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
-
     stuff: [Stuff] @relation(type: ONE_TO_MANY, baseTable: "language", refTable: "film", fields: ["language_id"], references: ["language_id"])
-
 }
 
 type Category @table(name:"category", schema: "movies") @generateFilterInput(name:"CategoryFilterInput") {
