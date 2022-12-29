@@ -5,7 +5,7 @@
 ## Getting Started
 
 * [Setup](getting-started/setup.md)
-* [Queries](getting-started/queries/README.md)
+* [Queries](getting-started/queries/overview.md)
   * [Aggregation](getting-started/queries/aggregation.md)
   * [Ordering](getting-started/queries/ordering.md)
   * [Pagination](getting-started/queries/pagination.md)
@@ -13,4 +13,5 @@
 
 ## Schema
 
-* [Page 1](schema/page-1.md)
+* [directives](schema/directives.md)
+* [fragment](schema/fastgql_schema_fragment.md)
