@@ -108,7 +108,10 @@ func (f FastGqlPlugin) MarkResolvers(c *config.Config) error {
 
 // CreateAugmented augments *ast.Schema returning []*ast.Source files that are augmented with filters, mutations etc'
 // so gqlgen can generate an augmented fastGQL server
-func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters []augmenters.Augmenter) ([]*ast.Source, error) {
+func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters ...augmenters.Augmenter) ([]*ast.Source, error) {
+	if len(augmenters) == 0 {
+		augmenters = defaultAugmenters
+	}
 	for _, a := range augmenters {
 		if err := a.Augment(schema); err != nil {
 			return nil, fmt.Errorf("augmenter %s failed: %w", a.Name(), err)

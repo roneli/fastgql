@@ -8,6 +8,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/roneli/fastgql/pkg/execution/builders"
 	"github.com/roneli/fastgql/pkg/execution/builders/sql"
+	"github.com/stretchr/testify/require"
 
 	"github.com/roneli/fastgql/pkg/schema"
 
@@ -159,17 +160,18 @@ func TestBuilder_Delete(t *testing.T) {
 func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders.Field) (string, []interface{}, error)) {
 	fs := afero.NewOsFs()
 	data, err := afero.ReadFile(fs, testCase.SchemaFile)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	testSchema, err := gqlparser.LoadSchema(&ast.Source{
 		Name:    "schema.graphql",
 		Input:   string(data),
 		BuiltIn: false,
 	})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	fgqlPlugin := schema.FastGqlPlugin{}
-	src := fgqlPlugin.CreateAugmented(testSchema)
+	src, err := fgqlPlugin.CreateAugmented(testSchema)
+	require.Nil(t, err)
 	augmentedSchema, err := gqlparser.LoadSchema(src...)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	builder := sql.NewBuilder(&builders.Config{
 		Schema:             augmentedSchema,
@@ -177,9 +179,9 @@ func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Bui
 		TableNameGenerator: &TestTableNameGenerator{},
 	})
 	doc, err := parser.ParseQuery(&ast.Source{Input: testCase.GraphQLQuery})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	errs := validator.Validate(augmentedSchema, doc)
-	assert.Nil(t, errs)
+	require.Nil(t, errs)
 	def := doc.Operations.ForName("")
 	sel := def.SelectionSet[0].(*ast.Field)
 	opCtx := &graphql.OperationContext{

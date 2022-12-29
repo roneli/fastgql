@@ -25,7 +25,7 @@ func Generate(configPath string, generateServer bool, sources ...*ast.Source) er
 	}
 	// initialize the FastGQL plugin and add it to gqlgen
 	fgqlPlugin := FastGqlPlugin{}
-	srcs, err := fgqlPlugin.CreateAugmented(cfg.Schema, defaultAugmenters)
+	srcs, err := fgqlPlugin.CreateAugmented(cfg.Schema)
 	if err != nil {
 		return err
 	}

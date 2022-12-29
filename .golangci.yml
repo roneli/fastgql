@@ -25,7 +25,6 @@ linters:
     - misspell
     - nakedret
     - prealloc
-    - structcheck
     - unconvert
     - unused
 
