@@ -3,7 +3,7 @@ description: Instant Golang Server GraphQL API based on gqlgen
 layout: landing
 ---
 
-# FastGQL
+![fastgql](./logo_dark.svg)
 
 ### What is fastGQL?
 
