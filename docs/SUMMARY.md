@@ -1,6 +1,7 @@
 # Table of contents
 
-* [Getting Started](getting_started.md)
+* [Introduction](README.md)
+* [Getting Started](getting\_started.md)
 * [Queries](queries/README.md)
   * [Searching & Filtering](queries/filtering.md)
   * [Aggregation](queries/aggregation.md)
