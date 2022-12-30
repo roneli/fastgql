@@ -1,5 +1,5 @@
 ---
-description: Fetching data with pagination
+description: Paginate your data with ease
 ---
 
 # Pagination
