@@ -11,11 +11,11 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/roneli/fastgql/examples/movie/graph"
 	"github.com/roneli/fastgql/examples/movie/graph/generated"
-	"github.com/roneli/fastgql/internal/log/adapters"
 	"github.com/roneli/fastgql/pkg/execution"
 	"github.com/roneli/fastgql/pkg/execution/builders"
 	"github.com/roneli/fastgql/pkg/execution/builders/mongo"
 	"github.com/roneli/fastgql/pkg/execution/builders/sql"
+	"github.com/roneli/fastgql/pkg/log/adapters"
 	"github.com/rs/zerolog/log"
 )
 

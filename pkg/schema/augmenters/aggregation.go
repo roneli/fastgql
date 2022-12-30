@@ -18,6 +18,10 @@ func (a Aggregation) DirectiveName() string {
 	return "generate"
 }
 
+func (a Aggregation) Name() string {
+	return "aggregation"
+}
+
 func (a Aggregation) Augment(s *ast.Schema) error {
 	for _, v := range s.Types {
 		d := v.Directives.ForName(a.DirectiveName())

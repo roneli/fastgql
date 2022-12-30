@@ -11,6 +11,10 @@ import (
 
 type Mutations struct{}
 
+func (m Mutations) Name() string {
+	return "mutations"
+}
+
 func (m Mutations) DirectiveName() string {
 	return "generateMutations"
 }

@@ -1,4 +1,4 @@
-package schema
+package builders
 
 type LogicalOperator string
 

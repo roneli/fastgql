@@ -42,6 +42,7 @@ func (ff Fields) HasSelection(sel string) bool {
 	return false
 }
 
+// Field is a helpful wrapper over *ast.Field adding more custom information when collecting the GraphQL query AST
 type Field struct {
 	// Original *ast.Field
 	*ast.Field
@@ -83,10 +84,12 @@ func (f Field) GetTypeName() string {
 	return f.TypeDefinition.Name
 }
 
+// Relation directive on field, if it exists
 func (f Field) Relation() *RelationDirective {
 	return GetRelationDirective(f.Definition)
 }
 
+// Table directive on field, if it exists
 func (f Field) Table() *TableDirective {
 	d := f.TypeDefinition.Directives.ForName("table")
 	if d == nil {

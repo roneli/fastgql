@@ -18,8 +18,12 @@ type createdInputDef struct {
 
 type FilterInput struct{}
 
-func (f FilterInput) Name() string {
+func (f FilterInput) DirectiveName() string {
 	return "generateFilterInput"
+}
+
+func (f FilterInput) Name() string {
+	return "filterInput"
 }
 
 func (f FilterInput) Augment(s *ast.Schema) error {
@@ -32,8 +36,8 @@ func (f FilterInput) Augment(s *ast.Schema) error {
 
 func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, object *ast.Definition) {
 
-	for _, f := range object.Fields {
-		fieldType := gql.GetType(f.Type)
+	for _, field := range object.Fields {
+		fieldType := gql.GetType(field.Type)
 		def, ok := s.Types[fieldType.Name()]
 		if !ok {
 			continue
@@ -41,7 +45,7 @@ func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, obje
 		var fieldDef *ast.Definition
 		switch def.Kind {
 		case ast.Scalar, ast.Enum:
-			if gql.IsListType(f.Type) {
+			if gql.IsListType(field.Type) {
 				fieldDef = s.Types[fmt.Sprintf("%sListComparator", fieldType.Name())]
 			} else {
 				fieldDef = s.Types[fmt.Sprintf("%sComparator", fieldType.Name())]
@@ -55,7 +59,7 @@ func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, obje
 		}
 
 		input.Fields = append(input.Fields, &ast.FieldDefinition{
-			Name: f.Name,
+			Name: field.Name,
 			Type: &ast.Type{NamedType: fieldDef.Name},
 		})
 	}
@@ -90,11 +94,10 @@ func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, obje
 
 // initInputs initialize all filter inputs before adding fields to avoid recursive reference
 func (f FilterInput) initInputs(s *ast.Schema) []*createdInputDef {
-
 	defs := make([]*createdInputDef, 0)
 	for _, obj := range s.Types {
 		// Check if object has a generateFilterInput directive
-		d := obj.Directives.ForName(f.Name())
+		d := obj.Directives.ForName(f.DirectiveName())
 		if d == nil {
 			continue
 		}
@@ -111,6 +114,10 @@ func (f FilterInput) initInputs(s *ast.Schema) []*createdInputDef {
 }
 
 type FilterArguments struct{}
+
+func (fa FilterArguments) Name() string {
+	return "filterArguments"
+}
 
 func (fa FilterArguments) DirectiveName() string {
 	return "generate"

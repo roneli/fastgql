@@ -1,3 +1,13 @@
+# FastGQL Schema Fragment
+
+While editing your schema, you might find it useful to include this GraphQL schema
+fragment. It sets up the definitions of the directives, etc. 
+(like @generate) that you’ll use in your schema. 
+If your editor is GraphQL aware, it may give you errors if you don’t have 
+this available. 
+
+```graphql
+
 # Table directive is defined on OBJECTS, if no table directive is defined defaults are assumed
 # i.e <type_name>, "postgres", ""
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
@@ -109,3 +119,5 @@ input BooleanListComparator {
     overlap: [Boolean]
     isNull: Boolean
 }
+
+```

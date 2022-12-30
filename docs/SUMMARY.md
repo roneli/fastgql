@@ -1,0 +1,15 @@
+# Table of contents
+
+* [Getting Started](README.md)
+* [Queries](overview/README.md)
+  * [Searching & Filtering](overview/filtering.md)
+  * [Aggregation](overview/aggregation.md)
+  * [Ordering](overview/ordering.md)
+  * [Pagination](overview/pagination.md)
+* [Mutations](mutations/README.md)
+  * [Insert](mutations/insert.md)
+  * [Delete](mutations/delete.md)
+  * [Update](mutations/update.md)
+* [Schema](schema/README.md)
+  * [Directives](schema/directives.md)
+  * [Schema Fragment](schema/fastgql\_schema\_fragment.md)

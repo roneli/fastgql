@@ -7,6 +7,8 @@ import (
 
 type Dialect string
 
+// Executor execute based on graphql.FieldContext & graphql.OperationContext
+// The executor holds all drivers that support execution
 type Executor struct {
 	drivers map[string]Driver
 }

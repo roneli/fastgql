@@ -8,6 +8,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/roneli/fastgql/pkg/execution/builders"
 	"github.com/roneli/fastgql/pkg/execution/builders/sql"
+	"github.com/stretchr/testify/require"
 
 	"github.com/roneli/fastgql/pkg/schema"
 
@@ -156,20 +157,50 @@ func TestBuilder_Delete(t *testing.T) {
 
 }
 
+func TestBuilder_Update(t *testing.T) {
+	testCases := []TestBuilderCase{
+		{
+			Name:              "simple_update",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `mutation { updatePosts(input: {name: "newPost"}) { rows_affected posts { name id } } }`,
+			ExpectedSQL:       `WITH update_posts AS (UPDATE "posts" AS "sq0" SET "name"='newPost' RETURNING *) SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq1"."name", 'id', "sq1"."id")), '[]'::jsonb) AS "posts" FROM "update_posts" AS "sq1") AS "posts", (SELECT COUNT(*) AS "rows_affected" FROM "update_posts")`,
+			ExpectedArguments: []interface{}{},
+		},
+		{
+			Name:              "update_with_filter",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `mutation { updatePosts(input: {name: "newPost"}, filter: {id: {eq: 1}}) { rows_affected posts { name id } } }`,
+			ExpectedSQL:       `WITH update_posts AS (UPDATE "posts" AS "sq0" SET "name"='newPost' WHERE ("sq0"."id" = 1) RETURNING *) SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq1"."name", 'id', "sq1"."id")), '[]'::jsonb) AS "posts" FROM "update_posts" AS "sq1") AS "posts", (SELECT COUNT(*) AS "rows_affected" FROM "update_posts")`,
+			ExpectedArguments: []interface{}{},
+		},
+	}
+	_ = os.Chdir("/testdata")
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
+				return b.Update(f)
+			})
+		})
+
+	}
+
+}
+
 func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders.Field) (string, []interface{}, error)) {
 	fs := afero.NewOsFs()
 	data, err := afero.ReadFile(fs, testCase.SchemaFile)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	testSchema, err := gqlparser.LoadSchema(&ast.Source{
 		Name:    "schema.graphql",
 		Input:   string(data),
 		BuiltIn: false,
 	})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	fgqlPlugin := schema.FastGqlPlugin{}
-	src := fgqlPlugin.CreateAugmented(testSchema)
+	src, err := fgqlPlugin.CreateAugmented(testSchema)
+	require.Nil(t, err)
 	augmentedSchema, err := gqlparser.LoadSchema(src...)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	builder := sql.NewBuilder(&builders.Config{
 		Schema:             augmentedSchema,
@@ -177,9 +208,9 @@ func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Bui
 		TableNameGenerator: &TestTableNameGenerator{},
 	})
 	doc, err := parser.ParseQuery(&ast.Source{Input: testCase.GraphQLQuery})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	errs := validator.Validate(augmentedSchema, doc)
-	assert.Nil(t, errs)
+	require.Nil(t, errs)
 	def := doc.Operations.ForName("")
 	sel := def.SelectionSet[0].(*ast.Field)
 	opCtx := &graphql.OperationContext{
