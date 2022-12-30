@@ -1,162 +1,51 @@
----
-description: How to setup fastGQL
----
+![fastgql](./logo_dark.svg)
 
-# Getting Started
+<div style="align-content: center ">
 
-This tutorial will take you through the process of building a GraphQL server with fastgql that can:
+  <a aria-label="License" href="https://github.com/roneli/fastgql/license.md">
+    <img alt="" src="https://img.shields.io/npm/l/next.svg?style=for-the-badge&labelColor=000000">
+   <a aria-label="read the docs" href="https://fastgql.io">
+        <img alt="" src="https://img.shields.io/website?down_color=red&down_message=down&label=docs&style=for-the-badge&up_color=green&up_message=available&url=https%3A%2F%2Ffastgql.com%2Fgetting-started%2F&labelColor=000000">
+   </a>
+</div>
 
-* automatically query, filter, order and pagination users, posts & categories from a postgres database.
+## What is fastGQL?
 
-You can find the finished code for this tutorial [here](https://github.com/roneli/fastgql/tree/master/example).
+[*fastGQL*](https://github.com/roneli/fastgql) is a Go library that
+extends [gqlgen](https://github.com/99designs/gqlgen) to create a blazing-fast GraphQL server that gives you instant,
+realtime GraphQL APIs over Postgres.
 
-If you are familiar with [gqlgen](https://gqlgen.com), the setup is nearly identical, with a little work in your Schema you won't need to define any resolvers!
+- **fastgql is based on a Schema first approach** — You get to Define your API using the
+  GraphQL [Schema Definition Language](http://graphql.org/learn/schema/).
+- **fastgql prioritizes extendability** — You can modify resolvers, add your own custom operators and even create your
+  own database query builder.
+- **fastgql enables codegen** — We generate even more of the boring CRUD bits, so you can focus on building your app
+  even faster!
 
-## Setup Project
+## Getting Started
 
-Create a directory for your project, and initialise it as a Go Module:
+- To install fastgql run the command `go get github.com/roneli/fastgql` in your project directory.<br/>
+- You could initialize a new project using the recommended folder structure by running this
+  command `go run github.com/roneli/fastgql init`.
 
-```bash
-$ mkdir fastgql-example
-$ cd fastgql-example 
-$ go mod init github.com/[username]/fastgql-example
-$ go get github.com/roneli/fastgql
-```
+You could find a more comprehensive guide on [gqlgen](https://github.com/99designs/gqlgen) to help you get
+started [here](https://gqlgen.com/getting-started/).
+We also have a couple of  [examples](https://github.com/roneli/fastgql/tree/master/example) that show how fastgql
+generates the full API seamlessly.
 
-#### Add github.com/roneli/fastgql to your project’s tools.go
+## Reporting Issues
 
-```bash
-printf '// +build tools\npackage tools\nimport _ "github.com/roneli/fastgql"' | gofmt > tools.go
-go mod tidy
-```
+If you think you've found a bug, or something isn't behaving the way you think it should, please raise
+an [issue](https://github.com/roneli/fastgql/issues) on GitHub.
 
-## Building the server
+## Contributing
 
-### Create the project skeleton
+Feel free to open Pull-Request for small fixes and changes. For bigger changes and new builders please open
+an [issue](https://github.com/roneli/fastgql/issues) first to prevent double work and discuss relevant stuff.
 
-```bash
-$ go run github.com/roneli/fastgql init
-$ go mod tidy
-```
+## Roadmap 🚧
 
-This will create our suggested package layout. You can modify these paths in gqlgen.yml if you need to.
-
-```
-├── go.mod
-├── go.sum
-├── gqlgen.yml               - The gqlgen config file, knobs for controlling the generated code.
-├── graph
-│   ├── generated            - A package that only contains the generated runtime
-│   │   └── generated.go
-│   ├── model                - A package for all your graph models, generated or otherwise
-│   │   └── models_gen.go
-│   ├── resolver.go          - The root graph resolver type. This file wont get regenerated
-|   ├── fastgql.graphql      - fastgql schema fragemnt, adding all directives, inputs etc' required for schema augment
-│   ├── schema.graphql       - Some schema. You can split the schema into as many graphql files as you like
-│   └── schema.fastgql.go    - the resolver implementation for schema.graphql
-└── server.go                - The entry point to your app. Customize it however you see fit
-```
-
-### Define your schema
-
-gqlgen is a schema-first library — before writing code, you describe your API using the GraphQL [Schema Definition Language](http://graphql.org/learn/schema/). By default this goes into a file called `schema.graphql` but you can break it up into as many different files as you want.
-
-The schema that was generated for us was:
-
-{% code overflow="wrap" %}
-```graphql
-type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user"){
-  id: Int!
-  name: String!
-  posts: [Post] @relation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
-}
-
-type Post @generateFilterInput(name: "PostFilterInput") {
-  id: Int!
-  name: String
-  categories: [Category] @relation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"]
-    manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-  user: User @relation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
-}
-
-
-type Category @generateFilterInput(name: "CategoryFilterInput"){
-  id: Int!
-  name: String
-}
-
-type Query @generate {
-  posts: [Post]
-  users: [User]
-  categories: [Category] @skipGenerate
-}
-```
-{% endcode %}
-
-### Implement the resolvers
-
-`fastgql generate` compares the schema file (`schema.graphql`) with the models `graph/model/*` and wherever it can it will bind directly to the model. It generates resolvers just like gqlgen, but also implements some resolvers to directly work with the database.
-
-If we take a look in `graph/schema.fastgql.go` you will see all the resolvers that fastgql autogenerated for example:
-
-{% code overflow="wrap" %}
-```go
-func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
- 	var data []*model.Post
-	if err := r.Executor.Scan(ctx, "postgres", &data); err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-```
-{% endcode %}
-
-We just need to start a postgres server and insert a schema, you can try the example's [compose file](https://github.com/roneli/fastgql/tree/master/example/docker-compose.yml) and execute the [schema.sql](https://github.com/roneli/fastgql/blob/master/example/graph/schema.graphql):
-
-Finally, we just need to define our postgres connection str that defined in server.go. We can override with `PG_CONN_STR` env variable.
-
-If we used the example's docker compose we can use this DSN: `PG_CONN_STR=postgresql://localhost/postgres?user=postgres&password=password`
-
-We now have a working server, to start it:
-
-```bash
-go run server.go
-```
-
-then open http://localhost:8080 in a browser. here are some queries to try:
-
-```graphql
-query {
-  posts(limit: 2) {
-    name
-    categories {
-      name
-    }
-  }
-}
-query filterPostsByUser {
-  posts(limit: 10, filter: {user:{name: {eq: "fastgql"}}}, orderBy: {name: ASC}) {
-    name
-    categories {
-      name
-    }
-    user {
-      name
-    }
-  }
-}
-```
-
-## Finishing touches
-
-At the top of our `server.go`, between `package` and `import`, add the following line:
-
-```go
-//go:generate go run github.com/roneli/fastgql generate -c gqlgen.yml
-```
-
-This magic comment tells `go generate` what command to run when we want to regenerate our code. To run go generate recursively over your entire project, use this command:
-
-```go
-go generate ./...
-```
+- More tests
+- configurable database connections
+- Support multiple database (mongodb, cockroachDB, neo4j)
+- full CRUD creation
