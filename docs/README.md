@@ -1,51 +1,36 @@
-![fastgql](./logo_dark.svg)
+# Introduction
 
-<div style="align-content: center ">
+![](logo\_dark.svg)
 
-  <a aria-label="License" href="https://github.com/roneli/fastgql/license.md">
-    <img alt="" src="https://img.shields.io/npm/l/next.svg?style=for-the-badge&labelColor=000000">
-   <a aria-label="read the docs" href="https://fastgql.io">
-        <img alt="" src="https://img.shields.io/website?down_color=red&down_message=down&label=docs&style=for-the-badge&up_color=green&up_message=available&url=https%3A%2F%2Ffastgql.com%2Fgetting-started%2F&labelColor=000000">
-   </a>
-</div>
+[![](https://img.shields.io/npm/l/next.svg?style=for-the-badge\&labelColor=000000) ](https://github.com/roneli/fastgql/license.md)[![](https://img.shields.io/website?down\_color=red\&down\_message=down\&label=docs\&style=for-the-badge\&up\_color=green\&up\_message=available\&url=https%3A%2F%2Ffastgql.com%2Fgetting-started%2F\&labelColor=000000)](https://fastgql.io)
 
-## What is fastGQL?
+### What is fastGQL?
 
-[*fastGQL*](https://github.com/roneli/fastgql) is a Go library that
-extends [gqlgen](https://github.com/99designs/gqlgen) to create a blazing-fast GraphQL server that gives you instant,
-realtime GraphQL APIs over Postgres.
+[_fastGQL_](https://github.com/roneli/fastgql) is a Go library that extends [gqlgen](https://github.com/99designs/gqlgen) to create a blazing-fast GraphQL server that gives you instant, realtime GraphQL APIs over Postgres.
 
-- **fastgql is based on a Schema first approach** — You get to Define your API using the
-  GraphQL [Schema Definition Language](http://graphql.org/learn/schema/).
-- **fastgql prioritizes extendability** — You can modify resolvers, add your own custom operators and even create your
-  own database query builder.
-- **fastgql enables codegen** — We generate even more of the boring CRUD bits, so you can focus on building your app
-  even faster!
+* **fastgql is based on a Schema first approach** — You get to Define your API using the GraphQL [Schema Definition Language](http://graphql.org/learn/schema/).
+* **fastgql prioritizes extendability** — You can modify resolvers, add your own custom operators and even create your own database query builder.
+* **fastgql enables codegen** — We generate even more of the boring CRUD bits, so you can focus on building your app even faster!
 
-## Getting Started
+### Getting Started
 
-- To install fastgql run the command `go get github.com/roneli/fastgql` in your project directory.<br/>
-- You could initialize a new project using the recommended folder structure by running this
-  command `go run github.com/roneli/fastgql init`.
+* To install fastgql run the command `go get github.com/roneli/fastgql` in your project directory.\
 
-You could find a more comprehensive guide on [gqlgen](https://github.com/99designs/gqlgen) to help you get
-started [here](https://gqlgen.com/getting-started/).
-We also have a couple of  [examples](https://github.com/roneli/fastgql/tree/master/example) that show how fastgql
-generates the full API seamlessly.
+* You could initialize a new project using the recommended folder structure by running this command `go run github.com/roneli/fastgql init`.
 
-## Reporting Issues
+You could find a more comprehensive guide on [gqlgen](https://github.com/99designs/gqlgen) to help you get started [here](https://gqlgen.com/getting-started/). We also have a couple of [examples](https://github.com/roneli/fastgql/tree/master/example) that show how fastgql generates the full API seamlessly.
 
-If you think you've found a bug, or something isn't behaving the way you think it should, please raise
-an [issue](https://github.com/roneli/fastgql/issues) on GitHub.
+### Reporting Issues
 
-## Contributing
+If you think you've found a bug, or something isn't behaving the way you think it should, please raise an [issue](https://github.com/roneli/fastgql/issues) on GitHub.
 
-Feel free to open Pull-Request for small fixes and changes. For bigger changes and new builders please open
-an [issue](https://github.com/roneli/fastgql/issues) first to prevent double work and discuss relevant stuff.
+### Contributing
 
-## Roadmap 🚧
+Feel free to open Pull-Request for small fixes and changes. For bigger changes and new builders please open an [issue](https://github.com/roneli/fastgql/issues) first to prevent double work and discuss relevant stuff.
 
-- More tests
-- configurable database connections
-- Support multiple database (mongodb, cockroachDB, neo4j)
-- full CRUD creation
+### Roadmap 🚧
+
+* More tests
+* configurable database connections
+* Support multiple database (mongodb, cockroachDB, neo4j)
+* full CRUD creation
