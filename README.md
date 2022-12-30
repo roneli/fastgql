@@ -5,11 +5,7 @@
 
   <a aria-label="License" href="https://github.com/roneli/fastgql/license.md">
     <img alt="" src="https://img.shields.io/npm/l/next.svg?style=for-the-badge&labelColor=000000">
-  </a>
-  <a aria-label="lint" href="https://github.com/roneli/fastgql/workflows/Lint/badge.svg">
-      <img alt="" src="https://img.shields.io/github/workflow/status/roneli/fastgql/Lint?style=for-the-badge&labelColor=000000">
-  </a>  
-   <a aria-label="read the docs" href="https://fastgql.com">
+   <a aria-label="read the docs" href="https://fastgql.io">
         <img alt="" src="https://img.shields.io/website?down_color=red&down_message=down&label=docs&style=for-the-badge&up_color=green&up_message=available&url=https%3A%2F%2Ffastgql.com%2Fgetting-started%2F&labelColor=000000">
    </a>
 </div>

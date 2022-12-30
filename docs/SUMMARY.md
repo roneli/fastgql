@@ -1,11 +1,11 @@
 # Table of contents
 
-* [Getting Started](README.md)
-* [Queries](overview/README.md)
-  * [Searching & Filtering](overview/filtering.md)
-  * [Aggregation](overview/aggregation.md)
-  * [Ordering](overview/ordering.md)
-  * [Pagination](overview/pagination.md)
+* [Getting Started](getting_started.md)
+* [Queries](queries/README.md)
+  * [Searching & Filtering](queries/filtering.md)
+  * [Aggregation](queries/aggregation.md)
+  * [Ordering](queries/ordering.md)
+  * [Pagination](queries/pagination.md)
 * [Mutations](mutations/README.md)
   * [Insert](mutations/insert.md)
   * [Delete](mutations/delete.md)
