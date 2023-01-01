@@ -1,8 +1,12 @@
-# Introduction
-
 ![](logo\_dark.svg)
 
-[![](https://img.shields.io/npm/l/next.svg?style=for-the-badge\&labelColor=000000) ](https://github.com/roneli/fastgql/license.md)[![](https://img.shields.io/website?down\_color=red\&down\_message=down\&label=docs\&style=for-the-badge\&up\_color=green\&up\_message=available\&url=https%3A%2F%2Ffastgql.com%2Fgetting-started%2F\&labelColor=000000)](https://fastgql.io)
+<div>
+  <a aria-label="License" href="https://github.com/roneli/fastgql/license.md">
+    <img alt="" src="https://img.shields.io/npm/l/next.svg?style=for-the-badge&labelColor=000000">
+   <a aria-label="read the docs" href="https://www.fastgql.io">
+      <img alt="" src="https://img.shields.io/website?down_color=red&down_message=down&label=docs&style=for-the-badge&up_color=green&up_message=available&url=https%3A%2F%2Fwww.fastgql.io&labelColor=000000">
+   </a>
+</div>
 
 ### What is fastGQL?
 

@@ -90,12 +90,12 @@ type Query @generate {
 
 ### @generateMutations
 
-The `@generateFilterInput` tells the augmenter on which `OBJECT | INTERFACE` to generate filter inputs, this is required so _fastGQL_ knows what objects to build filters for giving you more control over which filters are created.
+The `@generateMutations` tells the augmenter on which `OBJECT` to generate mutations on. 
+There are 3 possible mutations, create, update and delete, by default all of them are set to true. 
 
 ```graphql
 # Generate filter input on an object
-directive @generateFilterInput(name: String!, description: String) 
-    on OBJECT | INTERFACE
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 ```
 
 ## Builder directives
