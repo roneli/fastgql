@@ -10,7 +10,9 @@ type Scanner interface {
 }
 
 type Driver interface {
+	// Scanner is the main function of all drivers, a scanner will read the GraphQL AST from the context.Context
 	Scanner
+	// Close gracefully requests the driver to close
 	Close() error
 	// Dialect returns the dialect name of the driver.
 	Dialect() string

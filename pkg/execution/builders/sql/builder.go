@@ -404,7 +404,7 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 				return nil, fmt.Errorf("fatal value of key not map")
 			}
 			for op, value := range opMap {
-				opExp, err := b.Operation(table.table, k, op, value)
+				opExp, err := b.buildOperation(table.table, k, op, value)
 				if err != nil {
 					return nil, err
 				}
@@ -413,14 +413,6 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 		}
 	}
 	return expBuilder, nil
-}
-
-func (b Builder) Operation(table exp.AliasedExpression, fieldName, operatorName string, value interface{}) (goqu.Expression, error) {
-	opFunc, ok := b.Operators[operatorName]
-	if !ok {
-		return nil, fmt.Errorf("key operator %s not supported", operatorName)
-	}
-	return opFunc(table, b.CaseConverter(fieldName), value), nil
 }
 
 func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) error {
@@ -532,4 +524,12 @@ func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, r
 	}
 	fq.SelectDataset = fq.Where(expBuilder)
 	return fq, nil
+}
+
+func (b Builder) buildOperation(table exp.AliasedExpression, fieldName, operatorName string, value interface{}) (goqu.Expression, error) {
+	opFunc, ok := b.Operators[operatorName]
+	if !ok {
+		return nil, fmt.Errorf("key operator %s not supported", operatorName)
+	}
+	return opFunc(table, b.CaseConverter(fieldName), value), nil
 }

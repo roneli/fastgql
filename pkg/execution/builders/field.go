@@ -106,6 +106,30 @@ func GetFilterInput(s *ast.Schema, f *ast.Definition) *ast.Definition {
 	return s.Types[fmt.Sprintf("%sFilterInput", f.Name)]
 }
 
+func GetOperationType(ctx context.Context) OperationType {
+	opCtx := graphql.GetOperationContext(ctx)
+	if opCtx.Operation.Operation == "mutation" {
+		sel := opCtx.Operation.SelectionSet[0]
+		field := sel.(*ast.Field)
+		switch {
+		case strings.HasPrefix(field.Name, "delete"):
+			return DeleteOperation
+		case strings.HasPrefix(field.Name, "create"):
+			return InsertOperation
+		case strings.HasPrefix(field.Name, "update"):
+			return UpdateOperation
+		}
+		return UnknownOperation
+	}
+	return QueryOperation
+}
+
+func GetAggregateField(parentField, aggField Field) Field {
+	fieldName := strings.Split(aggField.Name, "Aggregate")[0][1:]
+	f, _ := parentField.ForName(fieldName)
+	return f
+}
+
 func CollectOrdering(ordering interface{}) ([]OrderField, error) {
 	switch orderings := ordering.(type) {
 	case map[string]interface{}:
@@ -141,30 +165,6 @@ func CollectFields(ctx context.Context, schema *ast.Schema) Field {
 	}
 	f := NewField(nil, resCtx.Field.Field, schema, args)
 	f.Selections = collectFields(&f, schema, opCtx, make(map[string]bool))
-	return f
-}
-
-func GetOperationType(ctx context.Context) OperationType {
-	opCtx := graphql.GetOperationContext(ctx)
-	if opCtx.Operation.Operation == "mutation" {
-		sel := opCtx.Operation.SelectionSet[0]
-		field := sel.(*ast.Field)
-		switch {
-		case strings.HasPrefix(field.Name, "delete"):
-			return DeleteOperation
-		case strings.HasPrefix(field.Name, "create"):
-			return InsertOperation
-		case strings.HasPrefix(field.Name, "update"):
-			return UpdateOperation
-		}
-		return UnknownOperation
-	}
-	return QueryOperation
-}
-
-func GetAggregateField(parentField, aggField Field) Field {
-	fieldName := strings.Split(aggField.Name, "Aggregate")[0][1:]
-	f, _ := parentField.ForName(fieldName)
 	return f
 }
 
@@ -316,6 +316,7 @@ func buildOrderingHelper(argMap map[string]interface{}) []OrderField {
 	return orderFields
 }
 
+// parseFieldType returns the fieldType based on the name/directive or type of the *ast.Field
 func parseFieldType(field *ast.Field, typeDef *ast.Definition) fieldType {
 	switch {
 	case strings.HasSuffix(field.Name, "Aggregate"):

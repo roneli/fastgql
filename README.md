@@ -44,8 +44,6 @@ Feel free to open Pull-Request for small fixes and changes. For bigger changes a
 an [issue](https://github.com/roneli/fastgql/issues) first to prevent double work and discuss relevant stuff.
 
 ## Roadmap 🚧
-
-- More tests
-- configurable database connections
+- Integration testing, and generation testing
+- configurable database connections, augmenters and better schema control
 - Support multiple database (mongodb, cockroachDB, neo4j)
-- full CRUD creation
