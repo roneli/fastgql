@@ -173,7 +173,7 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 {{ reserveImport "github.com/roneli/fastgql/pkg/execution" }}
 type {{.}} struct {
 	Cfg *builders.Config 
-	Executor execution.Querier
+	Executor execution.Executor
 }`,
 			Filename: data.Config.Resolver.Filename,
 			Data:     data.Config.Resolver.Type,

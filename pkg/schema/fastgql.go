@@ -14,7 +14,7 @@ import (
 var (
 	//go:embed fastgql.graphql
 	FastGQLSchema     string
-	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "generateMutations"}
+	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "skipGenerate", "generateMutations", "relation"}
 	baseDialect       = "postgres"
 	defaultAugmenters = []augmenters.Augmenter{
 		augmenters.Pagination{},
@@ -28,6 +28,10 @@ var (
 
 // FastGqlPlugin augments and extends the original schema
 type FastGqlPlugin struct{}
+
+func NewFastGQLPlugin() FastGqlPlugin {
+	return FastGqlPlugin{}
+}
 
 func (f FastGqlPlugin) Name() string {
 	return "fastGQLPlugin"

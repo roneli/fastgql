@@ -4,9 +4,9 @@ import (
 	"context"
 )
 
-// Scanner builds a query based on GraphQL query and scans data into v
+// Scanner builds a query based on GraphQL query and scans data into out
 type Scanner interface {
-	Scan(ctx context.Context, v any) error
+	Scan(ctx context.Context, out any) error
 }
 
 type Driver interface {

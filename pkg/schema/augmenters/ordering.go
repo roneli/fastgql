@@ -17,7 +17,7 @@ func (o Ordering) DirectiveName() string {
 	return "generate"
 }
 
-func (p Ordering) Name() string {
+func (o Ordering) Name() string {
 	return "ordering"
 }
 
