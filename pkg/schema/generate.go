@@ -8,7 +8,6 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 
 	"github.com/roneli/fastgql/pkg/schema/plugin"
-	"github.com/roneli/fastgql/pkg/schema/plugin/resolvergen"
 	"github.com/roneli/fastgql/pkg/schema/plugin/servergen"
 )
 
@@ -48,7 +47,7 @@ func Generate(configPath string, generateServer bool, saveFiles bool, sources ..
 	// skip validation for now, as after code generation we need to mod tidy again
 	cfg.SkipValidation = true
 	if generateServer {
-		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(resolvergen.New()),
+		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(New()),
 			api.AddPlugin(fgqlPlugin), api.AddPlugin(servergen.New("server.go")))
 	} else {
 		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin),

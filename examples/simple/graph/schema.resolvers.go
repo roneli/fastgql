@@ -7,12 +7,12 @@ package graph
 import (
 	"context"
 	"fmt"
-	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5"
-	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 
+	"github.com/georgysavva/scany/v2/pgxscan"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/roneli/fastgql/examples/simple/graph/generated"
 	"github.com/roneli/fastgql/examples/simple/graph/model"
+	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 )
 
 // Person is the resolver for the person field.
@@ -21,8 +21,8 @@ func (r *queryResolver) Person(ctx context.Context) (*model.Person, error) {
 }
 
 // User is the resolver for the user field.
-func (r *queryResolver) User(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering) ([]model.User, error) {
-	var data []model.User
+func (r *queryResolver) User(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
+	var data []*model.User
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
 		return nil, err
@@ -33,11 +33,10 @@ func (r *queryResolver) User(ctx context.Context, limit *int, offset *int, order
 		return nil, err
 	}
 	return data, nil
-
 }
 
 // UserAggregate is the resolver for the _userAggregate field.
-func (r *queryResolver) UserAggregate(ctx context.Context) (*model.UsersAggregate, error) {
+func (r *queryResolver) UserAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.UsersAggregate, error) {
 	var data *model.UsersAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -49,10 +48,18 @@ func (r *queryResolver) UserAggregate(ctx context.Context) (*model.UsersAggregat
 		return nil, err
 	}
 	return data, nil
+}
 
+// SomeInnerValue is the resolver for the someInnerValue field.
+func (r *userResolver) SomeInnerValue(ctx context.Context, obj *model.User) (*model.User, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// User returns generated.UserResolver implementation.
+func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
+
 type queryResolver struct{ *Resolver }
+type userResolver struct{ *Resolver }

@@ -1,10 +1,8 @@
 package augmenters
 
 import (
-	"log"
-	"strings"
-
 	"github.com/roneli/fastgql/pkg/schema/gql"
+	"log"
 
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -42,7 +40,7 @@ func (p Pagination) Augment(s *ast.Schema) error {
 func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
 		// avoid recurse
-		if strings.HasPrefix(f.Name, "__") || f.Arguments.ForName("limit") != nil || f.Arguments.ForName("offset") != nil {
+		if skipAugment(f, "limit", "offset") {
 			continue
 		}
 		fieldType := s.Types[f.Type.Name()]

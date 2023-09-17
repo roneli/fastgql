@@ -8,8 +8,6 @@ import (
 	"github.com/roneli/fastgql/pkg/schema/plugin/resolvergen"
 	"github.com/spf13/cast"
 	"go/types"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"text/template"
 )
@@ -99,16 +97,4 @@ func renderResolver(resolver *resolvergen.Resolver) (*bytes.Buffer, error) {
 
 func deref(p types.Type) string {
 	return strings.TrimPrefix(templates.CurrentImports.LookupType(p), "*")
-}
-
-func resolveName(name string, skip int) string {
-	if name[0] == '.' {
-		// load path relative to calling source file
-		_, callerFile, _, _ := runtime.Caller(skip + 1)
-		return filepath.Join(filepath.Dir(callerFile), name[1:])
-	}
-
-	// load path relative to this directory
-	_, callerFile, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(callerFile), name)
 }

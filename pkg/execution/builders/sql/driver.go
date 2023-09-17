@@ -6,8 +6,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"reflect"
 
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/roneli/fastgql/pkg/execution/builders"
 )
 

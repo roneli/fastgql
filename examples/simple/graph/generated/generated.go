@@ -37,6 +37,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Query() QueryResolver
+	User() UserResolver
 }
 
 type DirectiveRoot struct {
@@ -49,13 +50,16 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Person        func(childComplexity int) int
-		User          func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering) int
-		UserAggregate func(childComplexity int) int
+		User          func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
+		UserAggregate func(childComplexity int, filter *model.UserFilterInput) int
 	}
 
 	User struct {
-		Age  func(childComplexity int) int
-		Name func(childComplexity int) int
+		Age                        func(childComplexity int) int
+		Name                       func(childComplexity int) int
+		SomeInnerValue             func(childComplexity int) int
+		SomeInnerValueLis          func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
+		SomeInnerValueLisAggregate func(childComplexity int, filter *model.UserFilterInput) int
 	}
 
 	UserMin struct {
@@ -76,8 +80,11 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	Person(ctx context.Context) (*model.Person, error)
-	User(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering) ([]model.User, error)
-	UserAggregate(ctx context.Context) (*model.UsersAggregate, error)
+	User(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
+	UserAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.UsersAggregate, error)
+}
+type UserResolver interface {
+	SomeInnerValue(ctx context.Context, obj *model.User) (*model.User, error)
 }
 
 type executableSchema struct {
@@ -119,14 +126,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.User(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UserOrdering)), true
+		return e.complexity.Query.User(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UserOrdering), args["filter"].(*model.UserFilterInput)), true
 
 	case "Query._userAggregate":
 		if e.complexity.Query.UserAggregate == nil {
 			break
 		}
 
-		return e.complexity.Query.UserAggregate(childComplexity), true
+		args, err := ec.field_Query__userAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserAggregate(childComplexity, args["filter"].(*model.UserFilterInput)), true
 
 	case "User.age":
 		if e.complexity.User.Age == nil {
@@ -141,6 +153,37 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.Name(childComplexity), true
+
+	case "User.someInnerValue":
+		if e.complexity.User.SomeInnerValue == nil {
+			break
+		}
+
+		return e.complexity.User.SomeInnerValue(childComplexity), true
+
+	case "User.someInnerValueLis":
+		if e.complexity.User.SomeInnerValueLis == nil {
+			break
+		}
+
+		args, err := ec.field_User_someInnerValueLis_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.SomeInnerValueLis(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UserOrdering), args["filter"].(*model.UserFilterInput)), true
+
+	case "User._someInnerValueLisAggregate":
+		if e.complexity.User.SomeInnerValueLisAggregate == nil {
+			break
+		}
+
+		args, err := ec.field_User__someInnerValueLisAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.SomeInnerValueLisAggregate(childComplexity, args["filter"].(*model.UserFilterInput)), true
 
 	case "UserMin.age":
 		if e.complexity.UserMin.Age == nil {
@@ -200,6 +243,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputIntListComparator,
 		ec.unmarshalInputStringComparator,
 		ec.unmarshalInputStringListComparator,
+		ec.unmarshalInputUserFilterInput,
 		ec.unmarshalInputUserOrdering,
 	)
 	first := true
@@ -283,53 +327,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../fastgql_schema.graphql", Input: `"""
-max aggregator for User
-"""
-type UserMin {
-	"""
-	Compute the maxiumum for name
-	"""
-	name: String!
-	"""
-	Compute the maxiumum for age
-	"""
-	age: Int!
-}
-"""
-Ordering for User
-"""
-input UserOrdering {
-	"""
-	Order User by name
-	"""
-	name: _OrderingTypes
-	"""
-	Order User by age
-	"""
-	age: _OrderingTypes
-}
-"""
-Aggregate User
-"""
-type UsersAggregate {
-	"""
-	Count results
-	"""
-	count: Int!
-	"""
-	Computes the maximum of the non-null input values.
-	"""
-	max: UserMin
-	"""
-	Computes the minimum of the non-null input values.
-	"""
-	min: UserMin
-}
-`, BuiltIn: false},
 	{Name: "../fastgql.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean = False) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
@@ -417,32 +418,125 @@ enum _relationType {
 	{Name: "../schema.graphql", Input: `type Person {
 	name: String
 }
-type Query @generate {
+type Query @generate(recursive: true) {
 	person: Person! @skipGenerate
 	user(
 		"""
 		Limit
 		"""
-		limit: Int = 100
-	,
+		limit: Int = 100,
 		"""
 		Offset
 		"""
-		offset: Int = 0
-	,
+		offset: Int = 0,
 		"""
 		Ordering for User
 		"""
-		orderBy: [UserOrdering]
-	): [User!]
+		orderBy: [UserOrdering],
+		"""
+		Filter user
+		"""
+		filter: UserFilterInput): [User]
 	"""
 	user Aggregate
 	"""
-	_userAggregate: UsersAggregate!
+	_userAggregate(
+		"""
+		Filter _userAggregate
+		"""
+		filter: UserFilterInput): UsersAggregate!
 }
-type User {
+type User @generateFilterInput(name: "UserFilterInput") {
 	name: String
 	age: Int
+	someInnerValue: User @goField(forceResolver: true) @skipGenerate
+	someInnerValueLis(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter someInnerValueLis
+		"""
+		filter: UserFilterInput): [User]
+	"""
+	someInnerValueLis Aggregate
+	"""
+	_someInnerValueLisAggregate(
+		"""
+		Filter _someInnerValueLisAggregate
+		"""
+		filter: UserFilterInput): UsersAggregate!
+}
+`, BuiltIn: false},
+	{Name: "../fastgql_schema.graphql", Input: `input UserFilterInput {
+	name: StringComparator
+	age: IntComparator
+	someInnerValue: UserFilterInput
+	someInnerValueLis: UserFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [UserFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [UserFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: UserFilterInput
+}
+"""
+max aggregator for User
+"""
+type UserMin {
+	"""
+	Compute the maxiumum for name
+	"""
+	name: String!
+	"""
+	Compute the maxiumum for age
+	"""
+	age: Int!
+}
+"""
+Ordering for User
+"""
+input UserOrdering {
+	"""
+	Order User by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order User by age
+	"""
+	age: _OrderingTypes
+}
+"""
+Aggregate User
+"""
+type UsersAggregate {
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Computes the maximum of the non-null input values.
+	"""
+	max: UserMin
+	"""
+	Computes the minimum of the non-null input values.
+	"""
+	min: UserMin
 }
 `, BuiltIn: false},
 }
@@ -464,6 +558,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query__userAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -497,6 +606,72 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["orderBy"] = arg2
+	var arg3 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_User__someInnerValueLisAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_User_someInnerValueLis_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg1
+	var arg2 []*model.UserOrdering
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg2, err = ec.unmarshalOUserOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserOrdering(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg2
+	var arg3 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
 	return args, nil
 }
 
@@ -641,7 +816,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().User(rctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.UserOrdering))
+		return ec.resolvers.Query().User(rctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.UserOrdering), fc.Args["filter"].(*model.UserFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -650,9 +825,9 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]model.User)
+	res := resTmp.([]*model.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -667,6 +842,12 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 				return ec.fieldContext_User_name(ctx, field)
 			case "age":
 				return ec.fieldContext_User_age(ctx, field)
+			case "someInnerValue":
+				return ec.fieldContext_User_someInnerValue(ctx, field)
+			case "someInnerValueLis":
+				return ec.fieldContext_User_someInnerValueLis(ctx, field)
+			case "_someInnerValueLisAggregate":
+				return ec.fieldContext_User__someInnerValueLisAggregate(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -699,7 +880,7 @@ func (ec *executionContext) _Query__userAggregate(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UserAggregate(rctx)
+		return ec.resolvers.Query().UserAggregate(rctx, fc.Args["filter"].(*model.UserFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -733,6 +914,17 @@ func (ec *executionContext) fieldContext_Query__userAggregate(ctx context.Contex
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UsersAggregate", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query__userAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -944,6 +1136,186 @@ func (ec *executionContext) fieldContext_User_age(ctx context.Context, field gra
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_someInnerValue(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_someInnerValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().SomeInnerValue(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_someInnerValue(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "age":
+				return ec.fieldContext_User_age(ctx, field)
+			case "someInnerValue":
+				return ec.fieldContext_User_someInnerValue(ctx, field)
+			case "someInnerValueLis":
+				return ec.fieldContext_User_someInnerValueLis(ctx, field)
+			case "_someInnerValueLisAggregate":
+				return ec.fieldContext_User__someInnerValueLisAggregate(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_someInnerValueLis(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_someInnerValueLis(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SomeInnerValueLis, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_someInnerValueLis(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "age":
+				return ec.fieldContext_User_age(ctx, field)
+			case "someInnerValue":
+				return ec.fieldContext_User_someInnerValue(ctx, field)
+			case "someInnerValueLis":
+				return ec.fieldContext_User_someInnerValueLis(ctx, field)
+			case "_someInnerValueLisAggregate":
+				return ec.fieldContext_User__someInnerValueLisAggregate(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_User_someInnerValueLis_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User__someInnerValueLisAggregate(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User__someInnerValueLisAggregate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SomeInnerValueLisAggregate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UsersAggregate)
+	fc.Result = res
+	return ec.marshalNUsersAggregate2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUsersAggregate(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User__someInnerValueLisAggregate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext_UsersAggregate_count(ctx, field)
+			case "max":
+				return ec.fieldContext_UsersAggregate_max(ctx, field)
+			case "min":
+				return ec.fieldContext_UsersAggregate_min(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UsersAggregate", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_User__someInnerValueLisAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -3601,6 +3973,89 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, obj interface{}) (model.UserFilterInput, error) {
+	var it model.UserFilterInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "age", "someInnerValue", "someInnerValueLis", "AND", "OR", "NOT"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "age":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("age"))
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Age = data
+		case "someInnerValue":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("someInnerValue"))
+			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SomeInnerValue = data
+		case "someInnerValueLis":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("someInnerValueLis"))
+			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SomeInnerValueLis = data
+		case "AND":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "OR":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "NOT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj interface{}) (model.UserOrdering, error) {
 	var it model.UserOrdering
 	asMap := map[string]interface{}{}
@@ -3811,6 +4266,46 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_name(ctx, field, obj)
 		case "age":
 			out.Values[i] = ec._User_age(ctx, field, obj)
+		case "someInnerValue":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_someInnerValue(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "someInnerValueLis":
+			out.Values[i] = ec._User_someInnerValueLis(ctx, field, obj)
+		case "_someInnerValueLisAggregate":
+			out.Values[i] = ec._User__someInnerValueLisAggregate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4377,10 +4872,6 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	return ret
 }
 
-func (ec *executionContext) marshalNUser2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
-	return ec._User(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNUsersAggregate2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUsersAggregate(ctx context.Context, sel ast.SelectionSet, v model.UsersAggregate) graphql.Marshaler {
 	return ec._UsersAggregate(ctx, sel, &v)
 }
@@ -4812,6 +5303,14 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
+func (ec *executionContext) unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐIntComparator(ctx context.Context, v interface{}) (*model.IntComparator, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputIntComparator(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
 	if v == nil {
 		return nil, nil
@@ -4860,7 +5359,15 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalOUser2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []model.User) graphql.Marshaler {
+func (ec *executionContext) unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐStringComparator(ctx context.Context, v interface{}) (*model.StringComparator, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputStringComparator(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -4887,7 +5394,7 @@ func (ec *executionContext) marshalOUser2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋex
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNUser2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+			ret[i] = ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4898,13 +5405,42 @@ func (ec *executionContext) marshalOUser2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋex
 	}
 	wg.Wait()
 
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
+	return ret
+}
+
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) ([]*model.UserFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.UserFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
 		}
 	}
+	return res, nil
+}
 
-	return ret
+func (ec *executionContext) unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) (*model.UserFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOUserMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserMin(ctx context.Context, sel ast.SelectionSet, v *model.UserMin) graphql.Marshaler {

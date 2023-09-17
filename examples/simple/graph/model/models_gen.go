@@ -87,8 +87,25 @@ type StringListComparator struct {
 }
 
 type User struct {
-	Name *string `json:"name,omitempty" db:"name"`
-	Age  *int    `json:"age,omitempty" db:"age"`
+	Name              *string `json:"name,omitempty" db:"name"`
+	Age               *int    `json:"age,omitempty" db:"age"`
+	SomeInnerValue    *User   `json:"someInnerValue,omitempty" db:"someInnerValue"`
+	SomeInnerValueLis []*User `json:"someInnerValueLis,omitempty" db:"someInnerValueLis"`
+	// someInnerValueLis Aggregate
+	SomeInnerValueLisAggregate *UsersAggregate `json:"_someInnerValueLisAggregate" db:"_someInnerValueLisAggregate"`
+}
+
+type UserFilterInput struct {
+	Name              *StringComparator `json:"name,omitempty" db:"name"`
+	Age               *IntComparator    `json:"age,omitempty" db:"age"`
+	SomeInnerValue    *UserFilterInput  `json:"someInnerValue,omitempty" db:"someInnerValue"`
+	SomeInnerValueLis *UserFilterInput  `json:"someInnerValueLis,omitempty" db:"someInnerValueLis"`
+	// Logical AND of FilterInput
+	And []*UserFilterInput `json:"AND,omitempty" db:"AND"`
+	// Logical OR of FilterInput
+	Or []*UserFilterInput `json:"OR,omitempty" db:"OR"`
+	// Logical NOT of FilterInput
+	Not *UserFilterInput `json:"NOT,omitempty" db:"NOT"`
 }
 
 // max aggregator for User

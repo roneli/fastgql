@@ -22,15 +22,6 @@ import (
 	"github.com/roneli/fastgql/pkg/schema/codegen/rewrite"
 )
 
-//go:embed resolver.gotpl
-var resolverTemplate string
-
-func New() plugin.Plugin {
-	return &Plugin{
-		ResolverTemplate: resolverTemplate,
-	}
-}
-
 type Plugin struct {
 	ExtraFuncs       template.FuncMap
 	ResolverTemplate string
@@ -46,14 +37,12 @@ func (m *Plugin) GenerateCode(data *codegen.Data) error {
 	if !data.Config.Resolver.IsDefined() {
 		return nil
 	}
-
 	switch data.Config.Resolver.Layout {
 	case config.LayoutSingleFile:
 		return m.generateSingleFile(data)
 	case config.LayoutFollowSchema:
 		return m.generatePerSchema(data)
 	}
-
 	return nil
 }
 

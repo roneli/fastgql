@@ -35,7 +35,6 @@ func (f FilterInput) Augment(s *ast.Schema) error {
 }
 
 func (f FilterInput) buildFilterInput(s *ast.Schema, input *ast.Definition, object *ast.Definition) {
-
 	for _, field := range object.Fields {
 		fieldType := gql.GetType(field.Type)
 		def, ok := s.Types[fieldType.Name()]
@@ -133,7 +132,7 @@ func (fa FilterArguments) Augment(s *ast.Schema) error {
 		args := d.ArgumentMap(nil)
 		recursive := cast.ToBool(args["recursive"])
 		if addFilters, ok := args["filter"]; ok && cast.ToBool(addFilters) {
-			log.Printf("building adding filter arguments for %s\n", v.Name)
+			log.Printf("adding filter arguments for %s\n", v.Name)
 			fa.addFilter(s, v, nil, recursive)
 		}
 	}
@@ -143,10 +142,10 @@ func (fa FilterArguments) Augment(s *ast.Schema) error {
 func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
 		// avoid recurse and Skip "special" field types such as type name etc'
-		if strings.HasPrefix(f.Name, "__") || f.Arguments.ForName("filter") != nil {
+		if skipAugment(f, "filter") {
+			log.Printf("skipping adding filter for field %s\n", f.Name)
 			continue
 		}
-
 		fieldType := s.Types[f.Type.Name()]
 		if gql.IsScalarListType(s, f.Type) {
 			if recursive && fieldType.IsCompositeType() && fieldType != parent {
@@ -154,7 +153,6 @@ func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, parent *
 			}
 			continue
 		}
-
 		log.Printf("building adding filters for field %s\n", f.Name)
 		var typeName string
 		if strings.HasSuffix(f.Name, "Aggregate") {
@@ -172,7 +170,7 @@ func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, parent *
 		if !ok {
 			continue
 		}
-
+		log.Printf("adding filter argument for field %s\n", f.Name)
 		f.Arguments = append(f.Arguments,
 			&ast.ArgumentDefinition{Description: fmt.Sprintf("Filter %s", f.Name),
 				Name: "filter",
@@ -180,6 +178,7 @@ func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, parent *
 			},
 		)
 		if recursive && fieldType.IsCompositeType() {
+			log.Printf("adding ordering to field %s@%s\n", f.Name, obj.Name)
 			fa.addFilter(s, fieldType, obj, recursive)
 		}
 	}

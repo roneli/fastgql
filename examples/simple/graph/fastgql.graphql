@@ -1,6 +1,7 @@
 directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean = False) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE

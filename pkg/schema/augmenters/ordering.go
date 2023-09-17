@@ -2,10 +2,8 @@ package augmenters
 
 import (
 	"fmt"
-	"log"
-	"strings"
-
 	"github.com/roneli/fastgql/pkg/schema/gql"
+	"log"
 
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -39,10 +37,9 @@ func (o Ordering) Augment(s *ast.Schema) error {
 func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
 	for _, f := range obj.Fields {
 		// avoid recurse and adding to internal objects
-		if strings.HasPrefix(f.Name, "__") || f.Arguments.ForName("orderBy") != nil {
+		if skipAugment(f, "orderBy") {
 			continue
 		}
-
 		fieldType := s.Types[f.Type.Name()]
 		if gql.IsScalarListType(s, f.Type) || !gql.IsListType(f.Type) {
 			if recursive && fieldType.IsCompositeType() && parent != fieldType {
@@ -50,7 +47,6 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, parent *ast.De
 			}
 			continue
 		}
-
 		t := gql.GetType(f.Type)
 		fieldDef, ok := s.Types[t.Name()]
 		if !ok || !fieldDef.IsCompositeType() {
@@ -71,6 +67,7 @@ func (o Ordering) addOrdering(s *ast.Schema, obj *ast.Definition, parent *ast.De
 			},
 		)
 		if recursive && fieldType.IsCompositeType() {
+			log.Printf("adding ordering to field %s@%s\n", f.Name, obj.Name)
 			o.addOrdering(s, fieldType, obj, recursive)
 		}
 	}

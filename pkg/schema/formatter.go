@@ -21,8 +21,9 @@ func FormatSchema(rootDirectory string, schema *ast.Schema) []*ast.Source {
 		return nil
 	}
 	defaultFormatter := newFormatter(&bytes.Buffer{})
+	defaultSource := filepath.Join(rootDirectory, defaultFastGqlSchema)
 	formatters := map[string]*formatter{
-		filepath.Join(rootDirectory, defaultFastGqlSchema): defaultFormatter,
+		defaultSource: defaultFormatter,
 	}
 	var inSchema bool
 	startSchema := func() {
@@ -60,7 +61,7 @@ func FormatSchema(rootDirectory string, schema *ast.Schema) []*ast.Source {
 	sort.Strings(directiveNames)
 	for _, name := range directiveNames {
 		d := schema.Directives[name]
-		f := getOrCreateFormatter(getSourceName(d.Position), formatters)
+		f := getOrCreateFormatter(getSourceName(d.Position, defaultSource), formatters)
 		f.FormatDirectiveDefinition(d)
 	}
 
@@ -71,7 +72,7 @@ func FormatSchema(rootDirectory string, schema *ast.Schema) []*ast.Source {
 	sort.Strings(typeNames)
 	for _, name := range typeNames {
 		t := schema.Types[name]
-		f := getOrCreateFormatter(getSourceName(t.Position), formatters)
+		f := getOrCreateFormatter(getSourceName(t.Position, defaultSource), formatters)
 		f.FormatDefinition(t, false)
 	}
 
@@ -238,7 +239,6 @@ func (f *formatter) FormatArgumentDefinitionList(lists ast.ArgumentDefinitionLis
 	f.WriteString("(")
 	for idx, arg := range lists {
 		f.FormatArgumentDefinition(arg)
-
 		if idx != len(lists)-1 {
 			f.NoPadding().WriteWord(",")
 		}
@@ -262,7 +262,6 @@ func (f *formatter) FormatArgumentDefinition(def *ast.ArgumentDefinition) {
 
 	if def.Description != "" {
 		f.DecrementIndent()
-		f.WriteNewline()
 	}
 }
 
@@ -571,9 +570,9 @@ func (f *formatter) FormatValue(value *ast.Value) {
 	f.WriteString(value.String())
 }
 
-func getSourceName(pos *ast.Position) string {
+func getSourceName(pos *ast.Position, defaultSource string) string {
 	if pos == nil || pos.Src == nil {
-		return defaultFastGqlSchema
+		return defaultSource
 	}
 	return pos.Src.Name
 }

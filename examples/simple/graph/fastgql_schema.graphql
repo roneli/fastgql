@@ -1,3 +1,21 @@
+input UserFilterInput {
+	name: StringComparator
+	age: IntComparator
+	someInnerValue: UserFilterInput
+	someInnerValueLis: UserFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [UserFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [UserFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: UserFilterInput
+}
 """
 max aggregator for User
 """
