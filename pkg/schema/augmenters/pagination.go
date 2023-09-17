@@ -23,11 +23,13 @@ func (p Pagination) DirectiveName() string {
 
 func (p Pagination) Augment(s *ast.Schema) error {
 	for _, v := range s.Types {
+		if v.BuiltIn {
+			continue
+		}
 		d := v.Directives.ForName(p.DirectiveName())
 		if d == nil {
 			continue
 		}
-
 		args := d.ArgumentMap(nil)
 		recursive := cast.ToBool(args["recursive"])
 		if addPagination, ok := args["pagination"]; ok && cast.ToBool(addPagination) {
@@ -43,7 +45,6 @@ func (p Pagination) addPagination(s *ast.Schema, obj *ast.Definition, parent *as
 		if strings.HasPrefix(f.Name, "__") || f.Arguments.ForName("limit") != nil || f.Arguments.ForName("offset") != nil {
 			continue
 		}
-
 		fieldType := s.Types[f.Type.Name()]
 		if gql.IsScalarListType(s, f.Type) || !gql.IsListType(f.Type) {
 			if recursive && fieldType.IsCompositeType() && fieldType != parent {

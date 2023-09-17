@@ -1,0 +1,43 @@
+"""
+max aggregator for User
+"""
+type UserMin {
+	"""
+	Compute the maxiumum for name
+	"""
+	name: String!
+	"""
+	Compute the maxiumum for age
+	"""
+	age: Int!
+}
+"""
+Ordering for User
+"""
+input UserOrdering {
+	"""
+	Order User by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order User by age
+	"""
+	age: _OrderingTypes
+}
+"""
+Aggregate User
+"""
+type UsersAggregate {
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Computes the maximum of the non-null input values.
+	"""
+	max: UserMin
+	"""
+	Computes the minimum of the non-null input values.
+	"""
+	min: UserMin
+}

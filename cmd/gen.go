@@ -19,7 +19,7 @@ var generateCmd = &cobra.Command{
 }
 
 func generateAPI() {
-	if err := schema.Generate(configPath, false); err != nil {
+	if err := schema.Generate(configPath, false, true); err != nil {
 		fmt.Fprintln(os.Stderr, "failed to load config", err.Error())
 		os.Exit(2)
 	}

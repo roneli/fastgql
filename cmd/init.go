@@ -54,9 +54,9 @@ autobind:
 # modelgen, the others will be allowed when binding to fields. Configure them to
 # your liking
 models:
-  ID:
+  Id:
     model:
-      - github.com/99designs/gqlgen/graphql.ID
+      - github.com/99designs/gqlgen/graphql.Id
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
@@ -116,7 +116,7 @@ var initCmd = &cobra.Command{
 				return err
 			}
 		}
-		if err := schema.Generate(configFilename, true); err != nil {
+		if err := schema.Generate(configFilename, true, false); err != nil {
 			fmt.Fprintln(os.Stderr, "failed to load config", err.Error())
 			os.Exit(2)
 		}

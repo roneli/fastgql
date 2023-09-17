@@ -1,35 +1,40 @@
 package resolvergen
 
 import (
-	"bytes"
+	_ "embed"
+	"errors"
 	"fmt"
-	"go/types"
+	"go/ast"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"text/template"
 
-	"github.com/roneli/fastgql/pkg/schema/codegen/rewrite"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/codegen/templates"
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/plugin"
-	"github.com/pkg/errors"
-	"github.com/spf13/cast"
+	"github.com/roneli/fastgql/pkg/schema/codegen/rewrite"
 )
+
+//go:embed resolver.gotpl
+var resolverTemplate string
 
 func New() plugin.Plugin {
-	return &Plugin{}
+	return &Plugin{
+		ResolverTemplate: resolverTemplate,
+	}
 }
 
-const (
-	defaultImpl = `panic(fmt.Errorf("not implemented"))`
-	wrapperImpl = `return &{{.Field.TypeReference.GO | deref}}{}, nil`
-)
-
-type Plugin struct{}
+type Plugin struct {
+	ExtraFuncs       template.FuncMap
+	ResolverTemplate string
+}
 
 var _ plugin.CodeGenerator = &Plugin{}
 
@@ -56,7 +61,7 @@ func (m *Plugin) generateSingleFile(data *codegen.Data) error {
 	file := File{}
 
 	if _, err := os.Stat(data.Config.Resolver.Filename); err == nil {
-		// file already exists and we dont support updating codegen with layout = single so just return
+		// file already exists and we do not support updating resolvers with layout = single so just return
 		return nil
 	}
 
@@ -69,16 +74,17 @@ func (m *Plugin) generateSingleFile(data *codegen.Data) error {
 				continue
 			}
 
-			resolver := Resolver{o, f, `panic("not implemented")`}
+			resolver := Resolver{o, f, nil, "", `panic("not implemented")`}
 			file.Resolvers = append(file.Resolvers, &resolver)
 		}
 	}
 
 	resolverBuild := &ResolverBuild{
-		File:         &file,
-		PackageName:  data.Config.Resolver.Package,
-		ResolverType: data.Config.Resolver.Type,
-		HasRoot:      true,
+		File:                &file,
+		PackageName:         data.Config.Resolver.Package,
+		ResolverType:        data.Config.Resolver.Type,
+		HasRoot:             true,
+		OmitTemplateComment: data.Config.Resolver.OmitTemplateComment,
 	}
 
 	return templates.Render(templates.Options{
@@ -87,6 +93,7 @@ func (m *Plugin) generateSingleFile(data *codegen.Data) error {
 		Filename:    data.Config.Resolver.Filename,
 		Data:        resolverBuild,
 		Packages:    data.Config.Packages,
+		Template:    m.ResolverTemplate,
 	})
 }
 
@@ -98,15 +105,20 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 
 	files := map[string]*File{}
 
-	for _, o := range data.Objects {
+	objects := make(codegen.Objects, len(data.Objects)+len(data.Inputs))
+	copy(objects, data.Objects)
+	copy(objects[len(data.Objects):], data.Inputs)
+
+	for _, o := range objects {
 		if o.HasResolvers() {
 			fn := gqlToResolverName(data.Config.Resolver.Dir(), o.Position.Src.Name, data.Config.Resolver.FilenameTemplate)
 			if files[fn] == nil {
 				files[fn] = &File{}
 			}
 
+			caser := cases.Title(language.English, cases.NoLower)
 			rewriter.MarkStructCopied(templates.LcFirst(o.Name) + templates.UcFirst(data.Config.Resolver.Type))
-			rewriter.GetMethodBody(data.Config.Resolver.Type, o.Name)
+			rewriter.GetMethodBody(data.Config.Resolver.Type, caser.String(o.Name))
 			files[fn].Objects = append(files[fn].Objects, o)
 		}
 		for _, f := range o.Fields {
@@ -115,11 +127,29 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 			}
 
 			structName := templates.LcFirst(o.Name) + templates.UcFirst(data.Config.Resolver.Type)
+			comment := strings.TrimSpace(strings.TrimLeft(rewriter.GetMethodComment(structName, f.GoFieldName), `\`))
+
 			implementation := strings.TrimSpace(rewriter.GetMethodBody(structName, f.GoFieldName))
 			if implementation == "" {
-				implementation = `panic(fmt.Errorf("not implemented"))`
+				// Check for Implementer Plugin
+				var resolver_implementer plugin.ResolverImplementer
+				var exists bool
+				for _, p := range data.Plugins {
+					if p_cast, ok := p.(plugin.ResolverImplementer); ok {
+						resolver_implementer = p_cast
+						exists = true
+						break
+					}
+				}
+
+				if exists {
+					implementation = resolver_implementer.Implement(f)
+				} else {
+					implementation = fmt.Sprintf("panic(fmt.Errorf(\"not implemented: %v - %v\"))", f.GoFieldName, f.Name)
+				}
 			}
-			resolver := Resolver{o, f, implementation}
+
+			resolver := Resolver{o, f, rewriter.GetPrevDecl(structName, f.GoFieldName), comment, implementation}
 			fn := gqlToResolverName(data.Config.Resolver.Dir(), f.Position.Src.Name, data.Config.Resolver.FilenameTemplate)
 			if files[fn] == nil {
 				files[fn] = &File{}
@@ -136,45 +166,47 @@ func (m *Plugin) generatePerSchema(data *codegen.Data) error {
 
 	for filename, file := range files {
 		resolverBuild := &ResolverBuild{
-			File:         file,
-			PackageName:  data.Config.Resolver.Package,
-			ResolverType: data.Config.Resolver.Type,
+			File:                file,
+			PackageName:         data.Config.Resolver.Package,
+			ResolverType:        data.Config.Resolver.Type,
+			OmitTemplateComment: data.Config.Resolver.OmitTemplateComment,
+		}
+
+		var fileNotice strings.Builder
+		if !data.Config.OmitGQLGenFileNotice {
+			fileNotice.WriteString(`
+			// This file will be automatically regenerated based on the schema, any resolver implementations
+			// will be copied through when generating and any unknown code will be moved to the end.
+			// Code generated by github.com/99designs/gqlgen`,
+			)
+			if !data.Config.OmitGQLGenVersionInFileNotice {
+				fileNotice.WriteString(` version `)
+				fileNotice.WriteString(graphql.Version)
+			}
 		}
 
 		err := templates.Render(templates.Options{
 			PackageName: data.Config.Resolver.Package,
-			FileNotice: `
-				// This file will be automatically regenerated based on the schema, any resolver implementations
-				// will be copied through when generating and any unknown code will be moved to the end.`,
-			Filename: filename,
-			Data:     resolverBuild,
-			Packages: data.Config.Packages,
-			Funcs: map[string]interface{}{
-				"renderResolver": func(resolver interface{}) (*bytes.Buffer, error) {
-					r := resolver.(*Resolver)
-					return m.renderResolver(r)
-				},
-			},
+			FileNotice:  fileNotice.String(),
+			Filename:    filename,
+			Funcs:       m.ExtraFuncs,
+			Data:        resolverBuild,
+			Packages:    data.Config.Packages,
+			Template:    m.ResolverTemplate,
 		})
 		if err != nil {
 			return err
 		}
 	}
 
-	if _, err := os.Stat(data.Config.Resolver.Filename); os.IsNotExist(errors.Cause(err)) {
+	if _, err := os.Stat(data.Config.Resolver.Filename); errors.Is(err, fs.ErrNotExist) {
 		err := templates.Render(templates.Options{
 			PackageName: data.Config.Resolver.Package,
 			FileNotice: `
 				// This file will not be regenerated automatically.
 				//
 				// It serves as dependency injection for your app, add any dependencies you require here.`,
-			Template: `{{ reserveImport "context"  }}
-{{ reserveImport "github.com/roneli/fastgql/pkg/execution/builders" }}
-{{ reserveImport "github.com/roneli/fastgql/pkg/execution" }}
-type {{.}} struct {
-	Cfg *builders.Config 
-	Executor execution.Executor
-}`,
+			Template: `type {{.}} struct {}`,
 			Filename: data.Config.Resolver.Filename,
 			Data:     data.Config.Resolver.Type,
 			Packages: data.Config.Packages,
@@ -186,98 +218,12 @@ type {{.}} struct {
 	return nil
 }
 
-type fastGQLResolver struct {
-	*Resolver
-	Dialect string
-}
-
-func (m *Plugin) renderResolver(resolver *Resolver) (*bytes.Buffer, error) {
-	buf := &bytes.Buffer{}
-	if resolver.Implementation != "" && defaultImpl != resolver.Implementation {
-		buf.WriteString(resolver.Implementation)
-		return buf, nil
-	}
-
-	if resolver.Field.TypeReference.Definition.IsAbstractType() {
-		buf.WriteString(`panic(fmt.Errorf("interface support not implemented"))`)
-		return buf, nil
-	}
-
-	if resolver.Field.TypeReference.Definition.IsLeafType() || resolver.Field.TypeReference.Definition.IsInputType() {
-		buf.WriteString(`panic(fmt.Errorf("not implemented"))`)
-		return buf, nil
-	}
-
-	if resolver.Field.Name == "Stuff" {
-		fmt.Println("lol")
-	}
-
-	baseFuncs := templates.Funcs()
-	baseFuncs["hasSuffix"] = strings.HasSuffix
-	baseFuncs["hasPrefix"] = strings.HasPrefix
-	baseFuncs["deref"] = deref
-
-	fResolver := fastGQLResolver{resolver, "postgres"}
-	if d := resolver.Field.TypeReference.Definition.Directives.ForName("generate"); d != nil {
-		if v := d.Arguments.ForName("wrapper"); v != nil && cast.ToBool(v.Value.Raw) {
-			t, err := template.New("").Funcs(baseFuncs).Parse(wrapperImpl)
-			if err != nil {
-				return buf, err
-			}
-			return buf, t.Execute(buf, fResolver)
-		}
-	}
-
-	if d := resolver.Field.FieldDefinition.Directives.ForName("skipGenerate"); d != nil {
-		if v := d.Definition.Arguments.ForName("resolver"); v != nil && cast.ToBool(v.DefaultValue.Raw) {
-			buf.WriteString(`panic(fmt.Errorf("not implemented"))`)
-			return buf, nil
-		}
-	}
-
-	if d := resolver.Field.TypeReference.Definition.Directives.ForName("dialect"); d != nil {
-		if v := d.Arguments.ForName("type"); v != nil && v.Value.String() != "" {
-			fResolver.Dialect = v.Value.Raw
-		}
-	}
-
-	t := template.New("").Funcs(baseFuncs)
-	fileName := resolveName("fastgql.tpl", 0)
-
-	b, err := os.ReadFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	t, err = t.New(filepath.Base(fileName)).Parse(string(b))
-	if err != nil {
-		panic(err)
-	}
-
-	return buf, t.Execute(buf, fResolver)
-}
-
-func deref(p types.Type) string {
-	return strings.TrimPrefix(templates.CurrentImports.LookupType(p), "*")
-}
-
-func resolveName(name string, skip int) string {
-	if name[0] == '.' {
-		// load path relative to calling source file
-		_, callerFile, _, _ := runtime.Caller(skip + 1)
-		return filepath.Join(filepath.Dir(callerFile), name[1:])
-	}
-
-	// load path relative to this directory
-	_, callerFile, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(callerFile), name)
-}
-
 type ResolverBuild struct {
 	*File
-	HasRoot      bool
-	PackageName  string
-	ResolverType string
+	HasRoot             bool
+	PackageName         string
+	ResolverType        string
+	OmitTemplateComment bool
 }
 
 type File struct {
@@ -303,6 +249,8 @@ func (f *File) Imports() string {
 type Resolver struct {
 	Object         *codegen.Object
 	Field          *codegen.Field
+	PrevDecl       *ast.FuncDecl
+	Comment        string
 	Implementation string
 }
 
@@ -310,7 +258,7 @@ func gqlToResolverName(base string, gqlname, filenameTmpl string) string {
 	gqlname = filepath.Base(gqlname)
 	ext := filepath.Ext(gqlname)
 	if filenameTmpl == "" {
-		filenameTmpl = "{name}.fastgql.go"
+		filenameTmpl = "{name}.resolvers.go"
 	}
 	filename := strings.ReplaceAll(filenameTmpl, "{name}", strings.TrimSuffix(gqlname, ext))
 	return filepath.Join(base, filename)

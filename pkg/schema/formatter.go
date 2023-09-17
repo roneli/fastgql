@@ -3,24 +3,27 @@ package schema
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// Save all fastgql augmented schema into fastgql_schema.graphql file.
+const defaultFastGqlSchema = "fastgql_schema.graphql"
+
 // FormatSchema into multiple sources, the original format schema from gqlparser lib saves all in one file,
 // in this case after augmentation we want to keep all original files and structure and all added definitions to put in
-// fastgql.graphql file.
-func FormatSchema(schema *ast.Schema) []*ast.Source {
+// fastgql_schema.graphql file.
+func FormatSchema(rootDirectory string, schema *ast.Schema) []*ast.Source {
 	if schema == nil {
 		return nil
 	}
 	defaultFormatter := newFormatter(&bytes.Buffer{})
 	formatters := map[string]*formatter{
-		"fastgql.graphql": defaultFormatter,
+		filepath.Join(rootDirectory, defaultFastGqlSchema): defaultFormatter,
 	}
-
 	var inSchema bool
 	startSchema := func() {
 		if !inSchema {
@@ -570,7 +573,7 @@ func (f *formatter) FormatValue(value *ast.Value) {
 
 func getSourceName(pos *ast.Position) string {
 	if pos == nil || pos.Src == nil {
-		return "fastgql.graphql"
+		return defaultFastGqlSchema
 	}
 	return pos.Src.Name
 }

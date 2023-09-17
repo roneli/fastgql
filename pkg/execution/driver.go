@@ -2,6 +2,7 @@ package execution
 
 import (
 	"context"
+	"github.com/jackc/pgx/v4"
 )
 
 // Scanner builds a query based on GraphQL query and scans data into out
@@ -16,4 +17,12 @@ type Driver interface {
 	Close() error
 	// Dialect returns the dialect name of the driver.
 	Dialect() string
+}
+
+type RowScanner[T any] interface {
+	Scan(ctx context.Context, data pgx.Rows) ([]T, error)
+}
+
+type RowScan[T any] interface {
+	Scan(ctx context.Context, data pgx.Row) (T, error)
 }

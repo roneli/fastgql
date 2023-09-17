@@ -1,0 +1,28 @@
+type Person {
+	name: String
+}
+type Query @generate {
+	person: Person! @skipGenerate
+	user(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering]
+	): [User!]
+	"""
+	user Aggregate
+	"""
+	_userAggregate: UsersAggregate!
+}
+type User {
+	name: String
+	age: Int
+}

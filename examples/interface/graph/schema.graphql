@@ -2,7 +2,7 @@ interface Base {
     name: String
 }
 
-type Person implements  Base{
+type Person implements Base{
     name: String
 }
 

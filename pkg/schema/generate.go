@@ -4,6 +4,7 @@ import (
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin/modelgen"
+	"github.com/spf13/afero"
 	"github.com/vektah/gqlparser/v2/ast"
 
 	"github.com/roneli/fastgql/pkg/schema/plugin"
@@ -11,7 +12,7 @@ import (
 	"github.com/roneli/fastgql/pkg/schema/plugin/servergen"
 )
 
-func Generate(configPath string, generateServer bool, sources ...*ast.Source) error {
+func Generate(configPath string, generateServer bool, saveFiles bool, sources ...*ast.Source) error {
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		return err
@@ -19,8 +20,7 @@ func Generate(configPath string, generateServer bool, sources ...*ast.Source) er
 	if sources != nil {
 		cfg.Sources = append(cfg.Sources, sources...)
 	}
-	err = cfg.LoadSchema()
-	if err != nil {
+	if err := cfg.LoadSchema(); err != nil {
 		return err
 	}
 	// initialize the FastGQL plugin and add it to gqlgen
@@ -35,7 +35,12 @@ func Generate(configPath string, generateServer bool, sources ...*ast.Source) er
 		return err
 	}
 	cfg.Sources = srcs
-
+	if saveFiles {
+		err = saveGeneratedFiles(srcs)
+		if err != nil {
+			return err
+		}
+	}
 	// Attaching the mutation function onto modelgen plugin
 	modelgenPlugin := modelgen.Plugin{
 		MutateHook: plugin.MutateHook,
@@ -46,11 +51,23 @@ func Generate(configPath string, generateServer bool, sources ...*ast.Source) er
 		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(resolvergen.New()),
 			api.AddPlugin(fgqlPlugin), api.AddPlugin(servergen.New("server.go")))
 	} else {
-		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(resolvergen.New()), api.AddPlugin(fgqlPlugin))
+		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin),
+			api.AddPlugin(New()), api.AddPlugin(fgqlPlugin))
 	}
-
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+// saveGeneratedFields saves all the generated files, if the files already exists, it will override them
+func saveGeneratedFiles(files []*ast.Source) error {
+	fs := afero.NewOsFs()
+	for _, file := range files {
+		err := afero.WriteFile(fs, file.Name, []byte(file.Input), 0644)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

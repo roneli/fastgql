@@ -3,14 +3,13 @@ package rewrite
 import (
 	"bytes"
 	"fmt"
+	"github.com/roneli/fastgql/pkg/schema/codegen/code"
 	"go/ast"
 	"go/token"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/roneli/fastgql/pkg/schema/codegen/code"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -59,7 +58,7 @@ func (r *Rewriter) getFile(filename string) string {
 	if _, ok := r.files[filename]; !ok {
 		b, err := os.ReadFile(filename)
 		if err != nil {
-			panic(fmt.Errorf("unable to load file, already exists: %s", err.Error()))
+			panic(fmt.Errorf("unable to load file, already exists: %w", err))
 		}
 
 		r.files[filename] = string(b)
@@ -69,7 +68,7 @@ func (r *Rewriter) getFile(filename string) string {
 	return r.files[filename]
 }
 
-func (r *Rewriter) GetMethodBody(structname string, methodname string) string {
+func (r *Rewriter) GetPrevDecl(structname, methodname string) *ast.FuncDecl {
 	for _, f := range r.pkg.Syntax {
 		for _, d := range f.Decls {
 			d, isFunc := d.(*ast.FuncDecl)
@@ -90,17 +89,29 @@ func (r *Rewriter) GetMethodBody(structname string, methodname string) string {
 			if !ok {
 				continue
 			}
-
 			if ident.Name != structname {
 				continue
 			}
-
 			r.copied[d] = true
-
-			return r.getSource(d.Body.Pos()+1, d.Body.End()-1)
+			return d
 		}
 	}
+	return nil
+}
 
+func (r *Rewriter) GetMethodComment(structname, methodname string) string {
+	d := r.GetPrevDecl(structname, methodname)
+	if d != nil {
+		return d.Doc.Text()
+	}
+	return ""
+}
+
+func (r *Rewriter) GetMethodBody(structname, methodname string) string {
+	d := r.GetPrevDecl(structname, methodname)
+	if d != nil {
+		return r.getSource(d.Body.Pos()+1, d.Body.End()-1)
+	}
 	return ""
 }
 
