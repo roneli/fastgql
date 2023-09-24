@@ -25,12 +25,6 @@ type DialectDirective struct {
 
 type RelationType string
 
-const (
-	OneToMany  RelationType = "ONE_TO_MANY"
-	OneToOne   RelationType = "ONE_TO_ONE"
-	ManyToMany RelationType = "MANY_TO_MANY"
-)
-
 type RelationDirective struct {
 	RelType              RelationType
 	BaseTable            string

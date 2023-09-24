@@ -10,86 +10,95 @@ import (
 
 type Base interface {
 	IsBase()
+	GetName() *string
 }
 
 type BooleanComparator struct {
-	Eq     *bool `json:"eq" db:"eq"`
-	Neq    *bool `json:"neq" db:"neq"`
-	IsNull *bool `json:"isNull" db:"isNull"`
+	Eq     *bool `json:"eq,omitempty" db:"eq"`
+	Neq    *bool `json:"neq,omitempty" db:"neq"`
+	IsNull *bool `json:"isNull,omitempty" db:"isNull"`
 }
 
 type BooleanListComparator struct {
-	Eq        []*bool `json:"eq" db:"eq"`
-	Neq       []*bool `json:"neq" db:"neq"`
-	Contains  []*bool `json:"contains" db:"contains"`
-	Contained []*bool `json:"contained" db:"contained"`
-	Overlap   []*bool `json:"overlap" db:"overlap"`
-	IsNull    *bool   `json:"isNull" db:"isNull"`
+	Eq        []*bool `json:"eq,omitempty" db:"eq"`
+	Neq       []*bool `json:"neq,omitempty" db:"neq"`
+	Contains  []*bool `json:"contains,omitempty" db:"contains"`
+	Contained []*bool `json:"contained,omitempty" db:"contained"`
+	Overlap   []*bool `json:"overlap,omitempty" db:"overlap"`
+	IsNull    *bool   `json:"isNull,omitempty" db:"isNull"`
 }
 
 type FloatComparator struct {
-	Eq     *float64 `json:"eq" db:"eq"`
-	Neq    *float64 `json:"neq" db:"neq"`
-	Gt     *float64 `json:"gt" db:"gt"`
-	Gte    *float64 `json:"gte" db:"gte"`
-	Lt     *float64 `json:"lt" db:"lt"`
-	Lte    *float64 `json:"lte" db:"lte"`
-	IsNull *bool    `json:"isNull" db:"isNull"`
+	Eq     *float64 `json:"eq,omitempty" db:"eq"`
+	Neq    *float64 `json:"neq,omitempty" db:"neq"`
+	Gt     *float64 `json:"gt,omitempty" db:"gt"`
+	Gte    *float64 `json:"gte,omitempty" db:"gte"`
+	Lt     *float64 `json:"lt,omitempty" db:"lt"`
+	Lte    *float64 `json:"lte,omitempty" db:"lte"`
+	IsNull *bool    `json:"isNull,omitempty" db:"isNull"`
 }
 
 type FloatListComparator struct {
-	Eq        []*float64 `json:"eq" db:"eq"`
-	Neq       []*float64 `json:"neq" db:"neq"`
-	Contains  []*float64 `json:"contains" db:"contains"`
-	Contained []*float64 `json:"contained" db:"contained"`
-	Overlap   []*float64 `json:"overlap" db:"overlap"`
-	IsNull    *bool      `json:"isNull" db:"isNull"`
+	Eq        []*float64 `json:"eq,omitempty" db:"eq"`
+	Neq       []*float64 `json:"neq,omitempty" db:"neq"`
+	Contains  []*float64 `json:"contains,omitempty" db:"contains"`
+	Contained []*float64 `json:"contained,omitempty" db:"contained"`
+	Overlap   []*float64 `json:"overlap,omitempty" db:"overlap"`
+	IsNull    *bool      `json:"isNull,omitempty" db:"isNull"`
 }
 
+type Human struct {
+	Name *string `json:"name,omitempty" db:"name"`
+}
+
+func (Human) IsBase()               {}
+func (this Human) GetName() *string { return this.Name }
+
 type IntComparator struct {
-	Eq     *int  `json:"eq" db:"eq"`
-	Neq    *int  `json:"neq" db:"neq"`
-	Gt     *int  `json:"gt" db:"gt"`
-	Gte    *int  `json:"gte" db:"gte"`
-	Lt     *int  `json:"lt" db:"lt"`
-	Lte    *int  `json:"lte" db:"lte"`
-	IsNull *bool `json:"isNull" db:"isNull"`
+	Eq     *int  `json:"eq,omitempty" db:"eq"`
+	Neq    *int  `json:"neq,omitempty" db:"neq"`
+	Gt     *int  `json:"gt,omitempty" db:"gt"`
+	Gte    *int  `json:"gte,omitempty" db:"gte"`
+	Lt     *int  `json:"lt,omitempty" db:"lt"`
+	Lte    *int  `json:"lte,omitempty" db:"lte"`
+	IsNull *bool `json:"isNull,omitempty" db:"isNull"`
 }
 
 type IntListComparator struct {
-	Eq        []*int `json:"eq" db:"eq"`
-	Neq       []*int `json:"neq" db:"neq"`
-	Contains  []*int `json:"contains" db:"contains"`
-	Contained []*int `json:"contained" db:"contained"`
-	Overlap   []*int `json:"overlap" db:"overlap"`
-	IsNull    *bool  `json:"isNull" db:"isNull"`
+	Eq        []*int `json:"eq,omitempty" db:"eq"`
+	Neq       []*int `json:"neq,omitempty" db:"neq"`
+	Contains  []*int `json:"contains,omitempty" db:"contains"`
+	Contained []*int `json:"contained,omitempty" db:"contained"`
+	Overlap   []*int `json:"overlap,omitempty" db:"overlap"`
+	IsNull    *bool  `json:"isNull,omitempty" db:"isNull"`
 }
 
 type Person struct {
-	Name *string `json:"name" db:"name"`
+	Name *string `json:"name,omitempty" db:"name"`
 }
 
-func (Person) IsBase() {}
+func (Person) IsBase()               {}
+func (this Person) GetName() *string { return this.Name }
 
 type StringComparator struct {
-	Eq          *string   `json:"eq" db:"eq"`
-	Neq         *string   `json:"neq" db:"neq"`
-	Contains    []*string `json:"contains" db:"contains"`
-	NotContains []*string `json:"notContains" db:"notContains"`
-	Like        *string   `json:"like" db:"like"`
-	Ilike       *string   `json:"ilike" db:"ilike"`
-	Suffix      *string   `json:"suffix" db:"suffix"`
-	Prefix      *string   `json:"prefix" db:"prefix"`
-	IsNull      *bool     `json:"isNull" db:"isNull"`
+	Eq          *string   `json:"eq,omitempty" db:"eq"`
+	Neq         *string   `json:"neq,omitempty" db:"neq"`
+	Contains    []*string `json:"contains,omitempty" db:"contains"`
+	NotContains []*string `json:"notContains,omitempty" db:"notContains"`
+	Like        *string   `json:"like,omitempty" db:"like"`
+	Ilike       *string   `json:"ilike,omitempty" db:"ilike"`
+	Suffix      *string   `json:"suffix,omitempty" db:"suffix"`
+	Prefix      *string   `json:"prefix,omitempty" db:"prefix"`
+	IsNull      *bool     `json:"isNull,omitempty" db:"isNull"`
 }
 
 type StringListComparator struct {
-	Eq          []*string `json:"eq" db:"eq"`
-	Neq         []*string `json:"neq" db:"neq"`
-	Contains    []*string `json:"contains" db:"contains"`
-	ContainedBy []*string `json:"containedBy" db:"containedBy"`
-	Overlap     []*string `json:"overlap" db:"overlap"`
-	IsNull      *bool     `json:"isNull" db:"isNull"`
+	Eq          []*string `json:"eq,omitempty" db:"eq"`
+	Neq         []*string `json:"neq,omitempty" db:"neq"`
+	Contains    []*string `json:"contains,omitempty" db:"contains"`
+	ContainedBy []*string `json:"containedBy,omitempty" db:"containedBy"`
+	Overlap     []*string `json:"overlap,omitempty" db:"overlap"`
+	IsNull      *bool     `json:"isNull,omitempty" db:"isNull"`
 }
 
 type AggregateResult struct {

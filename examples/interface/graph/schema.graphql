@@ -1,11 +1,12 @@
 interface Base {
-    name: String
+	name: String
 }
-
-type Person implements Base{
-    name: String
+type Human implements Base {
+	name: String
 }
-
+type Person implements Base {
+	name: String
+}
 type Query @generate {
-    person: Person!
+	person: Base!
 }

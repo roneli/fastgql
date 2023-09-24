@@ -515,7 +515,7 @@ func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, r
 	case OneToOne:
 		relationTableName := b.TableNameGenerator.Generate(6)
 		jExps := buildJoinCondition(parentTable.alias, rel.fields, fq.alias, rel.references)
-		jExps = append(jExps, buildJoinCondition(parentTable.alias, rel.fields, relationTableName, rel.fields)...)
+		jExps = append(jExps, buildJoinCondition(parentTable.alias, rel.fields, relationTableName, rel.references)...)
 		fq.SelectDataset = fq.InnerJoin(goqu.T(td.Name).Schema(td.Schema).As(relationTableName), goqu.On(jExps...))
 	case OneToMany:
 		fq.SelectDataset = fq.InnerJoin(parentTable.table.Aliased().(exp.Aliaseable).As(b.TableNameGenerator.Generate(6)),

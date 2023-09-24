@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/99designs/gqlgen v0.17.34
 	github.com/doug-martin/goqu/v9 v9.10.0
-	github.com/georgysavva/scany v0.2.9
 	github.com/iancoleman/strcase v0.1.3
 	github.com/jackc/pgx/v4 v4.10.1
 	github.com/jinzhu/inflection v1.0.0
@@ -24,6 +23,7 @@ require (
 require (
 	github.com/georgysavva/scany/v2 v2.0.0
 	github.com/jackc/pgx/v5 v5.4.2
+	github.com/json-iterator/go v1.1.12
 	go.mongodb.org/mongo-driver v1.9.1
 	golang.org/x/text v0.9.0
 )
@@ -51,10 +51,11 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.10.2 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.0.2 // indirect
 	github.com/xdg-go/stringprep v1.0.2 // indirect

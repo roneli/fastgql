@@ -34,7 +34,7 @@ func NewBuilder(config *builders.Config) Builder {
 	return Builder{Schema: config.Schema, Operators: operators, Logger: l}
 }
 
-// TODO: issues:
+// TODO: Mongo is in PoC issues:
 // 1. first argument is string not used
 // 2. second argument is []interface i.e args also not used and changed to be something specific.
 // 3. operators is not generic enough

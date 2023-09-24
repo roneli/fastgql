@@ -27,10 +27,14 @@ var (
 )
 
 // FastGqlPlugin augments and extends the original schema
-type FastGqlPlugin struct{}
+type FastGqlPlugin struct {
+	rootDirectory string
+}
 
-func NewFastGQLPlugin() FastGqlPlugin {
-	return FastGqlPlugin{}
+func NewFastGQLPlugin(rootDir string) FastGqlPlugin {
+	return FastGqlPlugin{
+		rootDirectory: rootDir,
+	}
 }
 
 func (f FastGqlPlugin) Name() string {
@@ -120,5 +124,5 @@ func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters ...augment
 		}
 	}
 	// Format augmented schema to *.graphql files
-	return FormatSchema("graph", schema), nil
+	return FormatSchema(f.rootDirectory, schema), nil
 }

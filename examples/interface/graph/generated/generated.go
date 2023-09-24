@@ -43,6 +43,10 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Human struct {
+		Name func(childComplexity int) int
+	}
+
 	Person struct {
 		Name func(childComplexity int) int
 	}
@@ -57,7 +61,7 @@ type ComplexityRoot struct {
 }
 
 type QueryResolver interface {
-	Person(ctx context.Context) (*model.Person, error)
+	Person(ctx context.Context) (model.Base, error)
 }
 
 type executableSchema struct {
@@ -71,9 +75,16 @@ func (e *executableSchema) Schema() *ast.Schema {
 }
 
 func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]interface{}) (int, bool) {
-	ec := executionContext{nil, e}
+	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Human.name":
+		if e.complexity.Human.Name == nil {
+			break
+		}
+
+		return e.complexity.Human.Name(childComplexity), true
 
 	case "Person.name":
 		if e.complexity.Person.Name == nil {
@@ -102,7 +113,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
-	ec := executionContext{rc, e}
+	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputBooleanComparator,
 		ec.unmarshalInputBooleanListComparator,
@@ -118,18 +129,33 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	switch rc.Operation.Operation {
 	case ast.Query:
 		return func(ctx context.Context) *graphql.Response {
-			if !first {
-				return nil
+			var response graphql.Response
+			var data graphql.Marshaler
+			if first {
+				first = false
+				ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
+				data = ec._Query(ctx, rc.Operation.SelectionSet)
+			} else {
+				if atomic.LoadInt32(&ec.pendingDeferred) > 0 {
+					result := <-ec.deferredResults
+					atomic.AddInt32(&ec.pendingDeferred, -1)
+					data = result.Result
+					response.Path = result.Path
+					response.Label = result.Label
+					response.Errors = result.Errors
+				} else {
+					return nil
+				}
 			}
-			first = false
-			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
-			data := ec._Query(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
-
-			return &graphql.Response{
-				Data: buf.Bytes(),
+			response.Data = buf.Bytes()
+			if atomic.LoadInt32(&ec.deferred) > 0 {
+				hasNext := atomic.LoadInt32(&ec.pendingDeferred) > 0
+				response.HasNext = &hasNext
 			}
+
+			return &response
 		}
 
 	default:
@@ -140,6 +166,28 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 type executionContext struct {
 	*graphql.OperationContext
 	*executableSchema
+	deferred        int32
+	pendingDeferred int32
+	deferredResults chan graphql.DeferredResult
+}
+
+func (ec *executionContext) processDeferredGroup(dg graphql.DeferredGroup) {
+	atomic.AddInt32(&ec.pendingDeferred, 1)
+	go func() {
+		ctx := graphql.WithFreshResponseContext(dg.Context)
+		dg.FieldSet.Dispatch(ctx)
+		ds := graphql.DeferredResult{
+			Path:   dg.Path,
+			Label:  dg.Label,
+			Result: dg.FieldSet,
+			Errors: graphql.GetErrors(ctx),
+		}
+		// null fields should bubble up
+		if dg.FieldSet.Invalids > 0 {
+			ds.Result = graphql.Null
+		}
+		ec.deferredResults <- ds
+	}()
 }
 
 func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
@@ -157,17 +205,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graph/schema.graphql", Input: `interface Base {
-	name: String
-}
-type Person implements Base {
-	name: String
-}
-type Query @generate {
-	person: Person!
-}
-`, BuiltIn: false},
-	{Name: "graph/fastgql.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean = False) on OBJECT
+	{Name: "../fastgql.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean = False) on OBJECT
 directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
@@ -254,6 +292,19 @@ enum _relationType {
 	MANY_TO_MANY
 }
 `, BuiltIn: false},
+	{Name: "../schema.graphql", Input: `interface Base {
+	name: String
+}
+type Human implements Base {
+	name: String
+}
+type Person implements Base {
+	name: String
+}
+type Query @generate {
+	person: Base!
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -313,6 +364,47 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _Human_name(ctx context.Context, field graphql.CollectedField, obj *model.Human) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Human_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Human_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Human",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Person_name(ctx context.Context, field graphql.CollectedField, obj *model.Person) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Person_name(ctx, field)
@@ -381,9 +473,9 @@ func (ec *executionContext) _Query_person(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Person)
+	res := resTmp.(model.Base)
 	fc.Result = res
-	return ec.marshalNPerson2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPerson(ctx, field.Selections, res)
+	return ec.marshalNBase2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐBase(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_person(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -393,11 +485,7 @@ func (ec *executionContext) fieldContext_Query_person(ctx context.Context, field
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_Person_name(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Person", field.Name)
+			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
 		},
 	}
 	return fc, nil
@@ -472,7 +560,7 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query___type_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -1997,7 +2085,7 @@ func (ec *executionContext) fieldContext___Type_fields(ctx context.Context, fiel
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field___Type_fields_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -2185,7 +2273,7 @@ func (ec *executionContext) fieldContext___Type_enumValues(ctx context.Context, 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field___Type_enumValues_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -2356,32 +2444,40 @@ func (ec *executionContext) unmarshalInputBooleanComparator(ctx context.Context,
 		asMap[k] = v
 	}
 
-	for k, v := range asMap {
+	fieldsInOrder := [...]string{"eq", "neq", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
 		switch k {
 		case "eq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
-			it.Eq, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Eq = data
 		case "neq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
-			it.Neq, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Neq = data
 		case "isNull":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.IsNull = data
 		}
 	}
 
@@ -2395,56 +2491,67 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 		asMap[k] = v
 	}
 
-	for k, v := range asMap {
+	fieldsInOrder := [...]string{"eq", "neq", "contains", "contained", "overlap", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
 		switch k {
 		case "eq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
-			it.Eq, err = ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Eq = data
 		case "neq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
-			it.Neq, err = ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Neq = data
 		case "contains":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
-			it.Contains, err = ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Contains = data
 		case "contained":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contained"))
-			it.Contained, err = ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Contained = data
 		case "overlap":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
-			it.Overlap, err = ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Overlap = data
 		case "isNull":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.IsNull = data
 		}
 	}
 
@@ -2458,64 +2565,76 @@ func (ec *executionContext) unmarshalInputFloatComparator(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	for k, v := range asMap {
+	fieldsInOrder := [...]string{"eq", "neq", "gt", "gte", "lt", "lte", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
 		switch k {
 		case "eq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
-			it.Eq, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Eq = data
 		case "neq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
-			it.Neq, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Neq = data
 		case "gt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gt"))
-			it.Gt, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Gt = data
 		case "gte":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gte"))
-			it.Gte, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Gte = data
 		case "lt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lt"))
-			it.Lt, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Lt = data
 		case "lte":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lte"))
-			it.Lte, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Lte = data
 		case "isNull":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.IsNull = data
 		}
 	}
 
@@ -2529,56 +2648,67 @@ func (ec *executionContext) unmarshalInputFloatListComparator(ctx context.Contex
 		asMap[k] = v
 	}
 
-	for k, v := range asMap {
+	fieldsInOrder := [...]string{"eq", "neq", "contains", "contained", "overlap", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
 		switch k {
 		case "eq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
-			it.Eq, err = ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Eq = data
 		case "neq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
-			it.Neq, err = ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Neq = data
 		case "contains":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
-			it.Contains, err = ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Contains = data
 		case "contained":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contained"))
-			it.Contained, err = ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Contained = data
 		case "overlap":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
-			it.Overlap, err = ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
+			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Overlap = data
 		case "isNull":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.IsNull = data
 		}
 	}
 
@@ -2592,64 +2722,76 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	for k, v := range asMap {
+	fieldsInOrder := [...]string{"eq", "neq", "gt", "gte", "lt", "lte", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
 		switch k {
 		case "eq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
-			it.Eq, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Eq = data
 		case "neq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
-			it.Neq, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Neq = data
 		case "gt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gt"))
-			it.Gt, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Gt = data
 		case "gte":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gte"))
-			it.Gte, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Gte = data
 		case "lt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lt"))
-			it.Lt, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Lt = data
 		case "lte":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lte"))
-			it.Lte, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Lte = data
 		case "isNull":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.IsNull = data
 		}
 	}
 
@@ -2663,56 +2805,67 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 		asMap[k] = v
 	}
 
-	for k, v := range asMap {
+	fieldsInOrder := [...]string{"eq", "neq", "contains", "contained", "overlap", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
 		switch k {
 		case "eq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
-			it.Eq, err = ec.unmarshalOInt2ᚕᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Eq = data
 		case "neq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
-			it.Neq, err = ec.unmarshalOInt2ᚕᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Neq = data
 		case "contains":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
-			it.Contains, err = ec.unmarshalOInt2ᚕᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Contains = data
 		case "contained":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contained"))
-			it.Contained, err = ec.unmarshalOInt2ᚕᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Contained = data
 		case "overlap":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
-			it.Overlap, err = ec.unmarshalOInt2ᚕᚖint(ctx, v)
+			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Overlap = data
 		case "isNull":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.IsNull = data
 		}
 	}
 
@@ -2726,80 +2879,94 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	for k, v := range asMap {
+	fieldsInOrder := [...]string{"eq", "neq", "contains", "notContains", "like", "ilike", "suffix", "prefix", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
 		switch k {
 		case "eq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
-			it.Eq, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Eq = data
 		case "neq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
-			it.Neq, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Neq = data
 		case "contains":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
-			it.Contains, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Contains = data
 		case "notContains":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notContains"))
-			it.NotContains, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.NotContains = data
 		case "like":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
-			it.Like, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Like = data
 		case "ilike":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ilike"))
-			it.Ilike, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Ilike = data
 		case "suffix":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("suffix"))
-			it.Suffix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Suffix = data
 		case "prefix":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("prefix"))
-			it.Prefix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Prefix = data
 		case "isNull":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.IsNull = data
 		}
 	}
 
@@ -2813,56 +2980,67 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 		asMap[k] = v
 	}
 
-	for k, v := range asMap {
+	fieldsInOrder := [...]string{"eq", "neq", "contains", "containedBy", "overlap", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
 		switch k {
 		case "eq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
-			it.Eq, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Eq = data
 		case "neq":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
-			it.Neq, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Neq = data
 		case "contains":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
-			it.Contains, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Contains = data
 		case "containedBy":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("containedBy"))
-			it.ContainedBy, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ContainedBy = data
 		case "overlap":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
-			it.Overlap, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Overlap = data
 		case "isNull":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			it.IsNull, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.IsNull = data
 		}
 	}
 
@@ -2877,6 +3055,13 @@ func (ec *executionContext) _Base(ctx context.Context, sel ast.SelectionSet, obj
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
+	case model.Human:
+		return ec._Human(ctx, sel, &obj)
+	case *model.Human:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Human(ctx, sel, obj)
 	case model.Person:
 		return ec._Person(ctx, sel, &obj)
 	case *model.Person:
@@ -2893,28 +3078,75 @@ func (ec *executionContext) _Base(ctx context.Context, sel ast.SelectionSet, obj
 
 // region    **************************** object.gotpl ****************************
 
+var humanImplementors = []string{"Human", "Base"}
+
+func (ec *executionContext) _Human(ctx context.Context, sel ast.SelectionSet, obj *model.Human) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, humanImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Human")
+		case "name":
+			out.Values[i] = ec._Human_name(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var personImplementors = []string{"Person", "Base"}
 
 func (ec *executionContext) _Person(ctx context.Context, sel ast.SelectionSet, obj *model.Person) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, personImplementors)
+
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Person")
 		case "name":
-
 			out.Values[i] = ec._Person_name(ctx, field, obj)
-
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 
@@ -2927,7 +3159,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	})
 
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
 			Object: field.Name,
@@ -2940,7 +3172,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "person":
 			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -2948,38 +3180,45 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_person(ctx, field)
 				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
+					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
 			}
 
 			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
 			})
-
 		case "__schema":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
-
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 
@@ -2987,27 +3226,38 @@ var _AggregateResultImplementors = []string{"_AggregateResult"}
 
 func (ec *executionContext) __AggregateResult(ctx context.Context, sel ast.SelectionSet, obj *model.AggregateResult) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _AggregateResultImplementors)
+
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("_AggregateResult")
 		case "count":
-
 			out.Values[i] = ec.__AggregateResult_count(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 
@@ -3015,52 +3265,55 @@ var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, __DirectiveImplementors)
+
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("__Directive")
 		case "name":
-
 			out.Values[i] = ec.___Directive_name(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "description":
-
 			out.Values[i] = ec.___Directive_description(ctx, field, obj)
-
 		case "locations":
-
 			out.Values[i] = ec.___Directive_locations(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "args":
-
 			out.Values[i] = ec.___Directive_args(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "isRepeatable":
-
 			out.Values[i] = ec.___Directive_isRepeatable(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 
@@ -3068,42 +3321,47 @@ var __EnumValueImplementors = []string{"__EnumValue"}
 
 func (ec *executionContext) ___EnumValue(ctx context.Context, sel ast.SelectionSet, obj *introspection.EnumValue) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, __EnumValueImplementors)
+
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("__EnumValue")
 		case "name":
-
 			out.Values[i] = ec.___EnumValue_name(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "description":
-
 			out.Values[i] = ec.___EnumValue_description(ctx, field, obj)
-
 		case "isDeprecated":
-
 			out.Values[i] = ec.___EnumValue_isDeprecated(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "deprecationReason":
-
 			out.Values[i] = ec.___EnumValue_deprecationReason(ctx, field, obj)
-
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 
@@ -3111,56 +3369,57 @@ var __FieldImplementors = []string{"__Field"}
 
 func (ec *executionContext) ___Field(ctx context.Context, sel ast.SelectionSet, obj *introspection.Field) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, __FieldImplementors)
+
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("__Field")
 		case "name":
-
 			out.Values[i] = ec.___Field_name(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "description":
-
 			out.Values[i] = ec.___Field_description(ctx, field, obj)
-
 		case "args":
-
 			out.Values[i] = ec.___Field_args(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "type":
-
 			out.Values[i] = ec.___Field_type(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "isDeprecated":
-
 			out.Values[i] = ec.___Field_isDeprecated(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "deprecationReason":
-
 			out.Values[i] = ec.___Field_deprecationReason(ctx, field, obj)
-
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 
@@ -3168,42 +3427,47 @@ var __InputValueImplementors = []string{"__InputValue"}
 
 func (ec *executionContext) ___InputValue(ctx context.Context, sel ast.SelectionSet, obj *introspection.InputValue) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, __InputValueImplementors)
+
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("__InputValue")
 		case "name":
-
 			out.Values[i] = ec.___InputValue_name(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "description":
-
 			out.Values[i] = ec.___InputValue_description(ctx, field, obj)
-
 		case "type":
-
 			out.Values[i] = ec.___InputValue_type(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "defaultValue":
-
 			out.Values[i] = ec.___InputValue_defaultValue(ctx, field, obj)
-
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 
@@ -3211,53 +3475,54 @@ var __SchemaImplementors = []string{"__Schema"}
 
 func (ec *executionContext) ___Schema(ctx context.Context, sel ast.SelectionSet, obj *introspection.Schema) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, __SchemaImplementors)
+
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("__Schema")
 		case "description":
-
 			out.Values[i] = ec.___Schema_description(ctx, field, obj)
-
 		case "types":
-
 			out.Values[i] = ec.___Schema_types(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "queryType":
-
 			out.Values[i] = ec.___Schema_queryType(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "mutationType":
-
 			out.Values[i] = ec.___Schema_mutationType(ctx, field, obj)
-
 		case "subscriptionType":
-
 			out.Values[i] = ec.___Schema_subscriptionType(ctx, field, obj)
-
 		case "directives":
-
 			out.Values[i] = ec.___Schema_directives(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 
@@ -3265,69 +3530,72 @@ var __TypeImplementors = []string{"__Type"}
 
 func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, obj *introspection.Type) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, __TypeImplementors)
+
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("__Type")
 		case "kind":
-
 			out.Values[i] = ec.___Type_kind(ctx, field, obj)
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "name":
-
 			out.Values[i] = ec.___Type_name(ctx, field, obj)
-
 		case "description":
-
 			out.Values[i] = ec.___Type_description(ctx, field, obj)
-
 		case "fields":
-
 			out.Values[i] = ec.___Type_fields(ctx, field, obj)
-
 		case "interfaces":
-
 			out.Values[i] = ec.___Type_interfaces(ctx, field, obj)
-
 		case "possibleTypes":
-
 			out.Values[i] = ec.___Type_possibleTypes(ctx, field, obj)
-
 		case "enumValues":
-
 			out.Values[i] = ec.___Type_enumValues(ctx, field, obj)
-
 		case "inputFields":
-
 			out.Values[i] = ec.___Type_inputFields(ctx, field, obj)
-
 		case "ofType":
-
 			out.Values[i] = ec.___Type_ofType(ctx, field, obj)
-
 		case "specifiedByURL":
-
 			out.Values[i] = ec.___Type_specifiedByURL(ctx, field, obj)
-
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNBase2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐBase(ctx context.Context, sel ast.SelectionSet, v model.Base) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Base(ctx, sel, v)
+}
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
@@ -3357,20 +3625,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNPerson2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPerson(ctx context.Context, sel ast.SelectionSet, v model.Person) graphql.Marshaler {
-	return ec._Person(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPerson2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPerson(ctx context.Context, sel ast.SelectionSet, v *model.Person) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Person(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

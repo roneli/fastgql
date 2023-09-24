@@ -153,6 +153,9 @@ func (fa FilterArguments) addFilter(s *ast.Schema, obj *ast.Definition, parent *
 			}
 			continue
 		}
+		if fieldType.IsLeafType() {
+			continue
+		}
 		log.Printf("building adding filters for field %s\n", f.Name)
 		var typeName string
 		if strings.HasSuffix(f.Name, "Aggregate") {
