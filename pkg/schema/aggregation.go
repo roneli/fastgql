@@ -1,11 +1,8 @@
-package augmenters
+package schema
 
 import (
 	"fmt"
 	"log"
-	"strings"
-
-	"github.com/roneli/fastgql/pkg/schema/gql"
 
 	"github.com/jinzhu/inflection"
 	"github.com/spf13/cast"
@@ -22,59 +19,55 @@ func (a Aggregation) Name() string {
 	return "aggregation"
 }
 
-func (a Aggregation) Augment(s *ast.Schema) error {
-	for _, v := range s.Types {
-		d := v.Directives.ForName(a.DirectiveName())
+func AggregationAugmenter(s *ast.Schema) error {
+	for _, v := range s.Query.Fields {
+		d := v.Directives.ForName("generate")
 		if d == nil {
 			continue
 		}
-
-		args := d.ArgumentMap(nil)
-		recursive := cast.ToBool(args["recursive"])
-		if addAggregate, ok := args["aggregate"]; ok && cast.ToBool(addAggregate) {
-			a.addAggregation(s, v, nil, recursive)
+		if !IsListType(v.Type) {
+			continue
 		}
+		log.Printf("adding aggregation field to query %s@%s\n", v.Name, s.Query.Name)
+		args := d.ArgumentMap(nil)
+		if p, ok := args["aggregate"]; ok && cast.ToBool(p) {
+			addAggregationField(s, s.Query, v)
+		}
+		//if recursive := cast.ToBool(args["recursive"]); recursive {
+		//	addAggregationRecursive(s, s.Types[gql.GetType(v.Type).Name()], s.Query)
+		//}
 	}
 	return nil
 }
 
-func (a Aggregation) addAggregation(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
-	for _, f := range obj.Fields {
-		if gql.IsScalarListType(s, f.Type) {
-			continue
-		}
-		if strings.HasPrefix(f.Name, "__") {
-			continue
-		}
-		if !gql.IsListType(f.Type) {
-			continue
-		}
-
-		aggregateName := fmt.Sprintf("_%sAggregate", f.Name)
-		if def := obj.Fields.ForName(aggregateName); def != nil {
-			continue
-		}
-
-		fieldObj := s.Types[gql.GetType(f.Type).Name()]
-		aggregateDef := a.buildAggregateObject(s, fieldObj)
-
-		obj.Fields = append(obj.Fields, &ast.FieldDefinition{
-			Name:        aggregateName,
-			Description: fmt.Sprintf("%s Aggregate", f.Name),
-			Type: &ast.Type{
-				NamedType: aggregateDef.Name,
-				NonNull:   true,
-			},
-		})
-
-		fieldType := s.Types[f.Type.Name()]
-		if recursive && fieldType.IsCompositeType() && fieldType != parent {
-			a.addAggregation(s, fieldType, obj, recursive)
-		}
+func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDefinition) {
+	t := GetType(field.Type)
+	fieldDef, ok := s.Types[t.Name()]
+	if !ok || !fieldDef.IsCompositeType() {
+		return
 	}
+	aggDef := buildAggregateObject(s, fieldDef)
+	if aggDef == nil {
+		log.Printf("aggreationField for field %s@%s already exists skipping\n", field.Name, obj.Name)
+	}
+	aggregateName := fmt.Sprintf("_%sAggregate", field.Name)
+	// check if field already exists, if so, skip
+	if def := obj.Fields.ForName(aggregateName); def != nil {
+		log.Printf("aggreationField for field %s@%s already exists skipping\n", field.Name, obj.Name)
+		return
+	}
+	log.Printf("adding aggregation field to field %s@%s\n", field.Name, obj.Name)
+	obj.Fields = append(obj.Fields, &ast.FieldDefinition{
+		Name:        aggregateName,
+		Description: fmt.Sprintf("%s Aggregate", field.Name),
+		Type: &ast.Type{
+			NamedType: aggDef.Name,
+			NonNull:   true,
+		},
+	})
 }
 
-func (a Aggregation) buildAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
+func buildAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
 	payloadObjectName := fmt.Sprintf("%sAggregate", inflection.Plural(obj.Name))
 	if payloadObject, ok := s.Types[payloadObjectName]; ok {
 		return payloadObject
@@ -120,10 +113,10 @@ func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition
 	}
 
 	for _, f := range obj.Fields {
-		if gql.IsListType(f.Type) {
+		if IsListType(f.Type) {
 			continue
 		}
-		t := gql.GetType(f.Type)
+		t := GetType(f.Type)
 		fieldDef := s.Types[t.Name()]
 		// we only support scalar types as aggregate fields
 		if !fieldDef.IsLeafType() {

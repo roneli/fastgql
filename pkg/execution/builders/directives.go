@@ -2,8 +2,8 @@ package builders
 
 import (
 	"fmt"
+	"github.com/roneli/fastgql/pkg/schema"
 
-	"github.com/roneli/fastgql/pkg/schema/gql"
 	"github.com/spf13/cast"
 
 	"github.com/vektah/gqlparser/v2/ast"
@@ -56,13 +56,13 @@ func GetRelationDirective(field *ast.FieldDefinition) *RelationDirective {
 	relType := d.Arguments.ForName("type").Value.Raw
 	return &RelationDirective{
 		RelType:              RelationType(relType),
-		Fields:               cast.ToStringSlice(gql.GetDirectiveValue(d, "fields")),
-		References:           cast.ToStringSlice(gql.GetDirectiveValue(d, "references")),
-		BaseTable:            cast.ToString(gql.GetDirectiveValue(d, "baseTable")),
-		ReferenceTable:       cast.ToString(gql.GetDirectiveValue(d, "refTable")),
-		ManyToManyTable:      cast.ToString(gql.GetDirectiveValue(d, "manyToManyTable")),
-		ManyToManyFields:     cast.ToStringSlice(gql.GetDirectiveValue(d, "manyToManyFields")),
-		ManyToManyReferences: cast.ToStringSlice(gql.GetDirectiveValue(d, "manyToManyReferences")),
+		Fields:               cast.ToStringSlice(schema.GetDirectiveValue(d, "fields")),
+		References:           cast.ToStringSlice(schema.GetDirectiveValue(d, "references")),
+		BaseTable:            cast.ToString(schema.GetDirectiveValue(d, "baseTable")),
+		ReferenceTable:       cast.ToString(schema.GetDirectiveValue(d, "refTable")),
+		ManyToManyTable:      cast.ToString(schema.GetDirectiveValue(d, "manyToManyTable")),
+		ManyToManyFields:     cast.ToStringSlice(schema.GetDirectiveValue(d, "manyToManyFields")),
+		ManyToManyReferences: cast.ToStringSlice(schema.GetDirectiveValue(d, "manyToManyReferences")),
 	}
 }
 

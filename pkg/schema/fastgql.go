@@ -4,10 +4,10 @@ import (
 	_ "embed"
 	"fmt"
 	"log"
+	"reflect"
+	"runtime"
 
 	"github.com/99designs/gqlgen/codegen/config"
-	"github.com/roneli/fastgql/pkg/schema/augmenters"
-	"github.com/roneli/fastgql/pkg/schema/gql"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -16,13 +16,13 @@ var (
 	FastGQLSchema     string
 	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "skipGenerate", "generateMutations", "relation"}
 	baseDialect       = "postgres"
-	defaultAugmenters = []augmenters.Augmenter{
-		augmenters.Pagination{},
-		augmenters.Ordering{},
-		augmenters.Aggregation{},
-		augmenters.FilterInput{},
-		augmenters.FilterArguments{},
-		augmenters.Mutations{},
+	defaultAugmenters = []Augmenter{
+		PaginationAugmenter,
+		OrderByAugmenter,
+		AggregationAugmenter,
+		// FilterAugmenter
+		// MutationAugmenter
+		// AggregationAugmenter
 	}
 )
 
@@ -79,17 +79,17 @@ func (f FastGqlPlugin) MarkResolvers(c *config.Config) error {
 		}
 
 		parentDialect := baseDialect
-		value := gql.GetDirectiveValue(schemaType.Directives.ForName("table"), "dialect")
+		value := GetDirectiveValue(schemaType.Directives.ForName("table"), "dialect")
 		if value != nil {
 			parentDialect = value.(string)
 		}
 
 		for _, f := range schemaType.Fields {
-			fieldType := c.Schema.Types[gql.GetType(f.Type).NamedType]
+			fieldType := c.Schema.Types[GetType(f.Type).NamedType]
 			if !fieldType.IsCompositeType() {
 				continue
 			}
-			value := gql.GetDirectiveValue(fieldType.Directives.ForName("table"), "dialect")
+			value := GetDirectiveValue(fieldType.Directives.ForName("table"), "dialect")
 			if value == nil {
 				continue
 			}
@@ -114,15 +114,19 @@ func (f FastGqlPlugin) MarkResolvers(c *config.Config) error {
 
 // CreateAugmented augments *ast.Schema returning []*ast.Source files that are augmented with filters, mutations etc'
 // so gqlgen can generate an augmented fastGQL server
-func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters ...augmenters.Augmenter) ([]*ast.Source, error) {
+func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters ...Augmenter) ([]*ast.Source, error) {
 	if len(augmenters) == 0 {
 		augmenters = defaultAugmenters
 	}
 	for _, a := range augmenters {
-		if err := a.Augment(schema); err != nil {
-			return nil, fmt.Errorf("augmenter %s failed: %w", a.Name(), err)
+		if err := a(schema); err != nil {
+			return nil, fmt.Errorf("augmenter %v failed: %w", GetFunctionName(a), err)
 		}
 	}
 	// Format augmented schema to *.graphql files
 	return FormatSchema(f.rootDirectory, schema), nil
+}
+
+func GetFunctionName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }

@@ -1,0 +1,23 @@
+type Object {
+    id: ID!
+    name: String!
+}
+type ObjectWithRecursive {
+    id: ID!
+    name: String!
+    children(
+        """
+        Ordering for ObjectWithRecursive
+        """
+        orderBy: [ObjectWithRecursiveOrdering]): [ObjectWithRecursive]
+}
+type Query {
+    scalar: String
+    paginated(
+        """
+        Ordering for ObjectWithRecursive
+        """
+        orderBy: [ObjectWithRecursiveOrdering]): [ObjectWithRecursive] @generate(ordering: true)
+    nonPaginated: [Object] @generate(ordering: False)
+    listNoDirective: [Object]
+}

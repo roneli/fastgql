@@ -11,6 +11,8 @@ import (
 	"github.com/roneli/fastgql/pkg/schema/plugin/servergen"
 )
 
+// Generate generates the schema and the resolver files, if generateServer is true, it will also generate the server file.
+// if saveFiles is true, it will save the generated augmented graphql files to the disk, otherwise it the only be saved in generated code.
 func Generate(configPath string, generateServer bool, saveFiles bool, sources ...*ast.Source) error {
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {

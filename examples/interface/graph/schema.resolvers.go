@@ -19,8 +19,8 @@ import (
 // Person is the resolver for the person field.
 func (r *queryResolver) Person(ctx context.Context) (model.Base, error) {
 	scanner := execution.NewTypeNameScanner[model.Base](map[string]reflect.Type{
-		"human": reflect.TypeOf(model.Human{}),
-		"peron": reflect.TypeOf(model.Person{}),
+		"human":  reflect.TypeOf(model.Human{}),
+		"person": reflect.TypeOf(model.Person{}),
 	}, nil, "typeName")
 	var data model.Base
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))

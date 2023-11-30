@@ -1,0 +1,15 @@
+input ObjectFilterInput {
+    name: StringComparator
+    """
+    Logical AND of FilterInput
+    """
+    AND: [ObjectFilterInput]
+    """
+    Logical OR of FilterInput
+    """
+    OR: [ObjectFilterInput]
+    """
+    Logical NOT of FilterInput
+    """
+    NOT: ObjectFilterInput
+}

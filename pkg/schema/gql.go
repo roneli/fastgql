@@ -1,4 +1,4 @@
-package gql
+package schema
 
 import (
 	"github.com/vektah/gqlparser/v2/ast"

@@ -4,51 +4,59 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/99designs/gqlgen/codegen/config"
-	"github.com/roneli/fastgql/pkg/schema/augmenters"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser/v2/ast"
+	"os"
+	"strings"
 	"testing"
 )
-
-//go:embed testdata/add_pagination.graphql
-var addPagination string
 
 //go:embed fastgql.graphql
 var fastgql string
 
-func Test_AugmentSchema(t *testing.T) {
+type generateTestCase struct {
+	name                      string
+	baseSchemaFile            string
+	expectedSchemaFile        string
+	expectedFastgqlSchemaFile string
+}
 
-	tests := []struct {
-		name    string
-		sources []*ast.Source
-		wantErr bool
-	}{
-		{
-			name: "test",
-			sources: []*ast.Source{
-				{
-					Name:  "base.grapqhl",
-					Input: addPagination,
-				},
-			},
-		},
+func generateTestRunner(t *testing.T, tc *generateTestCase, augmenters ...Augmenter) {
+	// read test file
+	testFile, err := os.ReadFile(tc.baseSchemaFile)
+	require.NoError(t, err)
+	expectedSchemaFile, err := os.ReadFile(tc.expectedSchemaFile)
+	require.NoError(t, err)
+	var expectedFastgqlSchemaFile []byte
+	if tc.expectedFastgqlSchemaFile != "" {
+		expectedFastgqlSchemaFile, err = os.ReadFile(tc.expectedFastgqlSchemaFile)
+		require.NoError(t, err)
 	}
+
 	cfg := config.DefaultConfig()
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg.Sources = append(tt.sources, &ast.Source{
-				Name:    "fastgql.graphql",
-				Input:   fastgql,
-				BuiltIn: false,
-			})
-			assert.Nil(t, cfg.LoadSchema())
-			sources, err := NewFastGQLPlugin().CreateAugmented(cfg.Schema, augmenters.Pagination{})
-			assert.Nil(t, err)
-			for _, s := range sources {
-				fmt.Println(s.Name)
-				fmt.Println(s.Input)
+	cfg.Sources = append([]*ast.Source{{
+		Name:    "tc.graphql",
+		Input:   string(testFile),
+		BuiltIn: false,
+	}}, &ast.Source{
+		Name:    "fastgql.graphql",
+		Input:   fastgql,
+		BuiltIn: false,
+	})
+	assert.Nil(t, cfg.LoadSchema())
+	sources, err := NewFastGQLPlugin("").CreateAugmented(cfg.Schema, augmenters...)
+	assert.Nil(t, err)
+	for _, s := range sources {
+		switch s.Name {
+		case "tc.graphql":
+			if !assert.Equal(t, strings.ReplaceAll(strings.ReplaceAll(string(expectedSchemaFile), "\r\n", ""), " ", ""), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s.Input, "\n", ""), " ", ""), "\t", "")) {
+				fmt.Print(s.Input)
 			}
-		})
+		case "fastgql_schema.graphql":
+			if !assert.Equal(t, strings.ReplaceAll(strings.ReplaceAll(string(expectedFastgqlSchemaFile), "\r\n", ""), " ", ""), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s.Input, "\n", ""), " ", ""), "\t", "")) {
+				fmt.Print(s.Input)
+			}
+		}
 	}
-
 }

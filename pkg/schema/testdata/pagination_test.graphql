@@ -1,0 +1,18 @@
+type Object {
+    id: ID!
+    name: String!
+}
+
+type ObjectWithRecursivePagination {
+    id: ID!
+    name: String!
+    children: [ObjectWithRecursivePagination]
+}
+
+
+type Query {
+    scalar: String
+    paginated: [ObjectWithRecursivePagination] @generate(pagination: True)
+    nonPaginated: [Object] @generate(pagination: False)
+    listNoDirective: [Object]
+}
