@@ -33,9 +33,7 @@ func AggregationAugmenter(s *ast.Schema) error {
 		if p, ok := args["aggregate"]; ok && cast.ToBool(p) {
 			addAggregationField(s, s.Query, v)
 		}
-		//if recursive := cast.ToBool(args["recursive"]); recursive {
-		//	addAggregationRecursive(s, s.Types[gql.GetType(v.Type).Name()], s.Query)
-		//}
+		// TODO: add recursive aggregation
 	}
 	return nil
 }
@@ -50,6 +48,8 @@ func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDef
 	if aggDef == nil {
 		log.Printf("aggreationField for field %s@%s already exists skipping\n", field.Name, obj.Name)
 	}
+	// add the type to the schema
+	s.Types[aggDef.Name] = aggDef
 	aggregateName := fmt.Sprintf("_%sAggregate", field.Name)
 	// check if field already exists, if so, skip
 	if def := obj.Fields.ForName(aggregateName); def != nil {

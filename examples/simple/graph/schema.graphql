@@ -1,8 +1,8 @@
 type Person {
 	name: String
 }
-type Query @generate(recursive: true) {
-	person: Person! @skipGenerate
+type Query {
+	person: Person!
 	user(
 		"""
 		Limit
@@ -19,21 +19,17 @@ type Query @generate(recursive: true) {
 		"""
 		Filter user
 		"""
-		filter: UserFilterInput): [User]
+		filter: UserFilterInput): [User] @generate
 	"""
 	user Aggregate
 	"""
-	_userAggregate(
-		"""
-		Filter _userAggregate
-		"""
-		filter: UserFilterInput): UsersAggregate!
+	_userAggregate: UsersAggregate!
 }
-type User @generateFilterInput(name: "UserFilterInput") {
+type User @generateFilterInput {
 	name: String
 	age: Int
-	someInnerValue: User @goField(forceResolver: true) @skipGenerate
-	someInnerValueLis(
+	someInnerValue: User
+	someInnerValueList(
 		"""
 		Limit
 		"""
@@ -47,15 +43,7 @@ type User @generateFilterInput(name: "UserFilterInput") {
 		"""
 		orderBy: [UserOrdering],
 		"""
-		Filter someInnerValueLis
+		Filter someInnerValueList
 		"""
 		filter: UserFilterInput): [User]
-	"""
-	someInnerValueLis Aggregate
-	"""
-	_someInnerValueLisAggregate(
-		"""
-		Filter _someInnerValueLisAggregate
-		"""
-		filter: UserFilterInput): UsersAggregate!
 }

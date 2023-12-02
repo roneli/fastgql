@@ -13,6 +13,7 @@ var (
 	configFilename string
 	schemaFilename string
 	serverFilename string
+	saveFiles      bool
 
 	rootCmd = &cobra.Command{
 		Use:   "fastgql",
@@ -27,6 +28,7 @@ func init() {
 	initCmd.Flags().StringVarP(&schemaFilename, "schemaName", "s", "schema.graphql", "name of schema file")
 	initCmd.Flags().StringVarP(&configFilename, "configName", "n", "gqlgen.yml", "name of config file")
 	initCmd.Flags().StringVarP(&serverFilename, "serverName", "g", "server.go", "name of server file")
+	generateCmd.Flags().BoolVarP(&saveFiles, "saveFiles", "f", false, "save generated files to disk")
 }
 
 func Execute() {

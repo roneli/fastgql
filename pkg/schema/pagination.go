@@ -18,18 +18,22 @@ func PaginationAugmenter(s *ast.Schema) error {
 		log.Printf("adding pagination to field %s@%s\n", v.Name, s.Query.Name)
 		args := d.ArgumentMap(nil)
 		if p, ok := args["pagination"]; ok && cast.ToBool(p) {
-			addPaginationToField(s.Query, v)
+			if err := addPaginationToField(s, s.Query, v); err != nil {
+				return err
+			}
 		}
 		if recursive := cast.ToBool(args["recursive"]); recursive {
-			addPagination(s, s.Types[GetType(v.Type).Name()], s.Query, recursive)
+			if err := addRecursive(s, s.Types[GetType(v.Type).Name()], "limit", addPaginationToField); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func addPaginationToField(obj *ast.Definition, field *ast.FieldDefinition) {
+func addPaginationToField(_ *ast.Schema, obj *ast.Definition, field *ast.FieldDefinition) error {
 	if skipAugment(field, "limit", "offset") {
-		return
+		return nil
 	}
 	log.Printf("adding pagination to field %s@%s\n", field.Name, obj.Name)
 	field.Arguments = append(field.Arguments,
@@ -45,26 +49,5 @@ func addPaginationToField(obj *ast.Definition, field *ast.FieldDefinition) {
 			Type:         &ast.Type{NamedType: "Int"},
 		},
 	)
-}
-
-func addPagination(s *ast.Schema, obj *ast.Definition, parent *ast.Definition, recursive bool) {
-	for _, f := range obj.Fields {
-		// avoid recurse
-		if skipAugment(f, "limit", "offset") {
-			continue
-		}
-		fieldType := s.Types[f.Type.Name()]
-		if IsScalarListType(s, f.Type) || !IsListType(f.Type) {
-			if recursive && fieldType.IsCompositeType() && fieldType != parent {
-				addPagination(s, fieldType, obj, recursive)
-			}
-			continue
-		}
-		log.Printf("adding pagination to field %s@%s\n", f.Name, obj.Name)
-		addPaginationToField(obj, f)
-		if recursive && fieldType.IsCompositeType() {
-			log.Printf("adding recursive pagination to field %s@%s\n", f.Name, obj.Name)
-			addPagination(s, fieldType, obj, recursive)
-		}
-	}
+	return nil
 }

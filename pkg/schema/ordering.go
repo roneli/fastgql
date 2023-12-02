@@ -31,6 +31,9 @@ func OrderByAugmenter(s *ast.Schema) error {
 }
 
 func addOrderByArgsToField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDefinition) error {
+	if skipAugment(field, "orderBy") {
+		return nil
+	}
 	t := GetType(field.Type)
 	fieldDef, ok := s.Types[t.Name()]
 	if !ok || !fieldDef.IsCompositeType() {
@@ -41,6 +44,7 @@ func addOrderByArgsToField(s *ast.Schema, obj *ast.Definition, field *ast.FieldD
 		log.Printf("ordering for field %s@%s already exists skipping\n", field.Name, obj.Name)
 		return nil
 	}
+	s.Types[orderDef.Name] = orderDef
 	log.Printf("adding ordering to field %s@%s\n", field.Name, obj.Name)
 	// Finally, we can add the argument
 	field.Arguments = append(field.Arguments,

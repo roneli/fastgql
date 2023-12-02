@@ -15,7 +15,7 @@ func Test_FilterInput(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			generateTestRunner(t, &tc, FilterInputAugment, FilterArgumentsAugment)
+			generateTestRunner(t, &tc, FilterInputAugmenter, FilterArgAugmenter)
 		})
 	}
 }

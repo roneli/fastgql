@@ -2,7 +2,7 @@ input UserFilterInput {
 	name: StringComparator
 	age: IntComparator
 	someInnerValue: UserFilterInput
-	someInnerValueLis: UserFilterInput
+	someInnerValueList: UserFilterInput
 	"""
 	Logical AND of FilterInput
 	"""

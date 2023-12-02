@@ -1,13 +1,9 @@
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean = False) on OBJECT
-directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
+directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on FIELD_DEFINITION
+directive @generateFilterInput(description: String) on OBJECT
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
-directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
-directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
-
-
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
-
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean
@@ -82,6 +78,8 @@ enum _OrderingTypes {
 	DESC
 	ASC_NULL_FIRST
 	DESC_NULL_FIRST
+	ASC_NULL_LAST
+	DESC_NULL_LAST
 }
 enum _relationType {
 	ONE_TO_ONE

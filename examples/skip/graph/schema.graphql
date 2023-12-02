@@ -1,8 +1,0 @@
-
-type Person {
-    name: String
-}
-
-type Query @generate {
-    person: Person! @skipGenerate
-}

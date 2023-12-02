@@ -3,7 +3,7 @@ package schema
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 
@@ -16,12 +16,12 @@ const defaultFastGqlSchema = "fastgql_schema.graphql"
 // FormatSchema into multiple sources, the original format schema from gqlparser lib saves all in one file,
 // in this case after augmentation we want to keep all original files and structure and all added definitions to put in
 // fastgql_schema.graphql file.
-func FormatSchema(rootDirectory string, schema *ast.Schema) []*ast.Source {
+func FormatSchema(resolverPackageDir string, schema *ast.Schema) []*ast.Source {
 	if schema == nil {
 		return nil
 	}
 	defaultFormatter := newFormatter(&bytes.Buffer{})
-	defaultSource := filepath.Join(rootDirectory, defaultFastGqlSchema)
+	defaultSource := path.Join(resolverPackageDir, defaultFastGqlSchema)
 	formatters := map[string]*formatter{
 		defaultSource: defaultFormatter,
 	}

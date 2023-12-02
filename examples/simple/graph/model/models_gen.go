@@ -9,133 +9,131 @@ import (
 )
 
 type BooleanComparator struct {
-	Eq     *bool `json:"eq,omitempty" db:"eq"`
-	Neq    *bool `json:"neq,omitempty" db:"neq"`
-	IsNull *bool `json:"isNull,omitempty" db:"isNull"`
+	Eq     *bool `json:"eq,omitempty"`
+	Neq    *bool `json:"neq,omitempty"`
+	IsNull *bool `json:"isNull,omitempty"`
 }
 
 type BooleanListComparator struct {
-	Eq        []*bool `json:"eq,omitempty" db:"eq"`
-	Neq       []*bool `json:"neq,omitempty" db:"neq"`
-	Contains  []*bool `json:"contains,omitempty" db:"contains"`
-	Contained []*bool `json:"contained,omitempty" db:"contained"`
-	Overlap   []*bool `json:"overlap,omitempty" db:"overlap"`
-	IsNull    *bool   `json:"isNull,omitempty" db:"isNull"`
+	Eq        []*bool `json:"eq,omitempty"`
+	Neq       []*bool `json:"neq,omitempty"`
+	Contains  []*bool `json:"contains,omitempty"`
+	Contained []*bool `json:"contained,omitempty"`
+	Overlap   []*bool `json:"overlap,omitempty"`
+	IsNull    *bool   `json:"isNull,omitempty"`
 }
 
 type FloatComparator struct {
-	Eq     *float64 `json:"eq,omitempty" db:"eq"`
-	Neq    *float64 `json:"neq,omitempty" db:"neq"`
-	Gt     *float64 `json:"gt,omitempty" db:"gt"`
-	Gte    *float64 `json:"gte,omitempty" db:"gte"`
-	Lt     *float64 `json:"lt,omitempty" db:"lt"`
-	Lte    *float64 `json:"lte,omitempty" db:"lte"`
-	IsNull *bool    `json:"isNull,omitempty" db:"isNull"`
+	Eq     *float64 `json:"eq,omitempty"`
+	Neq    *float64 `json:"neq,omitempty"`
+	Gt     *float64 `json:"gt,omitempty"`
+	Gte    *float64 `json:"gte,omitempty"`
+	Lt     *float64 `json:"lt,omitempty"`
+	Lte    *float64 `json:"lte,omitempty"`
+	IsNull *bool    `json:"isNull,omitempty"`
 }
 
 type FloatListComparator struct {
-	Eq        []*float64 `json:"eq,omitempty" db:"eq"`
-	Neq       []*float64 `json:"neq,omitempty" db:"neq"`
-	Contains  []*float64 `json:"contains,omitempty" db:"contains"`
-	Contained []*float64 `json:"contained,omitempty" db:"contained"`
-	Overlap   []*float64 `json:"overlap,omitempty" db:"overlap"`
-	IsNull    *bool      `json:"isNull,omitempty" db:"isNull"`
+	Eq        []*float64 `json:"eq,omitempty"`
+	Neq       []*float64 `json:"neq,omitempty"`
+	Contains  []*float64 `json:"contains,omitempty"`
+	Contained []*float64 `json:"contained,omitempty"`
+	Overlap   []*float64 `json:"overlap,omitempty"`
+	IsNull    *bool      `json:"isNull,omitempty"`
 }
 
 type IntComparator struct {
-	Eq     *int  `json:"eq,omitempty" db:"eq"`
-	Neq    *int  `json:"neq,omitempty" db:"neq"`
-	Gt     *int  `json:"gt,omitempty" db:"gt"`
-	Gte    *int  `json:"gte,omitempty" db:"gte"`
-	Lt     *int  `json:"lt,omitempty" db:"lt"`
-	Lte    *int  `json:"lte,omitempty" db:"lte"`
-	IsNull *bool `json:"isNull,omitempty" db:"isNull"`
+	Eq     *int  `json:"eq,omitempty"`
+	Neq    *int  `json:"neq,omitempty"`
+	Gt     *int  `json:"gt,omitempty"`
+	Gte    *int  `json:"gte,omitempty"`
+	Lt     *int  `json:"lt,omitempty"`
+	Lte    *int  `json:"lte,omitempty"`
+	IsNull *bool `json:"isNull,omitempty"`
 }
 
 type IntListComparator struct {
-	Eq        []*int `json:"eq,omitempty" db:"eq"`
-	Neq       []*int `json:"neq,omitempty" db:"neq"`
-	Contains  []*int `json:"contains,omitempty" db:"contains"`
-	Contained []*int `json:"contained,omitempty" db:"contained"`
-	Overlap   []*int `json:"overlap,omitempty" db:"overlap"`
-	IsNull    *bool  `json:"isNull,omitempty" db:"isNull"`
+	Eq        []*int `json:"eq,omitempty"`
+	Neq       []*int `json:"neq,omitempty"`
+	Contains  []*int `json:"contains,omitempty"`
+	Contained []*int `json:"contained,omitempty"`
+	Overlap   []*int `json:"overlap,omitempty"`
+	IsNull    *bool  `json:"isNull,omitempty"`
 }
 
 type Person struct {
-	Name *string `json:"name,omitempty" db:"name"`
+	Name *string `json:"name,omitempty"`
 }
 
 type StringComparator struct {
-	Eq          *string   `json:"eq,omitempty" db:"eq"`
-	Neq         *string   `json:"neq,omitempty" db:"neq"`
-	Contains    []*string `json:"contains,omitempty" db:"contains"`
-	NotContains []*string `json:"notContains,omitempty" db:"notContains"`
-	Like        *string   `json:"like,omitempty" db:"like"`
-	Ilike       *string   `json:"ilike,omitempty" db:"ilike"`
-	Suffix      *string   `json:"suffix,omitempty" db:"suffix"`
-	Prefix      *string   `json:"prefix,omitempty" db:"prefix"`
-	IsNull      *bool     `json:"isNull,omitempty" db:"isNull"`
+	Eq          *string   `json:"eq,omitempty"`
+	Neq         *string   `json:"neq,omitempty"`
+	Contains    []*string `json:"contains,omitempty"`
+	NotContains []*string `json:"notContains,omitempty"`
+	Like        *string   `json:"like,omitempty"`
+	Ilike       *string   `json:"ilike,omitempty"`
+	Suffix      *string   `json:"suffix,omitempty"`
+	Prefix      *string   `json:"prefix,omitempty"`
+	IsNull      *bool     `json:"isNull,omitempty"`
 }
 
 type StringListComparator struct {
-	Eq          []*string `json:"eq,omitempty" db:"eq"`
-	Neq         []*string `json:"neq,omitempty" db:"neq"`
-	Contains    []*string `json:"contains,omitempty" db:"contains"`
-	ContainedBy []*string `json:"containedBy,omitempty" db:"containedBy"`
-	Overlap     []*string `json:"overlap,omitempty" db:"overlap"`
-	IsNull      *bool     `json:"isNull,omitempty" db:"isNull"`
+	Eq          []*string `json:"eq,omitempty"`
+	Neq         []*string `json:"neq,omitempty"`
+	Contains    []*string `json:"contains,omitempty"`
+	ContainedBy []*string `json:"containedBy,omitempty"`
+	Overlap     []*string `json:"overlap,omitempty"`
+	IsNull      *bool     `json:"isNull,omitempty"`
 }
 
 type User struct {
-	Name              *string `json:"name,omitempty" db:"name"`
-	Age               *int    `json:"age,omitempty" db:"age"`
-	SomeInnerValue    *User   `json:"someInnerValue,omitempty" db:"someInnerValue"`
-	SomeInnerValueLis []*User `json:"someInnerValueLis,omitempty" db:"someInnerValueLis"`
-	// someInnerValueLis Aggregate
-	SomeInnerValueLisAggregate *UsersAggregate `json:"_someInnerValueLisAggregate" db:"_someInnerValueLisAggregate"`
+	Name               *string `json:"name,omitempty"`
+	Age                *int    `json:"age,omitempty"`
+	SomeInnerValue     *User   `json:"someInnerValue,omitempty"`
+	SomeInnerValueList []*User `json:"someInnerValueList,omitempty"`
 }
 
 type UserFilterInput struct {
-	Name              *StringComparator `json:"name,omitempty" db:"name"`
-	Age               *IntComparator    `json:"age,omitempty" db:"age"`
-	SomeInnerValue    *UserFilterInput  `json:"someInnerValue,omitempty" db:"someInnerValue"`
-	SomeInnerValueLis *UserFilterInput  `json:"someInnerValueLis,omitempty" db:"someInnerValueLis"`
+	Name               *StringComparator `json:"name,omitempty"`
+	Age                *IntComparator    `json:"age,omitempty"`
+	SomeInnerValue     *UserFilterInput  `json:"someInnerValue,omitempty"`
+	SomeInnerValueList *UserFilterInput  `json:"someInnerValueList,omitempty"`
 	// Logical AND of FilterInput
-	And []*UserFilterInput `json:"AND,omitempty" db:"AND"`
+	And []*UserFilterInput `json:"AND,omitempty"`
 	// Logical OR of FilterInput
-	Or []*UserFilterInput `json:"OR,omitempty" db:"OR"`
+	Or []*UserFilterInput `json:"OR,omitempty"`
 	// Logical NOT of FilterInput
-	Not *UserFilterInput `json:"NOT,omitempty" db:"NOT"`
+	Not *UserFilterInput `json:"NOT,omitempty"`
 }
 
 // max aggregator for User
 type UserMin struct {
 	// Compute the maxiumum for name
-	Name string `json:"name" db:"name"`
+	Name string `json:"name"`
 	// Compute the maxiumum for age
-	Age int `json:"age" db:"age"`
+	Age int `json:"age"`
 }
 
 // Ordering for User
 type UserOrdering struct {
 	// Order User by name
-	Name *OrderingTypes `json:"name,omitempty" db:"name"`
+	Name *OrderingTypes `json:"name,omitempty"`
 	// Order User by age
-	Age *OrderingTypes `json:"age,omitempty" db:"age"`
+	Age *OrderingTypes `json:"age,omitempty"`
 }
 
 // Aggregate User
 type UsersAggregate struct {
 	// Count results
-	Count int `json:"count" db:"count"`
+	Count int `json:"count"`
 	// Computes the maximum of the non-null input values.
-	Max *UserMin `json:"max,omitempty" db:"max"`
+	Max *UserMin `json:"max,omitempty"`
 	// Computes the minimum of the non-null input values.
-	Min *UserMin `json:"min,omitempty" db:"min"`
+	Min *UserMin `json:"min,omitempty"`
 }
 
 type AggregateResult struct {
-	Count int `json:"count" db:"count"`
+	Count int `json:"count"`
 }
 
 type OrderingTypes string
@@ -145,6 +143,8 @@ const (
 	OrderingTypesDesc          OrderingTypes = "DESC"
 	OrderingTypesAscNullFirst  OrderingTypes = "ASC_NULL_FIRST"
 	OrderingTypesDescNullFirst OrderingTypes = "DESC_NULL_FIRST"
+	OrderingTypesAscNullLast   OrderingTypes = "ASC_NULL_LAST"
+	OrderingTypesDescNullLast  OrderingTypes = "DESC_NULL_LAST"
 )
 
 var AllOrderingTypes = []OrderingTypes{
@@ -152,11 +152,13 @@ var AllOrderingTypes = []OrderingTypes{
 	OrderingTypesDesc,
 	OrderingTypesAscNullFirst,
 	OrderingTypesDescNullFirst,
+	OrderingTypesAscNullLast,
+	OrderingTypesDescNullLast,
 }
 
 func (e OrderingTypes) IsValid() bool {
 	switch e {
-	case OrderingTypesAsc, OrderingTypesDesc, OrderingTypesAscNullFirst, OrderingTypesDescNullFirst:
+	case OrderingTypesAsc, OrderingTypesDesc, OrderingTypesAscNullFirst, OrderingTypesDescNullFirst, OrderingTypesAscNullLast, OrderingTypesDescNullLast:
 		return true
 	}
 	return false

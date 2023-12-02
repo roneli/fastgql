@@ -1,8 +1,8 @@
-type Object {
+type Object @generateFilterInput {
     id: ID!
     name: String!
 }
-type ObjectWithRecursivePagination {
+type ObjectWithRecursive {
     id: ID!
     name: String!
     children(
@@ -13,11 +13,11 @@ type ObjectWithRecursivePagination {
         """
         Offset
         """
-        offset: Int = 0): [ObjectWithRecursivePagination]
+        offset: Int = 0): [ObjectWithRecursive]
 }
 type Query {
     scalar: String
-    paginated(
+    generateField(
         """
         Limit
         """
@@ -25,8 +25,7 @@ type Query {
         """
         Offset
         """
-        offset: Int = 0): [ObjectWithRecursivePagination] @generate(pagination: True)
-    nonPaginated: [Object] @generate(pagination: False)
-
+        offset: Int = 0): [ObjectWithRecursive] @generate(ordering: true)
+    dontGenerate: [Object] @generate(ordering: False, aggregate: false, pagination: false)
     listNoDirective: [Object]
 }

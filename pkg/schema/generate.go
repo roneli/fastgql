@@ -3,12 +3,8 @@ package schema
 import (
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
-	"github.com/99designs/gqlgen/plugin/modelgen"
 	"github.com/spf13/afero"
 	"github.com/vektah/gqlparser/v2/ast"
-
-	"github.com/roneli/fastgql/pkg/schema/plugin"
-	"github.com/roneli/fastgql/pkg/schema/plugin/servergen"
 )
 
 // Generate generates the schema and the resolver files, if generateServer is true, it will also generate the server file.
@@ -25,7 +21,7 @@ func Generate(configPath string, generateServer bool, saveFiles bool, sources ..
 		return err
 	}
 	// initialize the FastGQL plugin and add it to gqlgen
-	fgqlPlugin := NewFastGQLPlugin(cfg.Resolver.Dir())
+	fgqlPlugin := NewFastGQLPlugin(cfg.Resolver.Package)
 	srcs, err := fgqlPlugin.CreateAugmented(cfg.Schema)
 	if err != nil {
 		return err
@@ -37,23 +33,16 @@ func Generate(configPath string, generateServer bool, saveFiles bool, sources ..
 	}
 	cfg.Sources = srcs
 	if saveFiles {
-		err = saveGeneratedFiles(srcs)
-		if err != nil {
+		if err := saveGeneratedFiles(srcs); err != nil {
 			return err
 		}
-	}
-	// Attaching the mutation function onto modelgen plugin
-	modelgenPlugin := modelgen.Plugin{
-		MutateHook: plugin.MutateHook,
 	}
 	// skip validation for now, as after code generation we need to mod tidy again
 	cfg.SkipValidation = true
 	if generateServer {
-		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin), api.AddPlugin(New()),
-			api.AddPlugin(fgqlPlugin), api.AddPlugin(servergen.New("server.go")))
+		err = api.Generate(cfg, api.AddPlugin(fgqlPlugin))
 	} else {
-		err = api.Generate(cfg, api.NoPlugins(), api.AddPlugin(&modelgenPlugin),
-			api.AddPlugin(New()), api.AddPlugin(fgqlPlugin))
+		err = api.Generate(cfg, api.AddPlugin(fgqlPlugin))
 	}
 	if err != nil {
 		return err

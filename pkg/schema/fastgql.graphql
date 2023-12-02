@@ -23,6 +23,8 @@ directive @table(name: String!, dialect: String! = "postgres", schema: String = 
 # Relation directive defines relations cross tables and dialects
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 
+# This will make the field skipped in select, this is useful for fields that are not columns in the database, and you want to resolve it manually
+directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 
 # ================== Default Filter input types supported by fastgql ==================
 

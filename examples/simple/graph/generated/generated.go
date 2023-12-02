@@ -23,6 +23,7 @@ import (
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 	return &executableSchema{
+		schema:     cfg.Schema,
 		resolvers:  cfg.Resolvers,
 		directives: cfg.Directives,
 		complexity: cfg.Complexity,
@@ -30,6 +31,7 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 }
 
 type Config struct {
+	Schema     *ast.Schema
 	Resolvers  ResolverRoot
 	Directives DirectiveRoot
 	Complexity ComplexityRoot
@@ -37,10 +39,10 @@ type Config struct {
 
 type ResolverRoot interface {
 	Query() QueryResolver
-	User() UserResolver
 }
 
 type DirectiveRoot struct {
+	FastgqlField func(ctx context.Context, obj interface{}, next graphql.Resolver, skipSelect *bool) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -51,15 +53,14 @@ type ComplexityRoot struct {
 	Query struct {
 		Person        func(childComplexity int) int
 		User          func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
-		UserAggregate func(childComplexity int, filter *model.UserFilterInput) int
+		UserAggregate func(childComplexity int) int
 	}
 
 	User struct {
-		Age                        func(childComplexity int) int
-		Name                       func(childComplexity int) int
-		SomeInnerValue             func(childComplexity int) int
-		SomeInnerValueLis          func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
-		SomeInnerValueLisAggregate func(childComplexity int, filter *model.UserFilterInput) int
+		Age                func(childComplexity int) int
+		Name               func(childComplexity int) int
+		SomeInnerValue     func(childComplexity int) int
+		SomeInnerValueList func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
 	}
 
 	UserMin struct {
@@ -81,19 +82,20 @@ type ComplexityRoot struct {
 type QueryResolver interface {
 	Person(ctx context.Context) (*model.Person, error)
 	User(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
-	UserAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.UsersAggregate, error)
-}
-type UserResolver interface {
-	SomeInnerValue(ctx context.Context, obj *model.User) (*model.User, error)
+	UserAggregate(ctx context.Context) (*model.UsersAggregate, error)
 }
 
 type executableSchema struct {
+	schema     *ast.Schema
 	resolvers  ResolverRoot
 	directives DirectiveRoot
 	complexity ComplexityRoot
 }
 
 func (e *executableSchema) Schema() *ast.Schema {
+	if e.schema != nil {
+		return e.schema
+	}
 	return parsedSchema
 }
 
@@ -133,12 +135,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query__userAggregate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.UserAggregate(childComplexity, args["filter"].(*model.UserFilterInput)), true
+		return e.complexity.Query.UserAggregate(childComplexity), true
 
 	case "User.age":
 		if e.complexity.User.Age == nil {
@@ -161,29 +158,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.SomeInnerValue(childComplexity), true
 
-	case "User.someInnerValueLis":
-		if e.complexity.User.SomeInnerValueLis == nil {
+	case "User.someInnerValueList":
+		if e.complexity.User.SomeInnerValueList == nil {
 			break
 		}
 
-		args, err := ec.field_User_someInnerValueLis_args(context.TODO(), rawArgs)
+		args, err := ec.field_User_someInnerValueList_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.User.SomeInnerValueLis(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UserOrdering), args["filter"].(*model.UserFilterInput)), true
-
-	case "User._someInnerValueLisAggregate":
-		if e.complexity.User.SomeInnerValueLisAggregate == nil {
-			break
-		}
-
-		args, err := ec.field_User__someInnerValueLisAggregate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.User.SomeInnerValueLisAggregate(childComplexity, args["filter"].(*model.UserFilterInput)), true
+		return e.complexity.User.SomeInnerValueList(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UserOrdering), args["filter"].(*model.UserFilterInput)), true
 
 	case "UserMin.age":
 		if e.complexity.UserMin.Age == nil {
@@ -316,23 +301,134 @@ func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapSchema(parsedSchema), nil
+	return introspection.WrapSchema(ec.Schema()), nil
 }
 
 func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
+	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
 var sources = []*ast.Source{
-	{Name: "../fastgql.graphql", Input: `directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, wrapper: Boolean = False) on OBJECT
-directive @generateFilterInput(name: String!, description: String) on OBJECT | INTERFACE
+	{Name: "../schema.graphql", Input: `type Person {
+	name: String
+}
+type Query {
+	person: Person!
+	user(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter user
+		"""
+		filter: UserFilterInput): [User] @generate
+	"""
+	user Aggregate
+	"""
+	_userAggregate: UsersAggregate!
+}
+type User @generateFilterInput {
+	name: String
+	age: Int
+	someInnerValue: User
+	someInnerValueList(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter someInnerValueList
+		"""
+		filter: UserFilterInput): [User]
+}
+`, BuiltIn: false},
+	{Name: "../fastgql_schema.graphql", Input: `input UserFilterInput {
+	name: StringComparator
+	age: IntComparator
+	someInnerValue: UserFilterInput
+	someInnerValueList: UserFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [UserFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [UserFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: UserFilterInput
+}
+"""
+max aggregator for User
+"""
+type UserMin {
+	"""
+	Compute the maxiumum for name
+	"""
+	name: String!
+	"""
+	Compute the maxiumum for age
+	"""
+	age: Int!
+}
+"""
+Ordering for User
+"""
+input UserOrdering {
+	"""
+	Order User by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order User by age
+	"""
+	age: _OrderingTypes
+}
+"""
+Aggregate User
+"""
+type UsersAggregate {
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Computes the maximum of the non-null input values.
+	"""
+	max: UserMin
+	"""
+	Computes the minimum of the non-null input values.
+	"""
+	min: UserMin
+}
+`, BuiltIn: false},
+	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on FIELD_DEFINITION
+directive @generateFilterInput(description: String) on OBJECT
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
-directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
 input BooleanComparator {
 	eq: Boolean
@@ -408,135 +504,13 @@ enum _OrderingTypes {
 	DESC
 	ASC_NULL_FIRST
 	DESC_NULL_FIRST
+	ASC_NULL_LAST
+	DESC_NULL_LAST
 }
 enum _relationType {
 	ONE_TO_ONE
 	ONE_TO_MANY
 	MANY_TO_MANY
-}
-`, BuiltIn: false},
-	{Name: "../schema.graphql", Input: `type Person {
-	name: String
-}
-type Query @generate(recursive: true) {
-	person: Person! @skipGenerate
-	user(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter user
-		"""
-		filter: UserFilterInput): [User]
-	"""
-	user Aggregate
-	"""
-	_userAggregate(
-		"""
-		Filter _userAggregate
-		"""
-		filter: UserFilterInput): UsersAggregate!
-}
-type User @generateFilterInput(name: "UserFilterInput") {
-	name: String
-	age: Int
-	someInnerValue: User @goField(forceResolver: true) @skipGenerate
-	someInnerValueLis(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter someInnerValueLis
-		"""
-		filter: UserFilterInput): [User]
-	"""
-	someInnerValueLis Aggregate
-	"""
-	_someInnerValueLisAggregate(
-		"""
-		Filter _someInnerValueLisAggregate
-		"""
-		filter: UserFilterInput): UsersAggregate!
-}
-`, BuiltIn: false},
-	{Name: "../fastgql_schema.graphql", Input: `input UserFilterInput {
-	name: StringComparator
-	age: IntComparator
-	someInnerValue: UserFilterInput
-	someInnerValueLis: UserFilterInput
-	"""
-	Logical AND of FilterInput
-	"""
-	AND: [UserFilterInput]
-	"""
-	Logical OR of FilterInput
-	"""
-	OR: [UserFilterInput]
-	"""
-	Logical NOT of FilterInput
-	"""
-	NOT: UserFilterInput
-}
-"""
-max aggregator for User
-"""
-type UserMin {
-	"""
-	Compute the maxiumum for name
-	"""
-	name: String!
-	"""
-	Compute the maxiumum for age
-	"""
-	age: Int!
-}
-"""
-Ordering for User
-"""
-input UserOrdering {
-	"""
-	Order User by name
-	"""
-	name: _OrderingTypes
-	"""
-	Order User by age
-	"""
-	age: _OrderingTypes
-}
-"""
-Aggregate User
-"""
-type UsersAggregate {
-	"""
-	Count results
-	"""
-	count: Int!
-	"""
-	Computes the maximum of the non-null input values.
-	"""
-	max: UserMin
-	"""
-	Computes the minimum of the non-null input values.
-	"""
-	min: UserMin
 }
 `, BuiltIn: false},
 }
@@ -545,6 +519,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_fastgqlField_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *bool
+	if tmp, ok := rawArgs["skipSelect"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skipSelect"))
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skipSelect"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -558,21 +547,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query__userAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *model.UserFilterInput
-	if tmp, ok := rawArgs["filter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg0, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["filter"] = arg0
 	return args, nil
 }
 
@@ -618,22 +592,7 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 	return args, nil
 }
 
-func (ec *executionContext) field_User__someInnerValueLisAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *model.UserFilterInput
-	if tmp, ok := rawArgs["filter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg0, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["filter"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_User_someInnerValueLis_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_User_someInnerValueList_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -844,10 +803,8 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 				return ec.fieldContext_User_age(ctx, field)
 			case "someInnerValue":
 				return ec.fieldContext_User_someInnerValue(ctx, field)
-			case "someInnerValueLis":
-				return ec.fieldContext_User_someInnerValueLis(ctx, field)
-			case "_someInnerValueLisAggregate":
-				return ec.fieldContext_User__someInnerValueLisAggregate(ctx, field)
+			case "someInnerValueList":
+				return ec.fieldContext_User_someInnerValueList(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -880,7 +837,7 @@ func (ec *executionContext) _Query__userAggregate(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UserAggregate(rctx, fc.Args["filter"].(*model.UserFilterInput))
+		return ec.resolvers.Query().UserAggregate(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -914,17 +871,6 @@ func (ec *executionContext) fieldContext_Query__userAggregate(ctx context.Contex
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UsersAggregate", field.Name)
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query__userAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -1154,7 +1100,7 @@ func (ec *executionContext) _User_someInnerValue(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().SomeInnerValue(rctx, obj)
+		return obj.SomeInnerValue, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1172,8 +1118,8 @@ func (ec *executionContext) fieldContext_User_someInnerValue(ctx context.Context
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "name":
@@ -1182,10 +1128,8 @@ func (ec *executionContext) fieldContext_User_someInnerValue(ctx context.Context
 				return ec.fieldContext_User_age(ctx, field)
 			case "someInnerValue":
 				return ec.fieldContext_User_someInnerValue(ctx, field)
-			case "someInnerValueLis":
-				return ec.fieldContext_User_someInnerValueLis(ctx, field)
-			case "_someInnerValueLisAggregate":
-				return ec.fieldContext_User__someInnerValueLisAggregate(ctx, field)
+			case "someInnerValueList":
+				return ec.fieldContext_User_someInnerValueList(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1193,8 +1137,8 @@ func (ec *executionContext) fieldContext_User_someInnerValue(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _User_someInnerValueLis(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_someInnerValueLis(ctx, field)
+func (ec *executionContext) _User_someInnerValueList(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_someInnerValueList(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1207,7 +1151,7 @@ func (ec *executionContext) _User_someInnerValueLis(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SomeInnerValueLis, nil
+		return obj.SomeInnerValueList, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1221,7 +1165,7 @@ func (ec *executionContext) _User_someInnerValueLis(ctx context.Context, field g
 	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_User_someInnerValueLis(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_User_someInnerValueList(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
@@ -1235,10 +1179,8 @@ func (ec *executionContext) fieldContext_User_someInnerValueLis(ctx context.Cont
 				return ec.fieldContext_User_age(ctx, field)
 			case "someInnerValue":
 				return ec.fieldContext_User_someInnerValue(ctx, field)
-			case "someInnerValueLis":
-				return ec.fieldContext_User_someInnerValueLis(ctx, field)
-			case "_someInnerValueLisAggregate":
-				return ec.fieldContext_User__someInnerValueLisAggregate(ctx, field)
+			case "someInnerValueList":
+				return ec.fieldContext_User_someInnerValueList(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1250,70 +1192,7 @@ func (ec *executionContext) fieldContext_User_someInnerValueLis(ctx context.Cont
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_User_someInnerValueLis_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _User__someInnerValueLisAggregate(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User__someInnerValueLisAggregate(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SomeInnerValueLisAggregate, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.UsersAggregate)
-	fc.Result = res
-	return ec.marshalNUsersAggregate2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUsersAggregate(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_User__someInnerValueLisAggregate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "User",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "count":
-				return ec.fieldContext_UsersAggregate_count(ctx, field)
-			case "max":
-				return ec.fieldContext_UsersAggregate_max(ctx, field)
-			case "min":
-				return ec.fieldContext_UsersAggregate_min(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type UsersAggregate", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_User__someInnerValueLisAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_User_someInnerValueList_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3378,8 +3257,6 @@ func (ec *executionContext) unmarshalInputBooleanComparator(ctx context.Context,
 		}
 		switch k {
 		case "eq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3387,8 +3264,6 @@ func (ec *executionContext) unmarshalInputBooleanComparator(ctx context.Context,
 			}
 			it.Eq = data
 		case "neq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3396,8 +3271,6 @@ func (ec *executionContext) unmarshalInputBooleanComparator(ctx context.Context,
 			}
 			it.Neq = data
 		case "isNull":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3425,8 +3298,6 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 		}
 		switch k {
 		case "eq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
 			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
@@ -3434,8 +3305,6 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 			}
 			it.Eq = data
 		case "neq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
 			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
@@ -3443,8 +3312,6 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 			}
 			it.Neq = data
 		case "contains":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
 			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
@@ -3452,8 +3319,6 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 			}
 			it.Contains = data
 		case "contained":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contained"))
 			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
@@ -3461,8 +3326,6 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 			}
 			it.Contained = data
 		case "overlap":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
 			data, err := ec.unmarshalOBoolean2ᚕᚖbool(ctx, v)
 			if err != nil {
@@ -3470,8 +3333,6 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 			}
 			it.Overlap = data
 		case "isNull":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3499,8 +3360,6 @@ func (ec *executionContext) unmarshalInputFloatComparator(ctx context.Context, o
 		}
 		switch k {
 		case "eq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
@@ -3508,8 +3367,6 @@ func (ec *executionContext) unmarshalInputFloatComparator(ctx context.Context, o
 			}
 			it.Eq = data
 		case "neq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
@@ -3517,8 +3374,6 @@ func (ec *executionContext) unmarshalInputFloatComparator(ctx context.Context, o
 			}
 			it.Neq = data
 		case "gt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gt"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
@@ -3526,8 +3381,6 @@ func (ec *executionContext) unmarshalInputFloatComparator(ctx context.Context, o
 			}
 			it.Gt = data
 		case "gte":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gte"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
@@ -3535,8 +3388,6 @@ func (ec *executionContext) unmarshalInputFloatComparator(ctx context.Context, o
 			}
 			it.Gte = data
 		case "lt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lt"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
@@ -3544,8 +3395,6 @@ func (ec *executionContext) unmarshalInputFloatComparator(ctx context.Context, o
 			}
 			it.Lt = data
 		case "lte":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lte"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
@@ -3553,8 +3402,6 @@ func (ec *executionContext) unmarshalInputFloatComparator(ctx context.Context, o
 			}
 			it.Lte = data
 		case "isNull":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3582,8 +3429,6 @@ func (ec *executionContext) unmarshalInputFloatListComparator(ctx context.Contex
 		}
 		switch k {
 		case "eq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
 			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
@@ -3591,8 +3436,6 @@ func (ec *executionContext) unmarshalInputFloatListComparator(ctx context.Contex
 			}
 			it.Eq = data
 		case "neq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
 			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
@@ -3600,8 +3443,6 @@ func (ec *executionContext) unmarshalInputFloatListComparator(ctx context.Contex
 			}
 			it.Neq = data
 		case "contains":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
 			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
@@ -3609,8 +3450,6 @@ func (ec *executionContext) unmarshalInputFloatListComparator(ctx context.Contex
 			}
 			it.Contains = data
 		case "contained":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contained"))
 			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
@@ -3618,8 +3457,6 @@ func (ec *executionContext) unmarshalInputFloatListComparator(ctx context.Contex
 			}
 			it.Contained = data
 		case "overlap":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
 			data, err := ec.unmarshalOFloat2ᚕᚖfloat64(ctx, v)
 			if err != nil {
@@ -3627,8 +3464,6 @@ func (ec *executionContext) unmarshalInputFloatListComparator(ctx context.Contex
 			}
 			it.Overlap = data
 		case "isNull":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3656,8 +3491,6 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 		}
 		switch k {
 		case "eq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
@@ -3665,8 +3498,6 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 			}
 			it.Eq = data
 		case "neq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
@@ -3674,8 +3505,6 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 			}
 			it.Neq = data
 		case "gt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gt"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
@@ -3683,8 +3512,6 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 			}
 			it.Gt = data
 		case "gte":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gte"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
@@ -3692,8 +3519,6 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 			}
 			it.Gte = data
 		case "lt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lt"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
@@ -3701,8 +3526,6 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 			}
 			it.Lt = data
 		case "lte":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lte"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
@@ -3710,8 +3533,6 @@ func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj
 			}
 			it.Lte = data
 		case "isNull":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3739,8 +3560,6 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 		}
 		switch k {
 		case "eq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
 			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
@@ -3748,8 +3567,6 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 			}
 			it.Eq = data
 		case "neq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
 			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
@@ -3757,8 +3574,6 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 			}
 			it.Neq = data
 		case "contains":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
 			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
@@ -3766,8 +3581,6 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 			}
 			it.Contains = data
 		case "contained":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contained"))
 			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
@@ -3775,8 +3588,6 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 			}
 			it.Contained = data
 		case "overlap":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
 			data, err := ec.unmarshalOInt2ᚕᚖint(ctx, v)
 			if err != nil {
@@ -3784,8 +3595,6 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 			}
 			it.Overlap = data
 		case "isNull":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3813,8 +3622,6 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 		}
 		switch k {
 		case "eq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -3822,8 +3629,6 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			}
 			it.Eq = data
 		case "neq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -3831,8 +3636,6 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			}
 			it.Neq = data
 		case "contains":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
 			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
@@ -3840,8 +3643,6 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			}
 			it.Contains = data
 		case "notContains":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notContains"))
 			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
@@ -3849,8 +3650,6 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			}
 			it.NotContains = data
 		case "like":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -3858,8 +3657,6 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			}
 			it.Like = data
 		case "ilike":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ilike"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -3867,8 +3664,6 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			}
 			it.Ilike = data
 		case "suffix":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("suffix"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -3876,8 +3671,6 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			}
 			it.Suffix = data
 		case "prefix":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("prefix"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -3885,8 +3678,6 @@ func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, 
 			}
 			it.Prefix = data
 		case "isNull":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3914,8 +3705,6 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 		}
 		switch k {
 		case "eq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
 			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
@@ -3923,8 +3712,6 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 			}
 			it.Eq = data
 		case "neq":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
 			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
@@ -3932,8 +3719,6 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 			}
 			it.Neq = data
 		case "contains":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
 			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
@@ -3941,8 +3726,6 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 			}
 			it.Contains = data
 		case "containedBy":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("containedBy"))
 			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
@@ -3950,8 +3733,6 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 			}
 			it.ContainedBy = data
 		case "overlap":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("overlap"))
 			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
@@ -3959,8 +3740,6 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 			}
 			it.Overlap = data
 		case "isNull":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -3980,7 +3759,7 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "age", "someInnerValue", "someInnerValueLis", "AND", "OR", "NOT"}
+	fieldsInOrder := [...]string{"name", "age", "someInnerValue", "someInnerValueList", "AND", "OR", "NOT"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3988,8 +3767,6 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 		}
 		switch k {
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
@@ -3997,8 +3774,6 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			}
 			it.Name = data
 		case "age":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("age"))
 			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
@@ -4006,26 +3781,20 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			}
 			it.Age = data
 		case "someInnerValue":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("someInnerValue"))
 			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.SomeInnerValue = data
-		case "someInnerValueLis":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("someInnerValueLis"))
+		case "someInnerValueList":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("someInnerValueList"))
 			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SomeInnerValueLis = data
+			it.SomeInnerValueList = data
 		case "AND":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
 			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
@@ -4033,8 +3802,6 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			}
 			it.And = data
 		case "OR":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
 			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
@@ -4042,8 +3809,6 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 			}
 			it.Or = data
 		case "NOT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
 			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
@@ -4071,8 +3836,6 @@ func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj 
 		}
 		switch k {
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
@@ -4080,8 +3843,6 @@ func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj 
 			}
 			it.Name = data
 		case "age":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("age"))
 			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋsimpleᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
@@ -4267,45 +4028,9 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		case "age":
 			out.Values[i] = ec._User_age(ctx, field, obj)
 		case "someInnerValue":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._User_someInnerValue(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "someInnerValueLis":
-			out.Values[i] = ec._User_someInnerValueLis(ctx, field, obj)
-		case "_someInnerValueLisAggregate":
-			out.Values[i] = ec._User__someInnerValueLisAggregate(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
+			out.Values[i] = ec._User_someInnerValue(ctx, field, obj)
+		case "someInnerValueList":
+			out.Values[i] = ec._User_someInnerValueList(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -15,7 +15,7 @@ type createdInputDef struct {
 	input  *ast.Definition
 }
 
-func FilterArgumentsAugment(s *ast.Schema) error {
+func FilterArgAugmenter(s *ast.Schema) error {
 	for _, v := range s.Query.Fields {
 		d := v.Directives.ForName("generate")
 		if d == nil {
@@ -40,7 +40,7 @@ func FilterArgumentsAugment(s *ast.Schema) error {
 	return nil
 }
 
-func FilterInputAugment(s *ast.Schema) error {
+func FilterInputAugmenter(s *ast.Schema) error {
 	inputs := initInputs(s)
 	for _, input := range inputs {
 		buildFilterInput(s, input.input, input.object)
