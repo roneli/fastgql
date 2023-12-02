@@ -56,33 +56,33 @@ func (f FastGqlPlugin) MutateConfig(c *config.Config) error {
 	return nil
 }
 
-func (f FastGqlPlugin) Implement(_ string, field *codegen.Field) (string, error) {
+func (f FastGqlPlugin) Render(field *codegen.Field) string {
 	buf := &bytes.Buffer{}
 	if field.TypeReference.Definition.Directives.ForName("generate") != nil {
-		return `panic(fmt.Errorf("not implemented"))`, nil
+		return `panic(fmt.Errorf("not implemented"))`
 	}
 	if field.TypeReference.Definition.IsAbstractType() {
-		return `panic(fmt.Errorf("interface not supported"))`, nil
+		return `panic(fmt.Errorf("interface not supported"))`
 	}
 	if field.TypeReference.Definition.IsLeafType() || field.TypeReference.Definition.IsInputType() {
-		return `panic(fmt.Errorf("not implemented"))`, nil
+		return `panic(fmt.Errorf("not implemented"))`
 	}
 
 	baseFuncs := templates.Funcs()
 	baseFuncs["hasSuffix"] = strings.HasSuffix
 	baseFuncs["hasPrefix"] = strings.HasPrefix
 	baseFuncs["deref"] = deref
-	baseFuncs["ref"] = ref
+
 	fResolver := fastGQLResolver{field, "postgres"}
 	t := template.New("").Funcs(baseFuncs)
 	t, err := t.New("fastgql.tpl").Parse(fastGqlTpl)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 	if err := t.Execute(buf, fResolver); err != nil {
-		return "", err
+		panic(err)
 	}
-	return buf.String(), nil
+	return buf.String()
 }
 
 type fastGQLResolver struct {

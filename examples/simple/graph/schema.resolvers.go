@@ -6,17 +6,16 @@ package graph
 
 import (
 	"context"
-	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5"
-	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 
+	"github.com/georgysavva/scany/v2/pgxscan"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/roneli/fastgql/examples/simple/graph/generated"
 	"github.com/roneli/fastgql/examples/simple/graph/model"
+	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 )
 
 // Person is the resolver for the person field.
 func (r *queryResolver) Person(ctx context.Context) (*model.Person, error) {
-
 	var data *model.Person
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -32,7 +31,6 @@ func (r *queryResolver) Person(ctx context.Context) (*model.Person, error) {
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
-
 	var data []*model.User
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -48,7 +46,6 @@ func (r *queryResolver) User(ctx context.Context, limit *int, offset *int, order
 
 // UserAggregate is the resolver for the _userAggregate field.
 func (r *queryResolver) UserAggregate(ctx context.Context) (*model.UsersAggregate, error) {
-
 	var data *model.UsersAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
