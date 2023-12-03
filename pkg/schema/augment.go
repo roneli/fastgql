@@ -1,9 +1,10 @@
 package schema
 
 import (
-	"github.com/vektah/gqlparser/v2/ast"
 	"log"
 	"strings"
+
+	"github.com/vektah/gqlparser/v2/ast"
 )
 
 type (

@@ -1,9 +1,10 @@
 package execution
 
 import (
-	jsoniter "github.com/json-iterator/go"
 	"reflect"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 type InterfaceScanner[T any] interface {

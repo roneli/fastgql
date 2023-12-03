@@ -2,6 +2,7 @@ package builders
 
 import (
 	"fmt"
+
 	"github.com/roneli/fastgql/pkg/schema"
 
 	"github.com/spf13/cast"

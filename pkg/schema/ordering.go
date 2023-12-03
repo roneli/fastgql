@@ -2,9 +2,10 @@ package schema
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
-	"log"
 )
 
 func OrderByAugmenter(s *ast.Schema) error {
@@ -19,7 +20,9 @@ func OrderByAugmenter(s *ast.Schema) error {
 		log.Printf("adding ordering to field %s@%s\n", v.Name, s.Query.Name)
 		args := d.ArgumentMap(nil)
 		if p, ok := args["ordering"]; ok && cast.ToBool(p) {
-			addOrderByArgsToField(s, s.Query, v)
+			if err := addOrderByArgsToField(s, s.Query, v); err != nil {
+				return err
+			}
 		}
 		if recursive := cast.ToBool(args["recursive"]); recursive {
 			if err := addRecursive(s, s.Types[GetType(v.Type).Name()], "orderBy", addOrderByArgsToField); err != nil {

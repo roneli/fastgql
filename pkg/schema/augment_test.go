@@ -3,13 +3,14 @@ package schema
 import (
 	_ "embed"
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser/v2/ast"
-	"os"
-	"strings"
-	"testing"
 )
 
 //go:embed fastgql.graphql

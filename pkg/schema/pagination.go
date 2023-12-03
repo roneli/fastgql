@@ -1,9 +1,10 @@
 package schema
 
 import (
+	"log"
+
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
-	"log"
 )
 
 func PaginationAugmenter(s *ast.Schema) error {

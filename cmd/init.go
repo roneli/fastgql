@@ -99,7 +99,7 @@ var initCmd = &cobra.Command{
 	Short: "create a new fastgql project in current directory",
 	Long:  `Generates a base fastgql project with servergen, resolvers and schema ready`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		//pkgName := code.ImportPathForDir(".")
+		// pkgName := code.ImportPathForDir(".")
 		pkgName := ""
 		if pkgName == "" {
 			return errors.New("unable to determine import path for current directory, you probably need to run go mod init first")

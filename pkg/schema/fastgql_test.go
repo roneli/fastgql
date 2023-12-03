@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/99designs/gqlgen/codegen/config"
@@ -14,6 +13,7 @@ func Test_Generate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Nil(t, cfg.LoadSchema())
 	srcs, err := fgqlPlugin.CreateAugmented(cfg.Schema)
+	assert.Nil(t, err)
 	assert.Nil(t, cfg.LoadSchema())
-	fmt.Println(srcs)
+	assert.Len(t, srcs, 2)
 }

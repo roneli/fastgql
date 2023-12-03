@@ -3,8 +3,9 @@ package sql
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"reflect"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"

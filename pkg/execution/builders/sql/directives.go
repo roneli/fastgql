@@ -2,8 +2,9 @@ package sql
 
 import (
 	"fmt"
-	"github.com/roneli/fastgql/pkg/schema"
 	"strings"
+
+	"github.com/roneli/fastgql/pkg/schema"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"

@@ -4,13 +4,14 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"github.com/99designs/gqlgen/codegen"
-	"github.com/99designs/gqlgen/codegen/templates"
 	"go/types"
 	"reflect"
 	"runtime"
 	"strings"
 	"text/template"
+
+	"github.com/99designs/gqlgen/codegen"
+	"github.com/99designs/gqlgen/codegen/templates"
 
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -55,7 +56,7 @@ func (f FastGqlPlugin) MutateConfig(c *config.Config) error {
 	return nil
 }
 
-func (f FastGqlPlugin) Render(field *codegen.Field) string {
+func (f FastGqlPlugin) Implement(field *codegen.Field) string {
 	buf := &bytes.Buffer{}
 	if field.TypeReference.Definition.Directives.ForName("generate") != nil {
 		return `panic(fmt.Errorf("not implemented"))`
