@@ -16,7 +16,7 @@ type createdInputDef struct {
 }
 
 func FilterArgAugmenter(s *ast.Schema) error {
-	for _, v := range s.Query.Fields {
+	for _, v := range append(s.Query.Fields, s.Mutation.Fields...) {
 		d := v.Directives.ForName("generate")
 		if d == nil {
 			continue

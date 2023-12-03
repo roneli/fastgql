@@ -312,56 +312,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../schema.graphql", Input: `type Person {
-	name: String
-}
-type Query {
-	person: Person!
-	user(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter user
-		"""
-		filter: UserFilterInput): [User] @generate
-	"""
-	user Aggregate
-	"""
-	_userAggregate: UsersAggregate!
-}
-type User @generateFilterInput {
-	name: String
-	age: Int
-	someInnerValue: User
-	someInnerValueList(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter someInnerValueList
-		"""
-		filter: UserFilterInput): [User]
-}
-`, BuiltIn: false},
 	{Name: "../fastgql_schema.graphql", Input: `input UserFilterInput {
 	name: StringComparator
 	age: IntComparator
@@ -511,6 +461,56 @@ enum _relationType {
 	ONE_TO_ONE
 	ONE_TO_MANY
 	MANY_TO_MANY
+}
+`, BuiltIn: false},
+	{Name: "../schema.graphql", Input: `type Person {
+	name: String
+}
+type Query {
+	person: Person!
+	user(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter user
+		"""
+		filter: UserFilterInput): [User] @generate
+	"""
+	user Aggregate
+	"""
+	_userAggregate: UsersAggregate!
+}
+type User @generateFilterInput {
+	name: String
+	age: Int
+	someInnerValue: User
+	someInnerValueList(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter someInnerValueList
+		"""
+		filter: UserFilterInput): [User]
 }
 `, BuiltIn: false},
 }

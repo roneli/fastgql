@@ -22,15 +22,14 @@ var (
 	//go:embed fastgql.graphql
 	FastGQLSchema     string
 	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "skipGenerate", "generateMutations", "relation"}
-	baseDialect       = "postgres"
 	defaultAugmenters = []Augmenter{
 		PaginationAugmenter,
 		OrderByAugmenter,
+		MutationsAugmenter,
 		AggregationAugmenter,
 		FilterInputAugmenter,
 		FilterArgAugmenter,
 	}
-	imports = templates.Imports{}
 )
 
 // FastGqlPlugin augments and extends the original schema
