@@ -1,12 +1,14 @@
-type Object {
+type Object @generateFilterInput {
     id: ID!
     name: String!
 }
+
 type ObjectWithRecursive {
     id: ID!
     name: String!
     children: [ObjectWithRecursive]
 }
+
 type Query {
     scalar: String
     generateField: [ObjectWithRecursive] @generate(ordering: true)
