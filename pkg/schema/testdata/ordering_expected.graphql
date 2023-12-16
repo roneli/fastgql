@@ -1,4 +1,4 @@
-type Object {
+type Object @generateFilterInput {
     id: ID!
     name: String!
 }
@@ -13,11 +13,11 @@ type ObjectWithRecursive {
 }
 type Query {
     scalar: String
-    paginated(
+    generateField(
         """
         Ordering for ObjectWithRecursive
         """
         orderBy: [ObjectWithRecursiveOrdering]): [ObjectWithRecursive] @generate(ordering: true)
-    nonPaginated: [Object] @generate(ordering: False)
+    dontGenerate: [Object] @generate(ordering: False, aggregate: false, pagination: false)
     listNoDirective: [Object]
 }
