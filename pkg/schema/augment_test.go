@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
-	"strings"
+	"regexp"
 	"testing"
 
 	"github.com/99designs/gqlgen/codegen/config"
@@ -52,13 +52,18 @@ func generateTestRunner(t *testing.T, tc *generateTestCase, augmenters ...Augmen
 	for _, s := range sources {
 		switch s.Name {
 		case "tc.graphql":
-			if !assert.Equal(t, strings.ReplaceAll(strings.ReplaceAll(string(expectedSchemaFile), "\r\n", ""), " ", ""), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s.Input, "\n", ""), " ", ""), "\t", "")) {
+			if !assert.Equal(t, removeWhitespaceWithRegex(string(expectedSchemaFile)), removeWhitespaceWithRegex(s.Input)) {
 				fmt.Print(s.Input)
 			}
 		case "fastgql_schema.graphql":
-			if !assert.Equal(t, strings.ReplaceAll(strings.ReplaceAll(string(expectedFastgqlSchemaFile), "\r\n", ""), " ", ""), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s.Input, "\n", ""), " ", ""), "\t", "")) {
+			if !assert.Equal(t, removeWhitespaceWithRegex(string(expectedFastgqlSchemaFile)), removeWhitespaceWithRegex(s.Input)) {
 				fmt.Print(s.Input)
 			}
 		}
 	}
+}
+
+func removeWhitespaceWithRegex(s string) string {
+	reg := regexp.MustCompile(`[\s]+`) // Match any whitespace character
+	return reg.ReplaceAllString(s, "")
 }
