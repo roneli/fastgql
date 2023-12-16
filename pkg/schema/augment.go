@@ -43,7 +43,9 @@ func addRecursive(s *ast.Schema, obj *ast.Definition, fieldStopCase string, augm
 			log.Printf("error augmenting field %s@%s: %s\n", f.Name, obj.Name, err)
 			return err
 		}
-		return addRecursive(s, fieldType, fieldStopCase, augmenter, append(visited, obj)...)
+		if err := addRecursive(s, fieldType, fieldStopCase, augmenter, append(visited, obj)...); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -3,7 +3,7 @@ module github.com/roneli/fastgql
 go 1.18
 
 require (
-	github.com/99designs/gqlgen v0.17.41-0.20231203170207-5e98a16a3a5a
+	github.com/99designs/gqlgen v0.17.41
 	github.com/doug-martin/goqu/v9 v9.10.0
 	github.com/georgysavva/scany/v2 v2.0.0
 	github.com/iancoleman/strcase v0.1.3
@@ -23,7 +23,6 @@ require (
 
 require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -45,14 +44,11 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sosodev/duration v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/urfave/cli/v2 v2.25.5 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
-	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
