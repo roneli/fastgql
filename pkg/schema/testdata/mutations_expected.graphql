@@ -1,4 +1,4 @@
-type Object @generateFilterInput @generateMutations{
+type Object @generateFilterInput @generateMutations {
     id: ID!
     name: String!
 }

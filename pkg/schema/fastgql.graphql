@@ -6,7 +6,7 @@
 # for filter to work @generateFilterInput must be defined on the object, if its missing you will get an error
 # recursive will generate pagination, filtering, ordering and aggregate for all the relations of the object,
 # this will modify the object itself and add arguments to the object fields.
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on FIELD_DEFINITION
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
 
 # Generate mutations for an object
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT

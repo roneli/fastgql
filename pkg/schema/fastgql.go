@@ -24,9 +24,9 @@ var (
 	FastGQLSchema     string
 	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "skipGenerate", "generateMutations", "relation"}
 	defaultAugmenters = []Augmenter{
+		MutationsAugmenter,
 		PaginationAugmenter,
 		OrderByAugmenter,
-		MutationsAugmenter,
 		AggregationAugmenter,
 		FilterInputAugmenter,
 		FilterArgAugmenter,

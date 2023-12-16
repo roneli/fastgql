@@ -17,14 +17,7 @@ type createdInputDef struct {
 }
 
 func FilterArgAugmenter(s *ast.Schema) error {
-	var fields []*ast.FieldDefinition
-	if s.Query != nil {
-		fields = append(fields, s.Query.Fields...)
-	}
-	if s.Mutation != nil {
-		fields = append(fields, s.Mutation.Fields...)
-	}
-	for _, v := range fields {
+	for _, v := range s.Query.Fields {
 		d := v.Directives.ForName("generate")
 		if d == nil {
 			continue
@@ -35,16 +28,34 @@ func FilterArgAugmenter(s *ast.Schema) error {
 		log.Printf("adding filter to field %s@%s\n", v.Name, s.Query.Name)
 		args := d.ArgumentMap(nil)
 		if p, ok := args["filter"]; ok && cast.ToBool(p) {
-			if err := addFilterToFieldArgs(s, s.Query, v); err != nil {
+			if err := addFilterToQueryFieldArgs(s, s.Query, v); err != nil {
 				return err
 			}
 		}
 		if recursive := cast.ToBool(args["recursive"]); recursive {
-			if err := addRecursive(s, s.Types[GetType(v.Type).Name()], "filter", addFilterToFieldArgs); err != nil {
+			if err := addRecursive(s, s.Types[GetType(v.Type).Name()], "filter", addFilterToQueryFieldArgs); err != nil {
 				return err
 			}
 		}
 	}
+	if s.Mutation == nil {
+		return nil
+	}
+	// add filter to mutation fields
+	for _, v := range s.Mutation.Fields {
+		d := v.Directives.ForName("generate")
+		if d == nil {
+			continue
+		}
+		log.Printf("adding filter to mutation field %s@%s\n", v.Name, s.Mutation.Name)
+		args := d.ArgumentMap(nil)
+		if p, ok := args["filter"]; ok && cast.ToBool(p) {
+			if err := addFilterToMutationField(s, v, cast.ToString(args["filterTypeName"])); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -56,7 +67,25 @@ func FilterInputAugmenter(s *ast.Schema) error {
 	return nil
 }
 
-func addFilterToFieldArgs(s *ast.Schema, obj *ast.Definition, field *ast.FieldDefinition) error {
+func addFilterToMutationField(s *ast.Schema, field *ast.FieldDefinition, filterTypeName string) error {
+	if skipAugment(field, "filter") {
+		return nil
+	}
+	input, ok := s.Types[filterTypeName]
+	if !ok {
+		return nil
+	}
+	log.Printf("adding filter argument for field %s\n", field.Name)
+	field.Arguments = append(field.Arguments,
+		&ast.ArgumentDefinition{Description: fmt.Sprintf("Filter %s", field.Name),
+			Name: "filter",
+			Type: &ast.Type{NamedType: input.Name},
+		},
+	)
+	return nil
+}
+
+func addFilterToQueryFieldArgs(s *ast.Schema, obj *ast.Definition, field *ast.FieldDefinition) error {
 	if skipAugment(field, "filter") {
 		return nil
 	}

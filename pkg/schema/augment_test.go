@@ -21,6 +21,7 @@ type generateTestCase struct {
 	baseSchemaFile            string
 	expectedSchemaFile        string
 	expectedFastgqlSchemaFile string
+	Augmenter                 []Augmenter
 }
 
 func generateTestRunner(t *testing.T, tc *generateTestCase, augmenters ...Augmenter) {
@@ -46,7 +47,7 @@ func generateTestRunner(t *testing.T, tc *generateTestCase, augmenters ...Augmen
 		BuiltIn: false,
 	})
 	assert.Nil(t, cfg.LoadSchema())
-	sources, err := NewFastGQLPlugin("").CreateAugmented(cfg.Schema, augmenters...)
+	sources, err := NewFastGQLPlugin("").CreateAugmented(cfg.Schema, append(augmenters, tc.Augmenter...)...)
 	assert.Nil(t, err)
 	for _, s := range sources {
 		switch s.Name {
