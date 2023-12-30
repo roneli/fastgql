@@ -1,6 +1,6 @@
 root: ./docs/
 
 structure:
-    readme: ./README.md
+    readme: ./base.md
     summary: ./SUMMARY.md
 

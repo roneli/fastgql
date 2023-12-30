@@ -8,7 +8,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/roneli/fastgql/pkg/execution"
 	"github.com/roneli/fastgql/pkg/execution/builders"
 	"github.com/roneli/fastgql/pkg/execution/builders/sql"
@@ -31,7 +31,7 @@ func main() {
 		pgConnectionString = defaultPGConnection
 	}
 
-	pool, err := pgxpool.Connect(context.Background(), pgConnectionString)
+	pool, err := pgxpool.New(context.Background(), pgConnectionString)
 	if err != nil {
 		panic(err)
 	}

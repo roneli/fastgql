@@ -3,24 +3,28 @@ package schema
 import (
 	"bytes"
 	"fmt"
+	"path"
 	"sort"
 	"strings"
 
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// Save all fastgql augmented schema into fastgql_schema.graphql file.
+const defaultFastGqlSchema = "fastgql_schema.graphql"
+
 // FormatSchema into multiple sources, the original format schema from gqlparser lib saves all in one file,
 // in this case after augmentation we want to keep all original files and structure and all added definitions to put in
-// fastgql.graphql file.
-func FormatSchema(schema *ast.Schema) []*ast.Source {
+// fastgql_schema.graphql file.
+func FormatSchema(resolverPackageDir string, schema *ast.Schema) []*ast.Source {
 	if schema == nil {
 		return nil
 	}
 	defaultFormatter := newFormatter(&bytes.Buffer{})
+	defaultSource := path.Join(resolverPackageDir, defaultFastGqlSchema)
 	formatters := map[string]*formatter{
-		"fastgql.graphql": defaultFormatter,
+		defaultSource: defaultFormatter,
 	}
-
 	var inSchema bool
 	startSchema := func() {
 		if !inSchema {
@@ -57,7 +61,7 @@ func FormatSchema(schema *ast.Schema) []*ast.Source {
 	sort.Strings(directiveNames)
 	for _, name := range directiveNames {
 		d := schema.Directives[name]
-		f := getOrCreateFormatter(getSourceName(d.Position), formatters)
+		f := getOrCreateFormatter(getSourceName(d.Position, defaultSource), formatters)
 		f.FormatDirectiveDefinition(d)
 	}
 
@@ -68,7 +72,7 @@ func FormatSchema(schema *ast.Schema) []*ast.Source {
 	sort.Strings(typeNames)
 	for _, name := range typeNames {
 		t := schema.Types[name]
-		f := getOrCreateFormatter(getSourceName(t.Position), formatters)
+		f := getOrCreateFormatter(getSourceName(t.Position, defaultSource), formatters)
 		f.FormatDefinition(t, false)
 	}
 
@@ -235,7 +239,6 @@ func (f *formatter) FormatArgumentDefinitionList(lists ast.ArgumentDefinitionLis
 	f.WriteString("(")
 	for idx, arg := range lists {
 		f.FormatArgumentDefinition(arg)
-
 		if idx != len(lists)-1 {
 			f.NoPadding().WriteWord(",")
 		}
@@ -259,7 +262,6 @@ func (f *formatter) FormatArgumentDefinition(def *ast.ArgumentDefinition) {
 
 	if def.Description != "" {
 		f.DecrementIndent()
-		f.WriteNewline()
 	}
 }
 
@@ -568,9 +570,9 @@ func (f *formatter) FormatValue(value *ast.Value) {
 	f.WriteString(value.String())
 }
 
-func getSourceName(pos *ast.Position) string {
+func getSourceName(pos *ast.Position, defaultSource string) string {
 	if pos == nil || pos.Src == nil {
-		return "fastgql.graphql"
+		return defaultSource
 	}
 	return pos.Src.Name
 }

@@ -11,7 +11,6 @@ import (
 	"text/template"
 
 	"github.com/roneli/fastgql/pkg/schema"
-	"github.com/roneli/fastgql/pkg/schema/codegen/code"
 
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/spf13/cobra"
@@ -54,9 +53,9 @@ autobind:
 # modelgen, the others will be allowed when binding to fields. Configure them to
 # your liking
 models:
-  ID:
+  Id:
     model:
-      - github.com/99designs/gqlgen/graphql.ID
+      - github.com/99designs/gqlgen/graphql.Id
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
@@ -98,9 +97,10 @@ type Query @generate {
 var initCmd = &cobra.Command{
 	Use:   "init ",
 	Short: "create a new fastgql project in current directory",
-	Long:  `Generates a base fastgql project with servergen, resolvers and schema ready`,
+	Long:  `Generates a start fastgql project with servergen, resolvers and schema ready`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		pkgName := code.ImportPathForDir(".")
+		// pkgName := code.ImportPathForDir(".")
+		pkgName := ""
 		if pkgName == "" {
 			return errors.New("unable to determine import path for current directory, you probably need to run go mod init first")
 		}
@@ -116,7 +116,7 @@ var initCmd = &cobra.Command{
 				return err
 			}
 		}
-		if err := schema.Generate(configFilename, true); err != nil {
+		if err := schema.Generate(configFilename, true, false); err != nil {
 			fmt.Fprintln(os.Stderr, "failed to load config", err.Error())
 			os.Exit(2)
 		}

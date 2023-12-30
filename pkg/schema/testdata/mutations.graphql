@@ -1,0 +1,15 @@
+type Object @generateFilterInput @generateMutations {
+    id: ID!
+    name: String!
+}
+type ObjectWithRecursive {
+    id: ID!
+    name: String!
+    children: [ObjectWithRecursive]
+}
+type Query {
+    scalar: String
+    generateField: [ObjectWithRecursive] @generate(ordering: true)
+    dontGenerate: [Object] @generate(ordering: False, aggregate: false, pagination: false)
+    listNoDirective: [Object]
+}

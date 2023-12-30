@@ -1,40 +1,54 @@
-![](logo\_dark.svg)
+# Starlight Starter Kit: Basics
 
-<div style="align-content: center ">
-  <a aria-label="License" href="https://github.com/roneli/fastgql/license.md">
-    <img alt="" src="https://img.shields.io/npm/l/next.svg?style=for-the-badge&labelColor=000000">
-   <a aria-label="read the docs" href="https://www.fastgql.io">
-        <img alt="" src="https://img.shields.io/website?down_color=red&down_message=down&label=docs&style=for-the-badge&up_color=green&up_message=available&url=https%3A%2F%2Fwww.fastgql.io&labelColor=000000">
-   </a>
-</div>
+[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
 
-### What is fastGQL?
+```
+npm create astro@latest -- --template starlight
+```
 
-[_fastGQL_](https://github.com/roneli/fastgql) is a Go library that extends [gqlgen](https://github.com/99designs/gqlgen) to create a blazing-fast GraphQL server that gives you instant, realtime GraphQL APIs over Postgres.
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/starlight/tree/main/examples/basics)
+[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/starlight/tree/main/examples/basics)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fwithastro%2Fstarlight%2Ftree%2Fmain%2Fexamples%2Fbasics&project-name=my-starlight-docs&repository-name=my-starlight-docs)
 
-* **fastgql is based on a Schema first approach** — You get to Define your API using the GraphQL [Schema Definition Language](http://graphql.org/learn/schema/).
-* **fastgql prioritizes extendability** — You can modify resolvers, add your own custom operators and even create your own database query builder.
-* **fastgql enables codegen** — We generate even more of the boring CRUD bits, so you can focus on building your app even faster!
+> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
 
-### Getting Started
+## 🚀 Project Structure
 
-* To install fastgql run the command `go get github.com/roneli/fastgql` in your project directory.\
+Inside of your Astro + Starlight project, you'll see the following folders and files:
 
-* You could initialize a new project using the recommended folder structure by running this command `go run github.com/roneli/fastgql init`.
+```
+.
+├── public/
+├── src/
+│   ├── assets/
+│   ├── content/
+│   │   ├── docs/
+│   │   └── config.ts
+│   └── env.d.ts
+├── astro.config.mjs
+├── package.json
+└── tsconfig.json
+```
 
-You could find a more comprehensive guide on [gqlgen](https://github.com/99designs/gqlgen) to help you get started [here](https://gqlgen.com/getting-started/). We also have a couple of [examples](https://github.com/roneli/fastgql/tree/master/example) that show how fastgql generates the full API seamlessly.
+Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
 
-### Reporting Issues
+Images can be added to `src/assets/` and embedded in Markdown with a relative link.
 
-If you think you've found a bug, or something isn't behaving the way you think it should, please raise an [issue](https://github.com/roneli/fastgql/issues) on GitHub.
+Static assets, like favicons, can be placed in the `public/` directory.
 
-### Contributing
+## 🧞 Commands
 
-Feel free to open Pull-Request for small fixes and changes. For bigger changes and new builders please open an [issue](https://github.com/roneli/fastgql/issues) first to prevent double work and discuss relevant stuff.
+All commands are run from the root of the project, from a terminal:
 
-### Roadmap 🚧
+| Command                   | Action                                           |
+| :------------------------ | :----------------------------------------------- |
+| `npm install`             | Installs dependencies                            |
+| `npm run dev`             | Starts local dev server at `localhost:4321`      |
+| `npm run build`           | Build your production site to `./dist/`          |
+| `npm run preview`         | Preview your build locally, before deploying     |
+| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `npm run astro -- --help` | Get help using the Astro CLI                     |
 
-* More tests
-* configurable database connections
-* Support multiple database (mongodb, cockroachDB, neo4j)
-* full CRUD creation
+## 👀 Want to learn more?
+
+Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).

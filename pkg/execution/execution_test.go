@@ -26,9 +26,10 @@ import (
 
 const defaultPGConnection = "postgresql://localhost/postgres?user=postgres&password=password"
 
-// Test Postgres Graph Sanity checks, this assumes that the posgresql exists
+// Test Postgres Graph Sanity checks, this assumes that the postgresql exists
 // NOTE: run init.sql on the postgres so data will be seeded
 func TestPostgresGraph(t *testing.T) {
+	// TODO: use testcontainers
 	tt := []struct {
 		name       string
 		query      *graphql.RawParams

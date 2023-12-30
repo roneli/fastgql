@@ -1,0 +1,13 @@
+"""
+Ordering for ObjectWithRecursive
+"""
+input ObjectWithRecursiveOrdering {
+    """
+    Order ObjectWithRecursive by id
+    """
+    id: _OrderingTypes
+    """
+    Order ObjectWithRecursive by name
+    """
+    name: _OrderingTypes
+}

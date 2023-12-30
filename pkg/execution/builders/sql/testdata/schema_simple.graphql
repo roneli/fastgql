@@ -1,11 +1,11 @@
-type User @generateFilterInput(name: "UserFilterInput") @table(name: "users", schema: "app"){
+type User @generateFilterInput @table(name: "users", schema: "app"){
     id: Int!
     name: String!
     posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
     someOtherName: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 }
 
-type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @generateMutations(create: true, delete: true, update: true) {
+type Post @generateFilterInput @table(name: "posts") @generateMutations(create: true, delete: true, update: true) {
     id: Int!
     name: String
     categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"]
@@ -14,24 +14,34 @@ type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @g
 }
 
 
-type Category @table(name:"categories", schema:"") @generateFilterInput(name: "CategoryFilterInput") {
+type Category @table(name:"categories", schema:"") @generateFilterInput {
     id: Int!
     name: String
 }
 
-type Query @generate {
-    posts: [Post]
-    users: [User]
-    categories: [Category] @skipGenerate
+type Query  {
+    posts: [Post] @generate
+    users: [User] @generate
+    categories: [Category] @generate
 }
 
+# ================== schema generation fastgql directives  ==================
 
-enum _relationType {
-    ONE_TO_ONE
-    ONE_TO_MANY
-    MANY_TO_MANY
-}
+# Generate Resolver directive tells fastgql to generate an automatic resolver for a given field
+# @generateResolver can only be defined on Query and Mutation fields.
+# adding pagination, ordering, aggregate, filter to false will disable the generation of the corresponding arguments
+# for filter to work @generateFilterInput must be defined on the object, if its missing you will get an error
+# recursive will generate pagination, filtering, ordering and aggregate for all the relations of the object,
+# this will modify the object itself and add arguments to the object fields.
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
 
+# Generate mutations for an object
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+
+# Generate filter input on an object
+directive @generateFilterInput(description: String) repeatable on OBJECT
+
+# ================== Directives supported by fastgql for Querying ==================
 
 # Table directive is defined on OBJECTS, if no table directive is defined defaults are assumed
 # i.e <type_name>, "postgres", ""
@@ -40,23 +50,24 @@ directive @table(name: String!, dialect: String! = "postgres", schema: String = 
 # Relation directive defines relations cross tables and dialects
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 
-# used to skip generate on a certain field, this should be used if we use recursive = True in @generate
-directive @skipGenerate(resolver: Boolean = True) on FIELD_DEFINITION
+# This will make the field skipped in select, this is useful for fields that are not columns in the database, and you want to resolve it manually
+directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 
-# Generate filter input on an object
-directive @generateFilterInput(name: String!, description: String) repeatable on OBJECT | INTERFACE
+# ================== Default Filter input types supported by fastgql ==================
 
-# Generate arguments for a given field or all object fields
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True,
-    recursive: Boolean = True, wrapper:Boolean = False) repeatable  on OBJECT
-
-directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+enum _relationType {
+    ONE_TO_ONE
+    ONE_TO_MANY
+    MANY_TO_MANY
+}
 
 enum _OrderingTypes {
     ASC
     DESC
     ASC_NULL_FIRST
     DESC_NULL_FIRST
+    ASC_NULL_LAST
+    DESC_NULL_LAST
 }
 
 type _AggregateResult {
@@ -67,11 +78,12 @@ input StringComparator {
     eq: String
     neq: String
     contains: [String]
-    not_contains: [String]
+    notContains: [String]
     like: String
     ilike: String
     suffix: String
     prefix: String
+    isNull: Boolean
 }
 
 input StringListComparator {
@@ -80,6 +92,7 @@ input StringListComparator {
     contains: [String]
     containedBy: [String]
     overlap: [String]
+    isNull: Boolean
 }
 
 input IntComparator {
@@ -89,6 +102,7 @@ input IntComparator {
     gte: Int
     lt: Int
     lte: Int
+    isNull: Boolean
 }
 
 input IntListComparator {
@@ -97,11 +111,33 @@ input IntListComparator {
     contains: [Int]
     contained: [Int]
     overlap: [Int]
+    isNull: Boolean
 }
+
+input FloatComparator {
+    eq: Float
+    neq: Float
+    gt: Float
+    gte: Float
+    lt: Float
+    lte: Float
+    isNull: Boolean
+}
+
+input FloatListComparator {
+    eq: [Float]
+    neq: [Float]
+    contains: [Float]
+    contained: [Float]
+    overlap: [Float]
+    isNull: Boolean
+}
+
 
 input BooleanComparator {
     eq: Boolean
     neq: Boolean
+    isNull: Boolean
 }
 
 input BooleanListComparator {
@@ -110,4 +146,5 @@ input BooleanListComparator {
     contains: [Boolean]
     contained: [Boolean]
     overlap: [Boolean]
+    isNull: Boolean
 }

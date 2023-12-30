@@ -1,10 +1,10 @@
-type User @generateFilterInput(name: "UserFilterInput") @table(name: "users"){
+type User @generateFilterInput @table(name: "users"){
     id: Int!
     name: String!
     posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 }
 
-type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @generateMutations(create: true, delete: true, update: true) {
+type Post @generateFilterInput @table(name: "posts") @generateMutations(create: true, delete: true, update: true) {
     id: Int!
     name: String
     categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"]
@@ -13,13 +13,13 @@ type Post @generateFilterInput(name: "PostFilterInput") @table(name: "posts") @g
 }
 
 
-type Category @table(name:"categories", schema:"") @generateFilterInput(name: "CategoryFilterInput") {
+type Category @table(name:"categories", schema:"") @generateFilterInput {
     id: Int!
     name: String
 }
 
-type Query @generate {
-    posts: [Post]
-    users: [User]
-    categories: [Category] @skipGenerate
+type Query {
+    posts: [Post] @generate
+    users: [User] @generate
+    categories: [Category]
 }

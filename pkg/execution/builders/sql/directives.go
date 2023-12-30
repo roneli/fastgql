@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/roneli/fastgql/pkg/schema/gql"
+	"github.com/roneli/fastgql/pkg/schema"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -57,11 +57,11 @@ func parseRelationDirective(d *ast.Directive) relation {
 	relType := d.Arguments.ForName("type").Value.Raw
 	return relation{
 		relType:              RelationType(relType),
-		fields:               cast.ToStringSlice(gql.GetDirectiveValue(d, "fields")),
-		references:           cast.ToStringSlice(gql.GetDirectiveValue(d, "references")),
-		manyToManyTable:      cast.ToString(gql.GetDirectiveValue(d, "manyToManyTable")),
-		manyToManyFields:     cast.ToStringSlice(gql.GetDirectiveValue(d, "manyToManyFields")),
-		manyToManyReferences: cast.ToStringSlice(gql.GetDirectiveValue(d, "manyToManyReferences")),
+		fields:               cast.ToStringSlice(schema.GetDirectiveValue(d, "fields")),
+		references:           cast.ToStringSlice(schema.GetDirectiveValue(d, "references")),
+		manyToManyTable:      cast.ToString(schema.GetDirectiveValue(d, "manyToManyTable")),
+		manyToManyFields:     cast.ToStringSlice(schema.GetDirectiveValue(d, "manyToManyFields")),
+		manyToManyReferences: cast.ToStringSlice(schema.GetDirectiveValue(d, "manyToManyReferences")),
 	}
 }
 

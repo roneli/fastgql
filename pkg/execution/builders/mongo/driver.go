@@ -26,7 +26,7 @@ func NewDriver(dialect string, cfg *builders.Config, uri string) *Driver {
 	return &Driver{dialect: dialect, builder: NewBuilder(cfg), client: client}
 }
 
-func (d Driver) Scan(ctx context.Context, model interface{}) error {
+func (d Driver) Scan(ctx context.Context, out interface{}) error {
 	field := builders.CollectFields(ctx, d.builder.Schema)
 	table := field.Table()
 	db := d.client.Database(table.Schema)
@@ -42,7 +42,7 @@ func (d Driver) Scan(ctx context.Context, model interface{}) error {
 	defer func() {
 		_ = cur.Close(ctx)
 	}()
-	return cur.All(ctx, model)
+	return cur.All(ctx, out)
 }
 
 func (d Driver) Close() error {

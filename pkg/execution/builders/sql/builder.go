@@ -57,7 +57,8 @@ func NewBuilder(config *builders.Config) Builder {
 	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: operators, AggregatorOperators: defaultAggregatorOperators, CaseConverter: caseConverter}
 }
 
-func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
+// Create generates an SQL create query based on graphql ast.
+func (b Builder) Create(field builders.Field) (string, []any, error) {
 	tableDef := getTableNamePrefix(b.Schema, "create", field.Field)
 	input, ok := field.Arguments[builders.InputFieldName]
 	if !ok {
@@ -82,7 +83,8 @@ func (b Builder) Create(field builders.Field) (string, []interface{}, error) {
 	return sql, args, err
 }
 
-func (b Builder) Delete(field builders.Field) (string, []interface{}, error) {
+// Delete generates an SQL delete query based on graphql ast.
+func (b Builder) Delete(field builders.Field) (string, []any, error) {
 	tableDef := getTableNamePrefix(b.Schema, "delete", field.Field)
 	deleteQuery, err := b.buildDelete(tableDef, field)
 	if err != nil {
@@ -99,7 +101,8 @@ func (b Builder) Delete(field builders.Field) (string, []interface{}, error) {
 	return sql, args, err
 }
 
-func (b Builder) Update(field builders.Field) (string, []interface{}, error) {
+// Update generates an SQL update query based on graphql ast.
+func (b Builder) Update(field builders.Field) (string, []any, error) {
 	tableDef := getTableNamePrefix(b.Schema, "update", field.Field)
 	updateQuery, err := b.buildUpdate(tableDef, field)
 	if err != nil {
@@ -116,7 +119,8 @@ func (b Builder) Update(field builders.Field) (string, []interface{}, error) {
 	return sql, args, err
 }
 
-func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
+// Query generates an SQL read query based on graphql ast.
+func (b Builder) Query(field builders.Field) (string, []any, error) {
 	var (
 		query *queryHelper
 		err   error
@@ -134,6 +138,8 @@ func (b Builder) Query(field builders.Field) (string, []interface{}, error) {
 	return q, args, err
 }
 
+// ======================================= Helper Methods ================================================== //
+
 func (b Builder) buildUpdate(tableDef tableDefinition, field builders.Field) (*goqu.UpdateDataset, error) {
 	b.Logger.Debug("building update", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
@@ -146,7 +152,7 @@ func (b Builder) buildUpdate(tableDef tableDefinition, field builders.Field) (*g
 		return nil, fmt.Errorf("failed to get input values: %w", err)
 	}
 	// Substitute KV from GraphQL input into case conversion expected in database
-	newRecord := make(map[string]interface{})
+	newRecord := make(map[string]any)
 	for k, v := range kv[0] {
 		newRecord[b.CaseConverter(k)] = v
 	}
@@ -157,7 +163,7 @@ func (b Builder) buildUpdate(tableDef tableDefinition, field builders.Field) (*g
 	if !ok {
 		return q, nil
 	}
-	filters, ok := filterArg.(map[string]interface{})
+	filters, ok := filterArg.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("expected filters map got %T", filterArg)
 	}
@@ -167,13 +173,13 @@ func (b Builder) buildUpdate(tableDef tableDefinition, field builders.Field) (*g
 	return q.Where(filterExp), nil
 }
 
-func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]interface{}) (*goqu.InsertDataset, error) {
+func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]any) (*goqu.InsertDataset, error) {
 	b.Logger.Debug("building insert", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
 	// Substitute KV from GraphQL input into case conversion expected in database
 	for i, record := range kv {
-		newRecord := make(map[string]interface{})
+		newRecord := make(map[string]any)
 		for k, v := range record {
 			newRecord[b.CaseConverter(k)] = v
 		}
@@ -190,7 +196,7 @@ func (b Builder) buildDelete(tableDef tableDefinition, field builders.Field) (*g
 	if !ok {
 		return q, nil
 	}
-	filters, ok := filterArg.(map[string]interface{})
+	filters, ok := filterArg.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("expected filters map got %T", filterArg)
 	}
@@ -200,7 +206,7 @@ func (b Builder) buildDelete(tableDef tableDefinition, field builders.Field) (*g
 }
 
 func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {
-	b.Logger.Debug("building query", map[string]interface{}{"tableDefinition": tableDef.name})
+	b.Logger.Debug("building query", map[string]any{"tableDefinition": tableDef.name})
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
 	query := queryHelper{goqu.From(table), table, tableAlias, nil}
@@ -242,7 +248,7 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 
 func (b Builder) buildPayloadQuery(withTable exp.IdentifierExpression, baseQuery exp.Expression, field builders.Field) (*goqu.SelectDataset, error) {
 	// Generate payload response
-	cols := make([]interface{}, 0, len(field.Selections))
+	cols := make([]any, 0, len(field.Selections))
 	hasRowsAffected := false
 	for _, f := range field.Selections {
 		if f.Name == "rows_affected" {
@@ -267,7 +273,7 @@ func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) 
 	table := tableDef.TableExpression().As(tableAlias)
 	query := &queryHelper{goqu.From(table), table, tableAlias, nil}
 
-	var aggColumns []interface{}
+	var aggColumns []any
 	for _, f := range field.Selections {
 		switch f.Name {
 		case "count":
@@ -331,7 +337,7 @@ func (b Builder) buildFiltering(query *queryHelper, field builders.Field) error 
 	if !ok {
 		return nil
 	}
-	filters, ok := filterArg.(map[string]interface{})
+	filters, ok := filterArg.(map[string]any)
 	if !ok {
 		return fmt.Errorf("unexpected filter arg type")
 	}
@@ -340,10 +346,10 @@ func (b Builder) buildFiltering(query *queryHelper, field builders.Field) error 
 	return nil
 }
 
-func (b Builder) buildFilterLogicalExp(table tableHelper, astDefinition *ast.Definition, filtersList []interface{}, logicalType exp.ExpressionListType) (goqu.Expression, error) {
+func (b Builder) buildFilterLogicalExp(table tableHelper, astDefinition *ast.Definition, filtersList []any, logicalType exp.ExpressionListType) (goqu.Expression, error) {
 	expBuilder := exp.NewExpressionList(logicalType)
 	for _, filterValue := range filtersList {
-		kv, ok := filterValue.(map[string]interface{})
+		kv, ok := filterValue.(map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("fatal value of bool exp not map")
 		}
@@ -356,14 +362,14 @@ func (b Builder) buildFilterLogicalExp(table tableHelper, astDefinition *ast.Def
 	return expBuilder, nil
 }
 
-func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition, filters map[string]interface{}) (goqu.Expression, error) {
+func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition, filters map[string]any) (goqu.Expression, error) {
 	filterInputDef := builders.GetFilterInput(b.Schema, astDefinition)
 	expBuilder := exp.NewExpressionList(exp.AndType)
 	for k, v := range filters {
 		keyType := filterInputDef.Fields.ForName(k).Type
 		switch {
 		case k == string(builders.LogicalOperatorAND) || k == string(builders.LogicalOperatorOR):
-			vv, ok := v.([]interface{})
+			vv, ok := v.([]any)
 			if !ok {
 				return nil, fmt.Errorf("fatal value of logical list exp not list")
 			}
@@ -383,7 +389,7 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			}
 			expBuilder = expBuilder.Append(goqu.Func("NOT", filterExp))
 		case strings.HasSuffix(keyType.Name(), "FilterInput"):
-			kv, ok := v.(map[string]interface{})
+			kv, ok := v.(map[string]any)
 			if !ok {
 				return nil, fmt.Errorf("fatal value of bool exp not map")
 			}
@@ -399,7 +405,7 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			}
 			expBuilder = expBuilder.Append(goqu.Func("exists", fq.SelectOne()))
 		default:
-			opMap, ok := v.(map[string]interface{})
+			opMap, ok := v.(map[string]any)
 			if !ok {
 				return nil, fmt.Errorf("fatal value of key not map")
 			}
@@ -491,7 +497,7 @@ func (b Builder) buildRelationAggregate(parentQuery *queryHelper, rf builders.Fi
 	return nil
 }
 
-func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, rel relation, filters map[string]interface{}) (*queryHelper, error) {
+func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, rel relation, filters map[string]any) (*queryHelper, error) {
 	tableAlias := b.TableNameGenerator.Generate(6)
 	td, err := builders.GetTableDirective(rf)
 	if err != nil {
@@ -509,7 +515,7 @@ func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, r
 	case OneToOne:
 		relationTableName := b.TableNameGenerator.Generate(6)
 		jExps := buildJoinCondition(parentTable.alias, rel.fields, fq.alias, rel.references)
-		jExps = append(jExps, buildJoinCondition(parentTable.alias, rel.fields, relationTableName, rel.fields)...)
+		jExps = append(jExps, buildJoinCondition(parentTable.alias, rel.fields, relationTableName, rel.references)...)
 		fq.SelectDataset = fq.InnerJoin(goqu.T(td.Name).Schema(td.Schema).As(relationTableName), goqu.On(jExps...))
 	case OneToMany:
 		fq.SelectDataset = fq.InnerJoin(parentTable.table.Aliased().(exp.Aliaseable).As(b.TableNameGenerator.Generate(6)),
@@ -517,7 +523,6 @@ func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, r
 	default:
 		panic("unknown relation type")
 	}
-
 	expBuilder, err := b.buildFilterExp(fq.Table(), rf, filters)
 	if err != nil {
 		return nil, err
@@ -526,7 +531,8 @@ func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, r
 	return fq, nil
 }
 
-func (b Builder) buildOperation(table exp.AliasedExpression, fieldName, operatorName string, value interface{}) (goqu.Expression, error) {
+// buildOperation creates a goqu.Expression SQL operator
+func (b Builder) buildOperation(table exp.AliasedExpression, fieldName, operatorName string, value any) (goqu.Expression, error) {
 	opFunc, ok := b.Operators[operatorName]
 	if !ok {
 		return nil, fmt.Errorf("key operator %s not supported", operatorName)

@@ -2,10 +2,13 @@ package sql
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/roneli/fastgql/pkg/execution/builders"
 )
 
@@ -14,6 +17,30 @@ type Driver struct {
 	builder Builder
 	pool    *pgxpool.Pool
 	dialect string
+}
+
+func BuildQuery(ctx context.Context, builder Builder) (string, []any, error) {
+	field := builders.CollectFields(ctx, builder.Schema)
+	switch builders.GetOperationType(ctx) {
+	case builders.QueryOperation:
+		return builder.Query(field)
+	case builders.InsertOperation:
+		return builder.Create(field)
+	case builders.DeleteOperation:
+		return builder.Delete(field)
+	case builders.UpdateOperation:
+		return builder.Update(field)
+	}
+	return "", nil, fmt.Errorf("invalid operation type %s", builders.GetOperationType(ctx))
+}
+
+func ExecuteQuery(ctx context.Context, querier pgxscan.Querier, scanner func(rows pgx.Rows) error, q string, args ...any) error {
+	rows, err := querier.Query(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return scanner(rows)
 }
 
 // NewDriver creates a new Driver with the given Conn and dialect.

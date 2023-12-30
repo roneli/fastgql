@@ -1,0 +1,137 @@
+---
+title: Filtering
+description: Filter queries with FastGQL
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+# Filtering
+
+FastGQL extends the GraphQL schema adding `filter` input for objects and adding `filter` arguments to the queries and mutations. We can use the `filter` argument in our queries to filter results based on the field's values. FastGQL allows to add multiple filters with `AND`, `OR`, `NOT` and even nested object filters.
+
+## Simple Operators
+
+fetch posts with where `id == 3`
+
+```graphql
+query {
+  posts(limit: 3, filter: { id: { eq: 3 } }) {
+    id
+  }
+}
+```
+
+## Logical filters
+
+#### AND filter
+
+By default, a logical `AND` operation is preformed on all the conditions mentioned in the filter clause. If we want to use the same field key, than we need to use the `AND` operator in the GraphQL query.
+
+<Tabs>
+    <TabItem label="Single">
+        ```graphql
+        query {
+        # expected filter: name = "article 1" AND id = 1
+        posts(filter: {name: {eq: "article 1"}, id: {eq: 1}}) {
+        id
+        name
+    }
+    }
+        ```
+    </TabItem>
+</Tabs>
+
+<Tabs>
+    <TabItem label="Multiple">
+        ```graphql
+        query {
+        posts(
+        # expected filter: name = "article 1" AND name like "%article%" AND id = 1
+        filter: {
+        AND: [
+    {name: {eq: "article 1"}}
+    {name: {like: "%article%"}}
+    {id: {eq: 1}}
+        ]
+    }
+        ) {
+        id
+        name
+    }
+    }
+        ```
+    </TabItem>
+</Tabs>
+
+#### OR filter
+
+To perform a logical `OR` operation, we have to use the `OR` operator in the GraphQL query.&#x20;
+
+If we would like to fetch information of all post's name that start with the prefix `a` or `b` the following query will return the desired result:
+
+```graphql
+query {
+    posts(
+        filter: { OR: [{ name: { prefix: "a" } }, { name: { suffix: "b" } }] }
+    ) {
+        id
+        name
+    }
+}
+```
+
+#### NOT filter
+
+To perform a logical `NOT`operation, we have to use the `NOT`operator in the GraphQL query.&#x20;
+
+if we would like  to fetch information of all post's name that **don't** start with "a" or ends with "b". the following query will return the desired result:
+
+```graphql
+query {
+    posts(
+        filter: {
+            NOT: { OR: [{ name: { prefix: "a" } }, { name: { suffix: "b" } }] }
+        }
+    ) {
+        id
+        name
+    }
+}
+```
+
+#### Nested filters
+
+We can also perform complex nested logical operation, such as `OR` inside an `AND` operator. The following query will result the following filter:
+
+```sql
+(name like 'b%' OR name like 'a%') AND name like '%c%'
+```
+
+```graphql
+query {
+    posts(
+        filter: {
+            AND: [
+                { OR: [{ name: { prefix: "a" } }, { name: { suffix: "b" } }] }
+                { name: { like: "%c%" } }
+            ]
+        }
+    ) {
+        id
+        name
+    }
+}
+```
+
+## Object Filters
+
+Most objects in our schema usually have fields that aren't `scalars`, and we would like to filter by thier fields. In our example each post has one or more categories we would want to filter posts by some category name. The following GraphQL query will filter for us those posts that have a category name called "Security"
+
+```graphql
+query ObjectFilterExample {
+    posts(filter: {categories: {name: {eq: "Security"}}}) {
+        id
+        name
+    }
+}
+```

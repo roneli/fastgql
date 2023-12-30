@@ -1,0 +1,30 @@
+"""
+max aggregator for ObjectWithRecursive
+"""
+type ObjectWithRecursiveMin {
+    """
+    Compute the maxiumum for id
+    """
+    id: ID!
+    """
+    Compute the maxiumum for name
+    """
+    name: String!
+}
+"""
+Aggregate ObjectWithRecursive
+"""
+type ObjectWithRecursivesAggregate {
+    """
+    Count results
+    """
+    count: Int!
+    """
+    Computes the maximum of the non-null input values.
+    """
+    max: ObjectWithRecursiveMin
+    """
+    Computes the minimum of the non-null input values.
+    """
+    min: ObjectWithRecursiveMin
+}

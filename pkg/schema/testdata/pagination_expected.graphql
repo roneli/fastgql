@@ -1,0 +1,31 @@
+type Object @generateFilterInput {
+    id: ID!
+    name: String!
+}
+type ObjectWithRecursive {
+    id: ID!
+    name: String!
+    children(
+        """
+        Limit
+        """
+        limit: Int = 100,
+        """
+        Offset
+        """
+        offset: Int = 0): [ObjectWithRecursive]
+}
+type Query {
+    scalar: String
+    generateField(
+        """
+        Limit
+        """
+        limit: Int = 100,
+        """
+        Offset
+        """
+        offset: Int = 0): [ObjectWithRecursive] @generate(ordering: true)
+    dontGenerate: [Object] @generate(ordering: False, aggregate: false, pagination: false)
+    listNoDirective: [Object]
+}
