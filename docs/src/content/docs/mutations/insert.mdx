@@ -1,6 +1,9 @@
-# Insert
+---
+title: Insert
+description: Insert mutations
+---
 
-## Auto-generated insert mutation
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 FastGQL auto generates `create<OBJECT_NAME>` insert mutations if the [#generatemutations](../schema/directives.md#generatemutations "mention")is set. The following code will be added to the GraphQL schema.
 
@@ -42,21 +45,22 @@ The [#generatemutations](../schema/directives.md#generatemutations "mention") di
 
 **Example:** Insert a new `post object` and return the inserted post object in the response:
 
-{% tabs %}
-{% tab title="Single Insert" %}
-<pre class="language-graphql"><code class="lang-graphql">mutation { 
+<Tabs>
+<TabItem label="Single Insert">
+
+```graphql
+mutation {
     createPosts(inputs: {name: "fastGQL", id: 111}) { 
         rows_affected 
         posts { 
             name 
             id 
         } 
-    } 
-<strong>}
-</strong></code></pre>
-{% endtab %}
+    }
+```
+</TabItem>
 
-{% tab title="Multiple Insert" %}
+<TabItem label="Multiple Insert" >
 ```graphql
 mutation { 
     createPosts(inputs: [{name: "fastGQL", id: 1}, {name: "fastGQL2", id: 2}]) { 
@@ -68,9 +72,9 @@ mutation {
     } 
 }
 ```
-{% endtab %}
+</TabItem>
 
-{% tab title="Insert Returning Relation" %}
+<TabItem label="Insert returning relation">
 ```graphql
 mutation { 
     createPosts(inputs: [{name: "fastGQL", id: 1}, {name: "fastGQL2", id: 2}]) { 
@@ -86,6 +90,6 @@ mutation {
     } 
 }
 ```
-{% endtab %}
-{% endtabs %}
+</TabItem>
+</Tabs>
 

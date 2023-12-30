@@ -1,8 +1,7 @@
 ---
+title: Ordering
 description: Sort query results
 ---
-
-# Ordering
 
 We can sort query results using the `orderBy` argument that is added when extending the schema with fastGQL. The value of the sort argument should be an array containing the name of fields to sort the result by.
 

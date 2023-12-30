@@ -1,8 +1,7 @@
 ---
+title: Setup FastGQL
 description: How to setup fastGQL
 ---
-
-# Getting Started
 
 This tutorial will take you through the process of building a GraphQL server with fastgql that can:
 

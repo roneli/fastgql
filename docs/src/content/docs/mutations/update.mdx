@@ -1,6 +1,9 @@
-# Update
+---
+title: Update
+description: Update mutations
+---
 
-## Auto-generated insert mutation
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 FastGQL auto generates `update<OBJECT_NAME>` update mutations if the [#generatemutations](../schema/directives.md#generatemutations "mention")is set. The following code will be added to the GraphQL schema.
 
@@ -63,9 +66,8 @@ The [#generatemutations](../schema/directives.md#generatemutations "mention") di
 
 **Example:** update posts and return the updated posts object in the response:
 
-{% tabs %}
-{% tab title="Update with filter" %}
-{% code overflow="wrap" %}
+<Tabs>
+<TabItem label="Update with filter">
 ```graphql
 mutation { 
     updatePosts(input: {name: "newPost"}, filter: {id: {eq: 1}}) {
@@ -77,6 +79,5 @@ mutation {
     } 
 }
 ```
-{% endcode %}
-{% endtab %}
-{% endtabs %}
+</TabItem>
+</Tabs>

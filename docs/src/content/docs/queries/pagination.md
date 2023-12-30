@@ -1,8 +1,7 @@
 ---
+title: Pagination
 description: Paginate your data with ease
 ---
-
-# Pagination
 
 The operators `limit` and `offset` are used for pagination of objects in our queries. `limit` specifies the number of rows to return from the result set, and `offset` determines the number of objects skip.&#x20;
 

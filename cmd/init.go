@@ -97,7 +97,7 @@ type Query @generate {
 var initCmd = &cobra.Command{
 	Use:   "init ",
 	Short: "create a new fastgql project in current directory",
-	Long:  `Generates a base fastgql project with servergen, resolvers and schema ready`,
+	Long:  `Generates a start fastgql project with servergen, resolvers and schema ready`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// pkgName := code.ImportPathForDir(".")
 		pkgName := ""

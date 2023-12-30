@@ -1,6 +1,9 @@
 ---
+title: Filtering
 description: Filter queries with FastGQL
 ---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 # Filtering
 
@@ -24,39 +27,41 @@ query {
 
 By default, a logical `AND` operation is preformed on all the conditions mentioned in the filter clause. If we want to use the same field key, than we need to use the `AND` operator in the GraphQL query.
 
-{% tabs %}
-{% tab title="Single" %}
-```graphql
-query {
-    # expected filter: name = "article 1" AND id = 1
-    posts(filter: { name: { eq: "article 1" }, id: { eq: 1 } }) {
+<Tabs>
+    <TabItem label="Single">
+        ```graphql
+        query {
+        # expected filter: name = "article 1" AND id = 1
+        posts(filter: {name: {eq: "article 1"}, id: {eq: 1}}) {
         id
         name
     }
-}
-```
-{% endtab %}
+    }
+        ```
+    </TabItem>
+</Tabs>
 
-{% tab title="Multiple Fields" %}
-```graphql
-query {
-    posts(
+<Tabs>
+    <TabItem label="Multiple">
+        ```graphql
+        query {
+        posts(
         # expected filter: name = "article 1" AND name like "%article%" AND id = 1
         filter: {
-            AND: [
-                { name: { eq: "article 1" } }
-                { name: { like: "%article%" } }
-                { id: { eq: 1 } }
-            ]
-        }
-    ) {
+        AND: [
+    {name: {eq: "article 1"}}
+    {name: {like: "%article%"}}
+    {id: {eq: 1}}
+        ]
+    }
+        ) {
         id
         name
     }
-}
-```
-{% endtab %}
-{% endtabs %}
+    }
+        ```
+    </TabItem>
+</Tabs>
 
 #### OR filter
 

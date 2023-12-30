@@ -1,8 +1,12 @@
-# Delete
+---
+title: Delete
+description: Delete mutations
+---
 
-## Auto-generated delete mutation
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-FastGQL auto generates `delete<OBJECT_NAME>` delete mutations if the [#generatemutations](../schema/directives.md#generatemutations "mention")is set. The following code will be added to the GraphQL schema.
+FastGQL auto generates `delete<OBJECT_NAME>` delete mutations if the [#generatemutations](../schema/directives.md#generatemutations "mention") is set.
+The following code will be added to the GraphQL schema.
 
 ```graphql
 
@@ -55,21 +59,21 @@ The [#generatemutations](../schema/directives.md#generatemutations "mention") di
 
 **Example:** Delete a post object and return the deleted posts in the response:
 
-{% tabs %}
-{% tab title="Delete Objects" %}
-<pre class="language-graphql"><code class="lang-graphql">mutation { 
-<strong>    deletePosts() { 
-</strong>        rows_affected 
+<Tabs>
+<TabItem label="Delete Objects">
+```graphql
+mutation { 
+    deletePosts { 
+        rows_affected 
         posts { 
             name 
             id 
         } 
     } 
 }
-</code></pre>
-{% endtab %}
-
-{% tab title="Delete With Filter" %}
+```
+</TabItem>
+<TabItem label="Delete Objects with filter">
 ```graphql
 mutation { 
     deletePosts(filter: {id: {eq: 1}) { 
@@ -81,5 +85,5 @@ mutation {
     } 
 }
 ```
-{% endtab %}
-{% endtabs %}
+</TabItem>
+</Tabs>

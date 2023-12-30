@@ -1,8 +1,7 @@
 ---
+title: Directives
 description: fastGQL supported directives
 ---
-
-# Directives
 
 In this section we will go over all of the custom _fastGQL_ directives, what they do and how to use them. These directives are added automatically when we augment and generate the server code. You can also use the following command `go run github.com/roneli/fastgql init` or copy the [fastgql\_schema\_fragment.md](fastgql\_schema\_fragment.md "mention").
 

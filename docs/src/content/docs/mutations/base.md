@@ -1,8 +1,7 @@
 ---
+title: Mutations
 description: GraphQL mutations
 ---
-
-# Mutations
 
 ## Introduction
 
@@ -14,9 +13,9 @@ FastGQL auto generates mutations using the [#generatemutations](../schema/direct
 
 The following types of mutations are possible:
 
-* [insert.md](insert.md "mention")
-* [update.md](update.md "mention")
-* [delete.md](delete.md "mention")
+* [insert.md](insert.mdx "mention")
+* [update.md](update.mdx "mention")
+* [delete.md](delete.mdx "mention")
 
 
 

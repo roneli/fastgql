@@ -1,3 +1,7 @@
+---
+title: FastGQL Schema Fragment
+description: fastGQL schema fragment
+---
 # FastGQL Schema Fragment
 
 While editing your schema, you might find it useful to include this GraphQL schema

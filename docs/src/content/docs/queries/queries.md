@@ -1,12 +1,11 @@
 ---
+title: Queries
 description: Executing queries on a generated FastGQL Server
 ---
 
-# Queries
-
 ## Introduction
 
-FastGQL allows to easily execute queries against a remote data source, i.e. <mark style="color:blue;">**`postgres`**</mark><mark style="color:blue;">** **</mark><mark style="color:blue;">****</mark> and convert the GraphQL AST into a valid SQL query and return queried data.
+FastGQL allows to easily execute queries against a remote data source, i.e. postgres and convert the GraphQL AST into a valid SQL query and return queried data.
 
 FastGQL auto-generates query filters, aggregation, pagination and ordering from your schema definition using the [#generate](../schema/directives.md#generate "mention") and [#generatefilterinput](../schema/directives.md#generatefilterinput "mention") directives.
 
