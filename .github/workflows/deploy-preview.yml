@@ -33,6 +33,6 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: rossjrw/pr-preview-action@v1
+        uses: actions/deploy-pages@v4
         with:
-          source-dir: ./build/
+          preview: true
