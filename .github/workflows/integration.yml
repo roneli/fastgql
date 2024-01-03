@@ -18,5 +18,5 @@ jobs:
           go-version: ${{ matrix.go }}
       - run: |
           chmod +x .github/workflows/check-init
-          .github/workflows/check-init
+            .github/workflows/check-init
       
