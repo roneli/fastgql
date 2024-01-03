@@ -2,6 +2,8 @@ package schema
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/spf13/afero"
@@ -13,7 +15,7 @@ import (
 func Generate(configPath string, generateServer, saveFiles bool, sources ...*ast.Source) error {
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load config in %s: %w", configPath, err)
 	}
 	if sources != nil {
 		cfg.Sources = append(cfg.Sources, sources...)
@@ -27,7 +29,9 @@ func Generate(configPath string, generateServer, saveFiles bool, sources ...*ast
 	if err != nil {
 		return err
 	}
+	log.Print("augmented schema generated successfully")
 	// Load config again
+	log.Printf("loading config again from %s", configPath)
 	cfg, err = config.LoadConfig(configPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config in %s: %w", configPath, err)
@@ -40,10 +44,10 @@ func Generate(configPath string, generateServer, saveFiles bool, sources ...*ast
 	}
 	// skip validation for now, as after code generation we need to mod tidy again
 	cfg.SkipValidation = true
-	// TODO: support generate server
 	if err = api.Generate(cfg, api.PrependPlugin(fgqlPlugin)); err != nil {
 		return err
 	}
+	log.Print("fastgql generated successfully")
 	return nil
 }
 
