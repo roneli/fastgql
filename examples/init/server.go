@@ -1,23 +1,22 @@
-//go:generate go run github.com/roneli/fastgql generate -c gqlgen.yml -f
 package main
 
 import (
 	"context"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/roneli/fastgql/examples/simple/graph"
-	"github.com/roneli/fastgql/examples/simple/graph/generated"
+	"github.com/roneli/fastgql/examples/init/graph"
+	"github.com/roneli/fastgql/examples/init/graph/generated"
 	"github.com/roneli/fastgql/pkg/execution/builders"
-	"github.com/roneli/fastgql/pkg/log/adapters"
-	"github.com/rs/zerolog/log"
-	"net/http"
-	"os"
 )
 
-const defaultPort = "8081"
+const defaultPort = "8080"
 
-const defaultPGConnection = "postgresql://localhost/movies?user=postgres&password=password"
+const defaultPGConnection = "postgresql://localhost/postgres?user=postgres"
 
 func main() {
 	port := os.Getenv("PORT")
@@ -33,19 +32,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	resolver := &graph.Resolver{}
+	defer pool.Close()
+	resolver := &graph.Resolver{Executor: pool}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
-	// Set configuration
-	cfg := &builders.Config{Schema: executableSchema.Schema(), Logger: adapters.NewZerologAdapter(log.Logger)}
+	// Add logger to config for building trace logging
+	cfg := &builders.Config{Schema: executableSchema.Schema(), Logger: nil}
 	resolver.Cfg = cfg
 	resolver.Executor = pool
-	srv := handler.NewDefaultServer(executableSchema)
 
+	srv := handler.NewDefaultServer(executableSchema)
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
-
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal().Err(err)
-	}
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

@@ -3,8 +3,11 @@ package schema
 import (
 	"bytes"
 	_ "embed"
+	"errors"
 	"fmt"
 	"go/types"
+	"io/fs"
+	"os"
 	"reflect"
 	"runtime"
 	"strings"
@@ -21,7 +24,9 @@ var (
 	//go:embed fastgql.tpl
 	fastGqlTpl string
 	//go:embed fastgql.graphql
-	FastGQLSchema     string
+	FastGQLSchema string
+	//go:embed server.gotpl
+	fastGqlServerTpl  string
 	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "skipGenerate", "generateMutations", "relation"}
 	defaultAugmenters = []Augmenter{
 		MutationsAugmenter,
@@ -33,14 +38,28 @@ var (
 	}
 )
 
+const defaultResolverTemplate = `
+{{ reserveImport "context"  }}
+{{ reserveImport "github.com/roneli/fastgql/pkg/execution/builders" }}
+{{ reserveImport "github.com/georgysavva/scany/v2/pgxscan" }}
+type {{.}} struct {
+	Cfg *builders.Config 
+	Executor  pgxscan.Querier
+}
+`
+
 // FastGqlPlugin augments and extends the original schema
 type FastGqlPlugin struct {
-	rootDirectory string
+	rootDirectory  string
+	generateServer bool
+	serverFilename string
 }
 
-func NewFastGQLPlugin(rootDir string) FastGqlPlugin {
+func NewFastGQLPlugin(rootDir, serverFileName string, generateServer bool) FastGqlPlugin {
 	return FastGqlPlugin{
-		rootDirectory: rootDir,
+		rootDirectory:  rootDir,
+		generateServer: generateServer,
+		serverFilename: serverFileName,
 	}
 }
 
@@ -52,6 +71,45 @@ func (f FastGqlPlugin) MutateConfig(c *config.Config) error {
 	// Skip runtime checks for all FastGQL directives as they only used on the server side schema
 	for _, d := range FastGQLDirectives {
 		c.Directives[d] = config.DirectiveConfig{SkipRuntime: true}
+	}
+	return nil
+}
+
+func (f FastGqlPlugin) GenerateCode(data *codegen.Data) error {
+	if _, err := os.Stat(data.Config.Resolver.Filename); errors.Is(err, fs.ErrNotExist) {
+		err := templates.Render(templates.Options{
+			PackageName: data.Config.Resolver.Package,
+			FileNotice: `
+				// This file will not be regenerated automatically.
+				//
+				// It serves as dependency injection for your app, add any dependencies you require here.`,
+			Template: defaultResolverTemplate,
+			Filename: data.Config.Resolver.Filename,
+			Data:     data.Config.Resolver.Type,
+			Packages: data.Config.Packages,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	if f.generateServer {
+		serverBuild := &struct {
+			ExecPackageName     string
+			ResolverPackageName string
+		}{
+			ExecPackageName:     data.Config.Exec.ImportPath(),
+			ResolverPackageName: data.Config.Resolver.ImportPath(),
+		}
+
+		if _, err := os.Stat(f.serverFilename); os.IsNotExist(err) {
+			return templates.Render(templates.Options{
+				PackageName: "main",
+				Filename:    f.serverFilename,
+				Data:        serverBuild,
+				Packages:    data.Config.Packages,
+				Template:    fastGqlServerTpl,
+			})
+		}
 	}
 	return nil
 }

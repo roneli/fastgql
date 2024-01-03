@@ -1,8 +1,6 @@
-name: Deploy to GitHub Pages
+name: deploy Github pages
 
 on:
-  pull_request:
-    branches: [ master ]
   # Trigger the workflow every time you push to the `main` branch
   # Using a different branch name? Replace `main` with your branch’s name
   push:
@@ -38,4 +36,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4

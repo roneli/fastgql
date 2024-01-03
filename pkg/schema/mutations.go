@@ -13,6 +13,9 @@ import (
 const mutationsDirectiveName = "generateMutations"
 
 func MutationsAugmenter(s *ast.Schema) error {
+	if !schemaHasMutationDirective(s) {
+		return nil
+	}
 	// add mutation type if wasn't defined on schema
 	if s.Mutation == nil {
 		s.Mutation = &ast.Definition{
@@ -44,6 +47,15 @@ func MutationsAugmenter(s *ast.Schema) error {
 		}
 	}
 	return nil
+}
+
+func schemaHasMutationDirective(s *ast.Schema) bool {
+	for _, v := range s.Types {
+		if v.Directives.ForName(mutationsDirectiveName) != nil {
+			return true
+		}
+	}
+	return false
 }
 
 func addDeleteMutation(s *ast.Schema, obj *ast.Definition) *ast.FieldDefinition {

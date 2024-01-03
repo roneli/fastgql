@@ -1,6 +1,9 @@
 package schema
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/spf13/afero"
@@ -9,10 +12,11 @@ import (
 
 // Generate generates the schema and the resolver files, if generateServer is true, it will also generate the server file.
 // if saveFiles is true, it will save the generated augmented graphql files to the disk, otherwise it the only be saved in generated code.
-func Generate(configPath string, _ bool, saveFiles bool, sources ...*ast.Source) error {
+func Generate(configPath string, generateServer, saveFiles bool, sources ...*ast.Source) error {
+	log.Printf("loading config from %s", configPath)
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load config in %s: %w", configPath, err)
 	}
 	if sources != nil {
 		cfg.Sources = append(cfg.Sources, sources...)
@@ -21,15 +25,17 @@ func Generate(configPath string, _ bool, saveFiles bool, sources ...*ast.Source)
 		return err
 	}
 	// initialize the FastGQL plugin and add it to gqlgen
-	fgqlPlugin := NewFastGQLPlugin(cfg.Resolver.Package)
+	fgqlPlugin := NewFastGQLPlugin(cfg.Resolver.Package, "server.go", generateServer)
 	srcs, err := fgqlPlugin.CreateAugmented(cfg.Schema)
 	if err != nil {
 		return err
 	}
+	log.Print("augmented schema generated successfully")
 	// Load config again
+	log.Printf("loading config again from %s", configPath)
 	cfg, err = config.LoadConfig(configPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load config in %s: %w", configPath, err)
 	}
 	cfg.Sources = srcs
 	if saveFiles {
@@ -39,10 +45,10 @@ func Generate(configPath string, _ bool, saveFiles bool, sources ...*ast.Source)
 	}
 	// skip validation for now, as after code generation we need to mod tidy again
 	cfg.SkipValidation = true
-	// TODO: support generate server
-	if err = api.Generate(cfg, api.AddPlugin(fgqlPlugin)); err != nil {
+	if err = api.Generate(cfg, api.PrependPlugin(fgqlPlugin)); err != nil {
 		return err
 	}
+	log.Print("fastgql generated successfully")
 	return nil
 }
 
