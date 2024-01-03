@@ -8,7 +8,7 @@ import (
 )
 
 func Test_Generate(t *testing.T) {
-	fgqlPlugin := NewFastGQLPlugin("")
+	fgqlPlugin := NewFastGQLPlugin("", "", false)
 	cfg, err := config.LoadConfig("./test/no_fastgql_gqlgen.yml")
 	assert.Nil(t, err)
 	assert.Nil(t, cfg.LoadSchema())
