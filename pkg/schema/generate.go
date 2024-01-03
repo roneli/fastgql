@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"fmt"
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/spf13/afero"
@@ -29,7 +30,7 @@ func Generate(configPath string, generateServer, saveFiles bool, sources ...*ast
 	// Load config again
 	cfg, err = config.LoadConfig(configPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load config in %s: %w", configPath, err)
 	}
 	cfg.Sources = srcs
 	if saveFiles {
