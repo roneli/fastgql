@@ -1,5 +1,5 @@
-name: Integration
-on: [push, pull_request]
+name: integration
+on: [ push, pull_request ]
 # When a new revision is pushed to a PR, cancel all in-progress CI runs for that
 # PR. See https://docs.github.com/en/actions/using-jobs/using-concurrency
 concurrency:
@@ -9,11 +9,14 @@ jobs:
   init:
     strategy:
       matrix:
-        go: ["1.18", "1.20"]
+        go: [ "1.18", "1.20" ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
-      - run: .github/workflows/check-init
+      - run: |
+          chmod +x .github/workflows/check-init
+          .github/workflows/check-init
+      
