@@ -15,7 +15,7 @@ if ! go run github.com/roneli/fastgql init ; then
     exit 125
 fi
 
-if ! go run github.com/roneli/fastgql generate ; then
+if ! go run github.com/roneli/fastgql generate -c gqlgen.yml ; then
     echo "gqlgen generate failed"
     exit 125
 fi

@@ -13,6 +13,7 @@ import (
 // Generate generates the schema and the resolver files, if generateServer is true, it will also generate the server file.
 // if saveFiles is true, it will save the generated augmented graphql files to the disk, otherwise it the only be saved in generated code.
 func Generate(configPath string, generateServer, saveFiles bool, sources ...*ast.Source) error {
+	log.Printf("loading config from %s", configPath)
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config in %s: %w", configPath, err)
