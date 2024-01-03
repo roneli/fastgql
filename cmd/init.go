@@ -66,41 +66,40 @@ models:
       - github.com/99designs/gqlgen/graphql.Int32
 `))
 
-const schemaDefault = `type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user"){
+const schemaDefault = `type User @table(name: "user"){
   id: Int!
   name: String!
-  posts: [Post] @sqlRelation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
+  posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 }
 
-type Post @generateFilterInput(name: "PostFilterInput") {
+type Post @generateFilterInput {
   id: Int!
   name: String
-  categories: [Category] @sqlRelation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"]
-    manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+  categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], 
+	manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
   user_id: Int
-  user: User @sqlRelation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
+  user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
 }
 
 
-type Category @generateFilterInput(name: "CategoryFilterInput"){
+type Category @generateFilterInput{
   id: Int!
   name: String
 }
 
-type Query @generate {
-  posts: [Post]
-  users: [User]
-  categories: [Category]
+type Query {
+  posts: [Post] @generate
+  users: [User] @generate 
+  categories: [Category] @generate
 }
 `
 
 var initCmd = &cobra.Command{
-	Use:   "init ",
+	Use:   "init",
 	Short: "create a new fastgql project in current directory",
 	Long:  `Generates a start fastgql project with servergen, resolvers and schema ready`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// pkgName := code.ImportPathForDir(".")
-		pkgName := ""
+		pkgName := schema.ImportPathForDir(".")
 		if pkgName == "" {
 			return errors.New("unable to determine import path for current directory, you probably need to run go mod init first")
 		}
@@ -109,6 +108,9 @@ var initCmd = &cobra.Command{
 			return err
 		}
 		if err := initFastgqlSchema(); err != nil {
+			return err
+		}
+		if err := initModelFile(); err != nil {
 			return err
 		}
 		if !configExists(configFilename) {
@@ -126,7 +128,6 @@ var initCmd = &cobra.Command{
 
 func configExists(configFilename string) bool {
 	var cfg *config.Config
-
 	if configFilename != "" {
 		cfg, _ = config.LoadConfig(configFilename)
 	} else {
@@ -156,8 +157,17 @@ func initConfig(configFilename string, pkgName string) error {
 	return nil
 }
 
-func initFastgqlSchema() error {
+func initModelFile() error {
+	if err := os.MkdirAll(filepath.Dir("graph/model/models_fastgql.go"), 0755); err != nil {
+		return fmt.Errorf("unable to create model dir: " + err.Error())
+	}
+	if err := os.WriteFile("graph/model/models_fastgql.go", []byte("package model"), 0644); err != nil {
+		return fmt.Errorf("unable to write model file: " + err.Error())
+	}
+	return nil
+}
 
+func initFastgqlSchema() error {
 	if err := os.MkdirAll(filepath.Dir("graph/fastgql.graphql"), 0755); err != nil {
 		return fmt.Errorf("unable to create schema dir: " + err.Error())
 	}
@@ -169,7 +179,6 @@ func initFastgqlSchema() error {
 }
 
 func initSchema(schemaFilename string) error {
-
 	schemaFullPath := filepath.Join("graph", schemaFilename)
 	_, err := os.Stat(schemaFullPath)
 	if !os.IsNotExist(err) {

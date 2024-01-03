@@ -14,7 +14,7 @@ q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 if err != nil {
     return nil, err
 }
-if err := sql.ExecuteQuery(ctx, nil, func(rows pgx.Rows) error {
+if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
     return pgxscan.ScanAll(&data, rows)
 }, q, args...); err != nil {
     return nil, err
