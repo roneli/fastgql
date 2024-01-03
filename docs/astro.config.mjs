@@ -3,8 +3,8 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-    site: 'https://roneli.github.io',
-    base: "/fastgql",
+    site: 'https://fastgql.com',
+    base: "/docs",
     integrations: [
         starlight({
             title: '',
