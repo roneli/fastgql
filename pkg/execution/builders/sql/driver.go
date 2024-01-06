@@ -43,6 +43,14 @@ func ExecuteQuery(ctx context.Context, querier pgxscan.Querier, scanner func(row
 	return scanner(rows)
 }
 
+func Collect[T any](ctx context.Context, querier pgxscan.Querier, toFunc pgx.RowToFunc[T], q string, args ...any) ([]T, error) {
+	rows, err := querier.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows[T](rows, toFunc)
+}
+
 // NewDriver creates a new Driver with the given Conn and dialect.
 func NewDriver(dialect string, cfg *builders.Config, pool *pgxpool.Pool) *Driver {
 	return &Driver{dialect: dialect, builder: NewBuilder(cfg), pool: pool}

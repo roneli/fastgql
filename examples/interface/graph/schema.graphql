@@ -1,0 +1,143 @@
+interface Animal @table(name: "animals") {
+	id: ID!
+	name: String!
+	type: String!
+}
+type Cat implements Animal {
+	id: ID!
+	name: String!
+	type: String!
+	color: String!
+}
+type Category @generateFilterInput {
+	id: Int!
+	name: String
+}
+type Dog implements Animal {
+	id: ID!
+	name: String!
+	type: String!
+	breed: String!
+}
+type Post @generateFilterInput {
+	id: Int!
+	name: String
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user_id: Int
+	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
+}
+type Query {
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @generate
+	users(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering]): [User] @generate
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @generate
+	animals(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Animal
+		"""
+		orderBy: [AnimalOrdering]): [Animal] @generate
+	"""
+	posts Aggregate
+	"""
+	_postsAggregate: PostsAggregate!
+	"""
+	users Aggregate
+	"""
+	_usersAggregate: UsersAggregate!
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate: CategoriesAggregate!
+	"""
+	animals Aggregate
+	"""
+	_animalsAggregate: AnimalsAggregate!
+}
+type User @table(name: "user") {
+	id: Int!
+	name: String!
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+}

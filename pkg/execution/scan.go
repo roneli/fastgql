@@ -18,8 +18,13 @@ type TypeNameScanner[T any] struct {
 }
 
 func NewTypeNameScanner[T any](types map[string]reflect.Type, defaultType reflect.Type, typeNameKey string) *TypeNameScanner[T] {
+	// lower case all keys
+	var t2 = make(map[string]reflect.Type)
+	for k, v := range types {
+		t2[strings.ToLower(k)] = v
+	}
 	return &TypeNameScanner[T]{
-		types:       types,
+		types:       t2,
 		typeNameKey: typeNameKey,
 		defaultType: defaultType,
 	}
