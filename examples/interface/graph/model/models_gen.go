@@ -18,8 +18,8 @@ type AnimalFilterInput struct {
 	ID   *IntComparator    `json:"id,omitempty"`
 	Name *StringComparator `json:"name,omitempty"`
 	Type *StringComparator `json:"type,omitempty"`
-	Dog  *DogFilterInput   `json:"dog,omitempty"`
 	Cat  *CatFilterInput   `json:"cat,omitempty"`
+	Dog  *DogFilterInput   `json:"dog,omitempty"`
 	// Logical AND of FilterInput
 	And []*AnimalFilterInput `json:"AND,omitempty"`
 	// Logical OR of FilterInput
@@ -216,6 +216,7 @@ type PostFilterInput struct {
 	Name       *StringComparator    `json:"name,omitempty"`
 	Categories *CategoryFilterInput `json:"categories,omitempty"`
 	UserID     *IntComparator       `json:"user_id,omitempty"`
+	User       *UserFilterInput     `json:"user,omitempty"`
 	// Logical AND of FilterInput
 	And []*PostFilterInput `json:"AND,omitempty"`
 	// Logical OR of FilterInput
@@ -279,6 +280,18 @@ type User struct {
 	ID    int     `json:"id"`
 	Name  string  `json:"name"`
 	Posts []*Post `json:"posts,omitempty"`
+}
+
+type UserFilterInput struct {
+	ID    *IntComparator    `json:"id,omitempty"`
+	Name  *StringComparator `json:"name,omitempty"`
+	Posts *PostFilterInput  `json:"posts,omitempty"`
+	// Logical AND of FilterInput
+	And []*UserFilterInput `json:"AND,omitempty"`
+	// Logical OR of FilterInput
+	Or []*UserFilterInput `json:"OR,omitempty"`
+	// Logical NOT of FilterInput
+	Not *UserFilterInput `json:"NOT,omitempty"`
 }
 
 // max aggregator for User

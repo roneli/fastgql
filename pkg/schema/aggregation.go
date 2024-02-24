@@ -54,6 +54,10 @@ func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDef
 	// check if field already exists, if so, skip
 	if def := obj.Fields.ForName(aggregateName); def != nil {
 		log.Printf("aggreationField for field %s@%s already exists skipping\n", field.Name, obj.Name)
+		if def.Directives.ForName("generate") == nil {
+			// add directive to field, so filter can be generated
+			def.Directives = append(def.Directives, addGenerateDirective(s))
+		}
 		return
 	}
 	log.Printf("adding aggregation field to field %s@%s\n", field.Name, obj.Name)
@@ -64,7 +68,25 @@ func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDef
 			NamedType: aggDef.Name,
 			NonNull:   true,
 		},
+		// add directive to field, so filter can be generated
+		Directives: ast.DirectiveList{addGenerateDirective(s)},
 	})
+}
+
+func addGenerateDirective(s *ast.Schema) *ast.Directive {
+	return &ast.Directive{
+		Name: "generate",
+		Arguments: []*ast.Argument{
+			{
+				Name: "filter",
+				Value: &ast.Value{
+					Raw:  "true",
+					Kind: ast.BooleanValue,
+				},
+			},
+		},
+		Definition: s.Directives["generate"],
+	}
 }
 
 func buildAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {

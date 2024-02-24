@@ -111,13 +111,13 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Animals             func(childComplexity int, limit *int, offset *int, orderBy []*model.AnimalOrdering, filter *model.AnimalFilterInput) int
-		AnimalsAggregate    func(childComplexity int) int
+		AnimalsAggregate    func(childComplexity int, filter *model.AnimalFilterInput) int
 		Categories          func(childComplexity int, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) int
-		CategoriesAggregate func(childComplexity int) int
+		CategoriesAggregate func(childComplexity int, filter *model.CategoryFilterInput) int
 		Posts               func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
-		PostsAggregate      func(childComplexity int) int
-		Users               func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering) int
-		UsersAggregate      func(childComplexity int) int
+		PostsAggregate      func(childComplexity int, filter *model.PostFilterInput) int
+		Users               func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
+		UsersAggregate      func(childComplexity int, filter *model.UserFilterInput) int
 	}
 
 	User struct {
@@ -144,13 +144,13 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error)
-	Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering) ([]*model.User, error)
+	Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
 	Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error)
 	Animals(ctx context.Context, limit *int, offset *int, orderBy []*model.AnimalOrdering, filter *model.AnimalFilterInput) ([]model.Animal, error)
-	PostsAggregate(ctx context.Context) (*model.PostsAggregate, error)
-	UsersAggregate(ctx context.Context) (*model.UsersAggregate, error)
-	CategoriesAggregate(ctx context.Context) (*model.CategoriesAggregate, error)
-	AnimalsAggregate(ctx context.Context) (*model.AnimalsAggregate, error)
+	PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.PostsAggregate, error)
+	UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.UsersAggregate, error)
+	CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.CategoriesAggregate, error)
+	AnimalsAggregate(ctx context.Context, filter *model.AnimalFilterInput) (*model.AnimalsAggregate, error)
 }
 
 type executableSchema struct {
@@ -418,7 +418,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.AnimalsAggregate(childComplexity), true
+		args, err := ec.field_Query__animalsAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AnimalsAggregate(childComplexity, args["filter"].(*model.AnimalFilterInput)), true
 
 	case "Query.categories":
 		if e.complexity.Query.Categories == nil {
@@ -437,7 +442,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.CategoriesAggregate(childComplexity), true
+		args, err := ec.field_Query__categoriesAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CategoriesAggregate(childComplexity, args["filter"].(*model.CategoryFilterInput)), true
 
 	case "Query.posts":
 		if e.complexity.Query.Posts == nil {
@@ -456,7 +466,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.PostsAggregate(childComplexity), true
+		args, err := ec.field_Query__postsAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PostsAggregate(childComplexity, args["filter"].(*model.PostFilterInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -468,14 +483,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Users(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UserOrdering)), true
+		return e.complexity.Query.Users(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UserOrdering), args["filter"].(*model.UserFilterInput)), true
 
 	case "Query._usersAggregate":
 		if e.complexity.Query.UsersAggregate == nil {
 			break
 		}
 
-		return e.complexity.Query.UsersAggregate(childComplexity), true
+		args, err := ec.field_Query__usersAggregate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UsersAggregate(childComplexity, args["filter"].(*model.UserFilterInput)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -569,6 +589,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPostOrdering,
 		ec.unmarshalInputStringComparator,
 		ec.unmarshalInputStringListComparator,
+		ec.unmarshalInputUserFilterInput,
 		ec.unmarshalInputUserOrdering,
 	)
 	first := true
@@ -652,284 +673,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../fastgql_schema.graphql", Input: `input AnimalFilterInput {
-	id: IntComparator
-	name: StringComparator
-	type: StringComparator
-	dog: DogFilterInput @isInterfaceFilter
-	cat: CatFilterInput @isInterfaceFilter
-	"""
-	Logical AND of FilterInput
-	"""
-	AND: [AnimalFilterInput]
-	"""
-	Logical OR of FilterInput
-	"""
-	OR: [AnimalFilterInput]
-	"""
-	Logical NOT of FilterInput
-	"""
-	NOT: AnimalFilterInput
-}
-"""
-max aggregator for Animal
-"""
-type AnimalMin {
-	"""
-	Compute the maxiumum for id
-	"""
-	id: ID!
-	"""
-	Compute the maxiumum for name
-	"""
-	name: String!
-	"""
-	Compute the maxiumum for type
-	"""
-	type: String!
-}
-"""
-Ordering for Animal
-"""
-input AnimalOrdering {
-	"""
-	Order Animal by id
-	"""
-	id: _OrderingTypes
-	"""
-	Order Animal by name
-	"""
-	name: _OrderingTypes
-	"""
-	Order Animal by type
-	"""
-	type: _OrderingTypes
-}
-"""
-Aggregate Animal
-"""
-type AnimalsAggregate {
-	"""
-	Count results
-	"""
-	count: Int!
-	"""
-	Computes the maximum of the non-null input values.
-	"""
-	max: AnimalMin
-	"""
-	Computes the minimum of the non-null input values.
-	"""
-	min: AnimalMin
-}
-input CatFilterInput {
-	id: IntComparator
-	name: StringComparator
-	type: StringComparator
-	color: StringComparator
-	"""
-	Logical AND of FilterInput
-	"""
-	AND: [CatFilterInput]
-	"""
-	Logical OR of FilterInput
-	"""
-	OR: [CatFilterInput]
-	"""
-	Logical NOT of FilterInput
-	"""
-	NOT: CatFilterInput
-}
-"""
-Aggregate Category
-"""
-type CategoriesAggregate {
-	"""
-	Count results
-	"""
-	count: Int!
-	"""
-	Computes the maximum of the non-null input values.
-	"""
-	max: CategoryMin
-	"""
-	Computes the minimum of the non-null input values.
-	"""
-	min: CategoryMin
-}
-input CategoryFilterInput {
-	id: IntComparator
-	name: StringComparator
-	"""
-	Logical AND of FilterInput
-	"""
-	AND: [CategoryFilterInput]
-	"""
-	Logical OR of FilterInput
-	"""
-	OR: [CategoryFilterInput]
-	"""
-	Logical NOT of FilterInput
-	"""
-	NOT: CategoryFilterInput
-}
-"""
-max aggregator for Category
-"""
-type CategoryMin {
-	"""
-	Compute the maxiumum for id
-	"""
-	id: Int!
-	"""
-	Compute the maxiumum for name
-	"""
-	name: String!
-}
-"""
-Ordering for Category
-"""
-input CategoryOrdering {
-	"""
-	Order Category by id
-	"""
-	id: _OrderingTypes
-	"""
-	Order Category by name
-	"""
-	name: _OrderingTypes
-}
-input DogFilterInput {
-	id: IntComparator
-	name: StringComparator
-	type: StringComparator
-	breed: StringComparator
-	"""
-	Logical AND of FilterInput
-	"""
-	AND: [DogFilterInput]
-	"""
-	Logical OR of FilterInput
-	"""
-	OR: [DogFilterInput]
-	"""
-	Logical NOT of FilterInput
-	"""
-	NOT: DogFilterInput
-}
-input PostFilterInput {
-	id: IntComparator
-	name: StringComparator
-	categories: CategoryFilterInput
-	user_id: IntComparator
-	"""
-	Logical AND of FilterInput
-	"""
-	AND: [PostFilterInput]
-	"""
-	Logical OR of FilterInput
-	"""
-	OR: [PostFilterInput]
-	"""
-	Logical NOT of FilterInput
-	"""
-	NOT: PostFilterInput
-}
-"""
-max aggregator for Post
-"""
-type PostMin {
-	"""
-	Compute the maxiumum for id
-	"""
-	id: Int!
-	"""
-	Compute the maxiumum for name
-	"""
-	name: String!
-	"""
-	Compute the maxiumum for user_id
-	"""
-	user_id: Int!
-}
-"""
-Ordering for Post
-"""
-input PostOrdering {
-	"""
-	Order Post by id
-	"""
-	id: _OrderingTypes
-	"""
-	Order Post by name
-	"""
-	name: _OrderingTypes
-	"""
-	Order Post by user_id
-	"""
-	user_id: _OrderingTypes
-}
-"""
-Aggregate Post
-"""
-type PostsAggregate {
-	"""
-	Count results
-	"""
-	count: Int!
-	"""
-	Computes the maximum of the non-null input values.
-	"""
-	max: PostMin
-	"""
-	Computes the minimum of the non-null input values.
-	"""
-	min: PostMin
-}
-"""
-max aggregator for User
-"""
-type UserMin {
-	"""
-	Compute the maxiumum for id
-	"""
-	id: Int!
-	"""
-	Compute the maxiumum for name
-	"""
-	name: String!
-}
-"""
-Ordering for User
-"""
-input UserOrdering {
-	"""
-	Order User by id
-	"""
-	id: _OrderingTypes
-	"""
-	Order User by name
-	"""
-	name: _OrderingTypes
-}
-"""
-Aggregate User
-"""
-type UsersAggregate {
-	"""
-	Count results
-	"""
-	count: Int!
-	"""
-	Computes the maximum of the non-null input values.
-	"""
-	max: UserMin
-	"""
-	Computes the minimum of the non-null input values.
-	"""
-	min: UserMin
-}
-`, BuiltIn: false},
 	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
 directive @generateFilterInput(description: String) on OBJECT | INTERFACE
@@ -1095,7 +838,11 @@ type Query {
 		"""
 		Ordering for User
 		"""
-		orderBy: [UserOrdering]): [User] @generate
+		orderBy: [UserOrdering],
+		"""
+		Filter users
+		"""
+		filter: UserFilterInput): [User] @generate
 	categories(
 		"""
 		Limit
@@ -1133,21 +880,37 @@ type Query {
 	"""
 	posts Aggregate
 	"""
-	_postsAggregate: PostsAggregate!
+	_postsAggregate(
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput): PostsAggregate! @generate(filter: true)
 	"""
 	users Aggregate
 	"""
-	_usersAggregate: UsersAggregate!
+	_usersAggregate(
+		"""
+		Filter _usersAggregate
+		"""
+		filter: UserFilterInput): UsersAggregate! @generate(filter: true)
 	"""
 	categories Aggregate
 	"""
-	_categoriesAggregate: CategoriesAggregate!
+	_categoriesAggregate(
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput): CategoriesAggregate! @generate(filter: true)
 	"""
 	animals Aggregate
 	"""
-	_animalsAggregate: AnimalsAggregate!
+	_animalsAggregate(
+		"""
+		Filter _animalsAggregate
+		"""
+		filter: AnimalFilterInput): AnimalsAggregate! @generate(filter: true)
 }
-type User @table(name: "user") {
+type User @table(name: "user") @generateFilterInput {
 	id: Int!
 	name: String!
 	posts(
@@ -1167,6 +930,302 @@ type User @table(name: "user") {
 		Filter posts
 		"""
 		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+}
+`, BuiltIn: false},
+	{Name: "../fastgql_schema.graphql", Input: `input AnimalFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	cat: CatFilterInput @isInterfaceFilter
+	dog: DogFilterInput @isInterfaceFilter
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [AnimalFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [AnimalFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: AnimalFilterInput
+}
+"""
+max aggregator for Animal
+"""
+type AnimalMin {
+	"""
+	Compute the maxiumum for id
+	"""
+	id: ID!
+	"""
+	Compute the maxiumum for name
+	"""
+	name: String!
+	"""
+	Compute the maxiumum for type
+	"""
+	type: String!
+}
+"""
+Ordering for Animal
+"""
+input AnimalOrdering {
+	"""
+	Order Animal by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Animal by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order Animal by type
+	"""
+	type: _OrderingTypes
+}
+"""
+Aggregate Animal
+"""
+type AnimalsAggregate {
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Computes the maximum of the non-null input values.
+	"""
+	max: AnimalMin
+	"""
+	Computes the minimum of the non-null input values.
+	"""
+	min: AnimalMin
+}
+input CatFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	color: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [CatFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [CatFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: CatFilterInput
+}
+"""
+Aggregate Category
+"""
+type CategoriesAggregate {
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Computes the maximum of the non-null input values.
+	"""
+	max: CategoryMin
+	"""
+	Computes the minimum of the non-null input values.
+	"""
+	min: CategoryMin
+}
+input CategoryFilterInput {
+	id: IntComparator
+	name: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [CategoryFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [CategoryFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: CategoryFilterInput
+}
+"""
+max aggregator for Category
+"""
+type CategoryMin {
+	"""
+	Compute the maxiumum for id
+	"""
+	id: Int!
+	"""
+	Compute the maxiumum for name
+	"""
+	name: String!
+}
+"""
+Ordering for Category
+"""
+input CategoryOrdering {
+	"""
+	Order Category by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Category by name
+	"""
+	name: _OrderingTypes
+}
+input DogFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	breed: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [DogFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [DogFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: DogFilterInput
+}
+input PostFilterInput {
+	id: IntComparator
+	name: StringComparator
+	categories: CategoryFilterInput
+	user_id: IntComparator
+	user: UserFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [PostFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [PostFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: PostFilterInput
+}
+"""
+max aggregator for Post
+"""
+type PostMin {
+	"""
+	Compute the maxiumum for id
+	"""
+	id: Int!
+	"""
+	Compute the maxiumum for name
+	"""
+	name: String!
+	"""
+	Compute the maxiumum for user_id
+	"""
+	user_id: Int!
+}
+"""
+Ordering for Post
+"""
+input PostOrdering {
+	"""
+	Order Post by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Post by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order Post by user_id
+	"""
+	user_id: _OrderingTypes
+}
+"""
+Aggregate Post
+"""
+type PostsAggregate {
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Computes the maximum of the non-null input values.
+	"""
+	max: PostMin
+	"""
+	Computes the minimum of the non-null input values.
+	"""
+	min: PostMin
+}
+input UserFilterInput {
+	id: IntComparator
+	name: StringComparator
+	posts: PostFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [UserFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [UserFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: UserFilterInput
+}
+"""
+max aggregator for User
+"""
+type UserMin {
+	"""
+	Compute the maxiumum for id
+	"""
+	id: Int!
+	"""
+	Compute the maxiumum for name
+	"""
+	name: String!
+}
+"""
+Ordering for User
+"""
+input UserOrdering {
+	"""
+	Order User by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order User by name
+	"""
+	name: _OrderingTypes
+}
+"""
+Aggregate User
+"""
+type UsersAggregate {
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Computes the maximum of the non-null input values.
+	"""
+	max: UserMin
+	"""
+	Computes the minimum of the non-null input values.
+	"""
+	min: UserMin
 }
 `, BuiltIn: false},
 }
@@ -1260,6 +1319,66 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query__animalsAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.AnimalFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query__categoriesAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.CategoryFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoryFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query__postsAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PostFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query__usersAggregate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -1419,6 +1538,15 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["orderBy"] = arg2
+	var arg3 *model.UserFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
 	return args, nil
 }
 
@@ -3024,7 +3152,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Users(rctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.UserOrdering))
+		return ec.resolvers.Query().Users(rctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.UserOrdering), fc.Args["filter"].(*model.UserFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3194,7 +3322,7 @@ func (ec *executionContext) _Query__postsAggregate(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().PostsAggregate(rctx)
+		return ec.resolvers.Query().PostsAggregate(rctx, fc.Args["filter"].(*model.PostFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3229,6 +3357,17 @@ func (ec *executionContext) fieldContext_Query__postsAggregate(ctx context.Conte
 			return nil, fmt.Errorf("no field named %q was found under type PostsAggregate", field.Name)
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query__postsAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
 	return fc, nil
 }
 
@@ -3246,7 +3385,7 @@ func (ec *executionContext) _Query__usersAggregate(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UsersAggregate(rctx)
+		return ec.resolvers.Query().UsersAggregate(rctx, fc.Args["filter"].(*model.UserFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3281,6 +3420,17 @@ func (ec *executionContext) fieldContext_Query__usersAggregate(ctx context.Conte
 			return nil, fmt.Errorf("no field named %q was found under type UsersAggregate", field.Name)
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query__usersAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
 	return fc, nil
 }
 
@@ -3298,7 +3448,7 @@ func (ec *executionContext) _Query__categoriesAggregate(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CategoriesAggregate(rctx)
+		return ec.resolvers.Query().CategoriesAggregate(rctx, fc.Args["filter"].(*model.CategoryFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3333,6 +3483,17 @@ func (ec *executionContext) fieldContext_Query__categoriesAggregate(ctx context.
 			return nil, fmt.Errorf("no field named %q was found under type CategoriesAggregate", field.Name)
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query__categoriesAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
 	return fc, nil
 }
 
@@ -3350,7 +3511,7 @@ func (ec *executionContext) _Query__animalsAggregate(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AnimalsAggregate(rctx)
+		return ec.resolvers.Query().AnimalsAggregate(rctx, fc.Args["filter"].(*model.AnimalFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3384,6 +3545,17 @@ func (ec *executionContext) fieldContext_Query__animalsAggregate(ctx context.Con
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AnimalsAggregate", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query__animalsAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5719,7 +5891,7 @@ func (ec *executionContext) unmarshalInputAnimalFilterInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name", "type", "dog", "cat", "AND", "OR", "NOT"}
+	fieldsInOrder := [...]string{"id", "name", "type", "cat", "dog", "AND", "OR", "NOT"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5747,13 +5919,6 @@ func (ec *executionContext) unmarshalInputAnimalFilterInput(ctx context.Context,
 				return it, err
 			}
 			it.Type = data
-		case "dog":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dog"))
-			data, err := ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Dog = data
 		case "cat":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cat"))
 			data, err := ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
@@ -5761,6 +5926,13 @@ func (ec *executionContext) unmarshalInputAnimalFilterInput(ctx context.Context,
 				return it, err
 			}
 			it.Cat = data
+		case "dog":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dog"))
+			data, err := ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Dog = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
 			data, err := ec.unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
@@ -6428,7 +6600,7 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name", "categories", "user_id", "AND", "OR", "NOT"}
+	fieldsInOrder := [...]string{"id", "name", "categories", "user_id", "user", "AND", "OR", "NOT"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6463,6 +6635,13 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 				return it, err
 			}
 			it.UserID = data
+		case "user":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
+			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.User = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
 			data, err := ec.unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
@@ -6670,6 +6849,68 @@ func (ec *executionContext) unmarshalInputStringListComparator(ctx context.Conte
 				return it, err
 			}
 			it.IsNull = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, obj interface{}) (model.UserFilterInput, error) {
+	var it model.UserFilterInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "posts", "AND", "OR", "NOT"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "posts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("posts"))
+			data, err := ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Posts = data
+		case "AND":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "OR":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "NOT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
 		}
 	}
 
@@ -8984,6 +9225,34 @@ func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋex
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) ([]*model.UserFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.UserFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v interface{}) (*model.UserFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOUserMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserMin(ctx context.Context, sel ast.SelectionSet, v *model.UserMin) graphql.Marshaler {

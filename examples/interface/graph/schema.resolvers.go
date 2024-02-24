@@ -30,7 +30,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 }
 
 // Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering) ([]*model.User, error) {
+func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
 	var data []*model.User
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -70,7 +70,7 @@ func (r *queryResolver) Animals(ctx context.Context, limit *int, offset *int, or
 }
 
 // PostsAggregate is the resolver for the _postsAggregate field.
-func (r *queryResolver) PostsAggregate(ctx context.Context) (*model.PostsAggregate, error) {
+func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.PostsAggregate, error) {
 	var data *model.PostsAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -83,7 +83,7 @@ func (r *queryResolver) PostsAggregate(ctx context.Context) (*model.PostsAggrega
 }
 
 // UsersAggregate is the resolver for the _usersAggregate field.
-func (r *queryResolver) UsersAggregate(ctx context.Context) (*model.UsersAggregate, error) {
+func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.UsersAggregate, error) {
 	var data *model.UsersAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -96,7 +96,7 @@ func (r *queryResolver) UsersAggregate(ctx context.Context) (*model.UsersAggrega
 }
 
 // CategoriesAggregate is the resolver for the _categoriesAggregate field.
-func (r *queryResolver) CategoriesAggregate(ctx context.Context) (*model.CategoriesAggregate, error) {
+func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.CategoriesAggregate, error) {
 	var data *model.CategoriesAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -109,7 +109,7 @@ func (r *queryResolver) CategoriesAggregate(ctx context.Context) (*model.Categor
 }
 
 // AnimalsAggregate is the resolver for the _animalsAggregate field.
-func (r *queryResolver) AnimalsAggregate(ctx context.Context) (*model.AnimalsAggregate, error) {
+func (r *queryResolver) AnimalsAggregate(ctx context.Context, filter *model.AnimalFilterInput) (*model.AnimalsAggregate, error) {
 	var data *model.AnimalsAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {

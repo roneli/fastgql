@@ -124,7 +124,7 @@ type Query {
 	"""
 	_animalsAggregate: AnimalsAggregate!
 }
-type User @table(name: "user") {
+type User @table(name: "user") @generateFilterInput {
 	id: Int!
 	name: String!
 	posts(

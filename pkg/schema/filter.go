@@ -2,9 +2,10 @@ package schema
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"log"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -21,9 +22,6 @@ func FilterArgAugmenter(s *ast.Schema) error {
 	for _, v := range s.Query.Fields {
 		d := v.Directives.ForName("generate")
 		if d == nil {
-			continue
-		}
-		if !IsListType(v.Type) {
 			continue
 		}
 		log.Printf("adding filter to field %s@%s\n", v.Name, s.Query.Name)
