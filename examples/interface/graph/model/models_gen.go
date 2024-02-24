@@ -14,6 +14,20 @@ type Animal interface {
 	GetType() string
 }
 
+type AnimalFilterInput struct {
+	ID   *IntComparator    `json:"id,omitempty"`
+	Name *StringComparator `json:"name,omitempty"`
+	Type *StringComparator `json:"type,omitempty"`
+	Cat  *CatFilterInput   `json:"Cat,omitempty"`
+	Dog  *DogFilterInput   `json:"Dog,omitempty"`
+	// Logical AND of FilterInput
+	And []*AnimalFilterInput `json:"AND,omitempty"`
+	// Logical OR of FilterInput
+	Or []*AnimalFilterInput `json:"OR,omitempty"`
+	// Logical NOT of FilterInput
+	Not *AnimalFilterInput `json:"NOT,omitempty"`
+}
+
 // max aggregator for Animal
 type AnimalMin struct {
 	// Compute the maxiumum for id
@@ -71,6 +85,19 @@ func (this Cat) GetID() int      { return this.ID }
 func (this Cat) GetName() string { return this.Name }
 func (this Cat) GetType() string { return this.Type }
 
+type CatFilterInput struct {
+	ID    *IntComparator    `json:"id,omitempty"`
+	Name  *StringComparator `json:"name,omitempty"`
+	Type  *StringComparator `json:"type,omitempty"`
+	Color *StringComparator `json:"color,omitempty"`
+	// Logical AND of FilterInput
+	And []*CatFilterInput `json:"AND,omitempty"`
+	// Logical OR of FilterInput
+	Or []*CatFilterInput `json:"OR,omitempty"`
+	// Logical NOT of FilterInput
+	Not *CatFilterInput `json:"NOT,omitempty"`
+}
+
 // Aggregate Category
 type CategoriesAggregate struct {
 	// Count results
@@ -124,6 +151,19 @@ func (Dog) IsAnimal()            {}
 func (this Dog) GetID() int      { return this.ID }
 func (this Dog) GetName() string { return this.Name }
 func (this Dog) GetType() string { return this.Type }
+
+type DogFilterInput struct {
+	ID    *IntComparator    `json:"id,omitempty"`
+	Name  *StringComparator `json:"name,omitempty"`
+	Type  *StringComparator `json:"type,omitempty"`
+	Breed *StringComparator `json:"breed,omitempty"`
+	// Logical AND of FilterInput
+	And []*DogFilterInput `json:"AND,omitempty"`
+	// Logical OR of FilterInput
+	Or []*DogFilterInput `json:"OR,omitempty"`
+	// Logical NOT of FilterInput
+	Not *DogFilterInput `json:"NOT,omitempty"`
+}
 
 type FloatComparator struct {
 	Eq     *float64 `json:"eq,omitempty"`

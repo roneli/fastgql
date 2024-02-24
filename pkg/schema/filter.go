@@ -140,6 +140,24 @@ func buildFilterInput(s *ast.Schema, input *ast.Definition, object *ast.Definiti
 			Type: &ast.Type{NamedType: fieldDef.Name},
 		})
 	}
+	// if object is an interface, we need to create a filter input for each of its implementations
+	if object.IsAbstractType() {
+		log.Printf("adding filter input for interface %s\n", object.Name)
+		for k, imps := range s.Implements {
+			for _, d := range imps {
+				if d.Name == object.Name {
+					log.Printf("adding filter input for interface implementation %s\n", k)
+					name := fmt.Sprintf("%sFilterInput", k)
+					input.Fields = append(input.Fields, &ast.FieldDefinition{
+						Name:       k,
+						Type:       &ast.Type{NamedType: name},
+						Directives: []*ast.Directive{{Name: "isInterfaceFilter"}},
+					})
+
+				}
+			}
+		}
+	}
 	input.Fields = append(input.Fields, []*ast.FieldDefinition{
 		{
 			Name:        "AND",
@@ -186,6 +204,24 @@ func initInputs(s *ast.Schema) []*createdInputDef {
 			Name:        name,
 		}
 		defs = append(defs, &createdInputDef{obj, s.Types[name]})
+		// if object is an interface, we need to create a filter input for each of its implementations
+		if obj.IsAbstractType() {
+			log.Printf("adding filter input for interface %s\n", obj.Name)
+			for k, imps := range s.Implements {
+				for _, d := range imps {
+					if d.Name == obj.Name {
+						log.Printf("adding filter input for interface implementation %s\n", k)
+						name := fmt.Sprintf("%sFilterInput", k)
+						s.Types[name] = &ast.Definition{
+							Kind:        ast.InputObject,
+							Description: cast.ToString(args["description"]),
+							Name:        name,
+						}
+						defs = append(defs, &createdInputDef{s.Types[k], s.Types[name]})
+					}
+				}
+			}
+		}
 	}
 	return defs
 }

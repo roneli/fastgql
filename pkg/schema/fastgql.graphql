@@ -12,7 +12,9 @@ directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 
 # Generate filter input on an object
-directive @generateFilterInput(description: String) repeatable on OBJECT
+directive @generateFilterInput(description: String) repeatable on OBJECT | INTERFACE
+
+directive @isInterfaceFilter on INPUT_FIELD_DEFINITION
 
 # ================== Directives supported by fastgql for Querying ==================
 

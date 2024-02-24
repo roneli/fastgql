@@ -1,3 +1,20 @@
+input AnimalFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [AnimalFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [AnimalFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: AnimalFilterInput
+}
 """
 max aggregator for Animal
 """

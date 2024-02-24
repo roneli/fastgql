@@ -62,7 +62,7 @@ func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int,
 }
 
 // Animals is the resolver for the animals field.
-func (r *queryResolver) Animals(ctx context.Context, limit *int, offset *int, orderBy []*model.AnimalOrdering) ([]model.Animal, error) {
+func (r *queryResolver) Animals(ctx context.Context, limit *int, offset *int, orderBy []*model.AnimalOrdering, filter *model.AnimalFilterInput) ([]model.Animal, error) {
 	scanner := execution.NewTypeNameScanner[model.Animal](map[string]reflect.Type{
 		"Cat": reflect.TypeOf(model.Cat{}),
 		"Dog": reflect.TypeOf(model.Dog{})}, "type")

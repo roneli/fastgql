@@ -3,7 +3,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"github.com/roneli/fastgql/pkg/log/adapters"
 	"net/http"
 	"os"
 
@@ -13,6 +13,7 @@ import (
 	"github.com/roneli/fastgql/examples/interface/graph"
 	"github.com/roneli/fastgql/examples/interface/graph/generated"
 	"github.com/roneli/fastgql/pkg/execution/builders"
+	"github.com/rs/zerolog/log"
 )
 
 const defaultPort = "8080"
@@ -37,7 +38,7 @@ func main() {
 	resolver := &graph.Resolver{Executor: pool}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
 	// Add logger to config for building trace logging
-	cfg := &builders.Config{Schema: executableSchema.Schema(), Logger: nil}
+	cfg := &builders.Config{Schema: executableSchema.Schema(), Logger: adapters.NewZerologAdapter(log.Logger)}
 	resolver.Cfg = cfg
 	resolver.Executor = pool
 
@@ -45,5 +46,7 @@ func main() {
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal().Err(err)
+	}
 }

@@ -110,7 +110,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Animals             func(childComplexity int, limit *int, offset *int, orderBy []*model.AnimalOrdering) int
+		Animals             func(childComplexity int, limit *int, offset *int, orderBy []*model.AnimalOrdering, filter *model.AnimalFilterInput) int
 		AnimalsAggregate    func(childComplexity int) int
 		Categories          func(childComplexity int, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) int
 		CategoriesAggregate func(childComplexity int) int
@@ -146,7 +146,7 @@ type QueryResolver interface {
 	Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error)
 	Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering) ([]*model.User, error)
 	Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error)
-	Animals(ctx context.Context, limit *int, offset *int, orderBy []*model.AnimalOrdering) ([]model.Animal, error)
+	Animals(ctx context.Context, limit *int, offset *int, orderBy []*model.AnimalOrdering, filter *model.AnimalFilterInput) ([]model.Animal, error)
 	PostsAggregate(ctx context.Context) (*model.PostsAggregate, error)
 	UsersAggregate(ctx context.Context) (*model.UsersAggregate, error)
 	CategoriesAggregate(ctx context.Context) (*model.CategoriesAggregate, error)
@@ -411,7 +411,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Animals(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.AnimalOrdering)), true
+		return e.complexity.Query.Animals(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.AnimalOrdering), args["filter"].(*model.AnimalFilterInput)), true
 
 	case "Query._animalsAggregate":
 		if e.complexity.Query.AnimalsAggregate == nil {
@@ -553,11 +553,14 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputAnimalFilterInput,
 		ec.unmarshalInputAnimalOrdering,
 		ec.unmarshalInputBooleanComparator,
 		ec.unmarshalInputBooleanListComparator,
+		ec.unmarshalInputCatFilterInput,
 		ec.unmarshalInputCategoryFilterInput,
 		ec.unmarshalInputCategoryOrdering,
+		ec.unmarshalInputDogFilterInput,
 		ec.unmarshalInputFloatComparator,
 		ec.unmarshalInputFloatListComparator,
 		ec.unmarshalInputIntComparator,
@@ -649,7 +652,26 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../fastgql_schema.graphql", Input: `"""
+	{Name: "../fastgql_schema.graphql", Input: `input AnimalFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	Cat: CatFilterInput @isInterfaceFilter
+	Dog: DogFilterInput @isInterfaceFilter
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [AnimalFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [AnimalFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: AnimalFilterInput
+}
+"""
 max aggregator for Animal
 """
 type AnimalMin {
@@ -699,6 +721,24 @@ type AnimalsAggregate {
 	Computes the minimum of the non-null input values.
 	"""
 	min: AnimalMin
+}
+input CatFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	color: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [CatFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [CatFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: CatFilterInput
 }
 """
 Aggregate Category
@@ -758,6 +798,24 @@ input CategoryOrdering {
 	Order Category by name
 	"""
 	name: _OrderingTypes
+}
+input DogFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	breed: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [DogFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [DogFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: DogFilterInput
 }
 input PostFilterInput {
 	id: IntComparator
@@ -874,8 +932,9 @@ type UsersAggregate {
 `, BuiltIn: false},
 	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
-directive @generateFilterInput(description: String) on OBJECT
+directive @generateFilterInput(description: String) on OBJECT | INTERFACE
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+directive @isInterfaceFilter on INPUT_FIELD_DEFINITION
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
 directive @typename(name: String!) on INTERFACE
@@ -962,7 +1021,7 @@ enum _relationType {
 	MANY_TO_MANY
 }
 `, BuiltIn: false},
-	{Name: "../schema.graphql", Input: `interface Animal @table(name: "animals") @typename(name: "type") {
+	{Name: "../schema.graphql", Input: `interface Animal @table(name: "animals") @typename(name: "type") @generateFilterInput {
 	id: Int!
 	name: String!
 	type: String!
@@ -1066,7 +1125,11 @@ type Query {
 		"""
 		Ordering for Animal
 		"""
-		orderBy: [AnimalOrdering]): [Animal] @generate
+		orderBy: [AnimalOrdering],
+		"""
+		Filter animals
+		"""
+		filter: AnimalFilterInput): [Animal] @generate
 	"""
 	posts Aggregate
 	"""
@@ -1230,6 +1293,15 @@ func (ec *executionContext) field_Query_animals_args(ctx context.Context, rawArg
 		}
 	}
 	args["orderBy"] = arg2
+	var arg3 *model.AnimalFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg3, err = ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
 	return args, nil
 }
 
@@ -3070,7 +3142,7 @@ func (ec *executionContext) _Query_animals(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Animals(rctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.AnimalOrdering))
+		return ec.resolvers.Query().Animals(rctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.AnimalOrdering), fc.Args["filter"].(*model.AnimalFilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5640,6 +5712,82 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAnimalFilterInput(ctx context.Context, obj interface{}) (model.AnimalFilterInput, error) {
+	var it model.AnimalFilterInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "type", "Cat", "Dog", "AND", "OR", "NOT"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "Cat":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Cat"))
+			data, err := ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Cat = data
+		case "Dog":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Dog"))
+			data, err := ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Dog = data
+		case "AND":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			data, err := ec.unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "OR":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			data, err := ec.unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "NOT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			data, err := ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputAnimalOrdering(ctx context.Context, obj interface{}) (model.AnimalOrdering, error) {
 	var it model.AnimalOrdering
 	asMap := map[string]interface{}{}
@@ -5784,6 +5932,75 @@ func (ec *executionContext) unmarshalInputBooleanListComparator(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCatFilterInput(ctx context.Context, obj interface{}) (model.CatFilterInput, error) {
+	var it model.CatFilterInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "type", "color", "AND", "OR", "NOT"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "color":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("color"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Color = data
+		case "AND":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			data, err := ec.unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "OR":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			data, err := ec.unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "NOT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			data, err := ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Context, obj interface{}) (model.CategoryFilterInput, error) {
 	var it model.CategoryFilterInput
 	asMap := map[string]interface{}{}
@@ -5867,6 +6084,75 @@ func (ec *executionContext) unmarshalInputCategoryOrdering(ctx context.Context, 
 				return it, err
 			}
 			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDogFilterInput(ctx context.Context, obj interface{}) (model.DogFilterInput, error) {
+	var it model.DogFilterInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "type", "breed", "AND", "OR", "NOT"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "breed":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("breed"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Breed = data
+		case "AND":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			data, err := ec.unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "OR":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			data, err := ec.unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "NOT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			data, err := ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
 		}
 	}
 
@@ -8093,6 +8379,34 @@ func (ec *executionContext) marshalOAnimal2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋ
 	return ret
 }
 
+func (ec *executionContext) unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx context.Context, v interface{}) ([]*model.AnimalFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.AnimalFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx context.Context, v interface{}) (*model.AnimalFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputAnimalFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalOAnimalMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalMin(ctx context.Context, sel ast.SelectionSet, v *model.AnimalMin) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -8184,6 +8498,34 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx context.Context, v interface{}) ([]*model.CatFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.CatFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx context.Context, v interface{}) (*model.CatFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCatFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v []*model.Category) graphql.Marshaler {
@@ -8294,6 +8636,34 @@ func (ec *executionContext) unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneli�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputCategoryOrdering(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx context.Context, v interface{}) ([]*model.DogFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.DogFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx context.Context, v interface{}) (*model.DogFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputDogFilterInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

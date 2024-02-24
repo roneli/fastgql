@@ -1,4 +1,4 @@
-interface Animal @table(name: "animals") @typename(name: "type") {
+interface Animal @table(name: "animals") @typename(name: "type") @generateFilterInput {
 	id: Int!
 	name: String!
 	type: String!
@@ -102,7 +102,11 @@ type Query {
 		"""
 		Ordering for Animal
 		"""
-		orderBy: [AnimalOrdering]): [Animal] @generate
+		orderBy: [AnimalOrdering],
+		"""
+		Filter animals
+		"""
+		filter: AnimalFilterInput): [Animal] @generate
 	"""
 	posts Aggregate
 	"""
