@@ -212,6 +212,17 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 	query := queryHelper{goqu.From(table), table, tableAlias, nil}
 
 	fieldsAdded := make(map[string]struct{})
+	// if type is abstract check if it has a typename
+	if field.TypeDefinition.IsAbstractType() {
+		// add type name field
+		d := field.TypeDefinition.Directives.ForName("typename")
+		if d != nil {
+			name := d.Arguments.ForName("name")
+			query.selects = append(query.selects, column{table: query.alias, name: b.CaseConverter(name.Value.Raw), alias: name.Value.Raw})
+			b.Logger.Debug("adding typename field for interface", "interface", field.TypeDefinition.Name, "tableDefinition", tableDef.name, "fieldName", name.Value.Raw)
+			fieldsAdded[name.Value.Raw] = struct{}{}
+		}
+	}
 	// Add field columns
 	for _, childField := range field.Selections {
 		if _, ok := fieldsAdded[childField.Name]; ok {

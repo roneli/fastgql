@@ -65,13 +65,13 @@ func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int,
 func (r *queryResolver) Animals(ctx context.Context, limit *int, offset *int, orderBy []*model.AnimalOrdering) ([]model.Animal, error) {
 	scanner := execution.NewTypeNameScanner[model.Animal](map[string]reflect.Type{
 		"Cat": reflect.TypeOf(model.Cat{}),
-		"Dog": reflect.TypeOf(model.Dog{})}, nil, "type")
+		"Dog": reflect.TypeOf(model.Dog{})}, "type")
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
 		return nil, err
 	}
 	return sql.Collect[model.Animal](ctx, r.Executor, func(row pgx.CollectableRow) (model.Animal, error) {
-		return scanner.Scan(row.RawValues()[0])
+		return scanner.ScanRow(row)
 	}, q, args...)
 }
 

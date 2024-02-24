@@ -10,8 +10,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/roneli/fastgql/examples/init/graph"
-	"github.com/roneli/fastgql/examples/init/graph/generated"
+	"github.com/roneli/fastgql/examples/interface/graph"
+	"github.com/roneli/fastgql/examples/interface/graph/generated"
 	"github.com/roneli/fastgql/pkg/execution/builders"
 )
 

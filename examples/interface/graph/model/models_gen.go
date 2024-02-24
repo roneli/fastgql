@@ -9,7 +9,7 @@ import (
 )
 
 type Animal interface {
-	GetID() string
+	GetID() int
 	GetName() string
 	GetType() string
 }
@@ -60,14 +60,14 @@ type BooleanListComparator struct {
 }
 
 type Cat struct {
-	ID    string `json:"id"`
+	ID    int    `json:"id"`
 	Name  string `json:"name"`
 	Type  string `json:"type"`
 	Color string `json:"color"`
 }
 
 func (Cat) IsAnimal()            {}
-func (this Cat) GetID() string   { return this.ID }
+func (this Cat) GetID() int      { return this.ID }
 func (this Cat) GetName() string { return this.Name }
 func (this Cat) GetType() string { return this.Type }
 
@@ -114,14 +114,14 @@ type CategoryOrdering struct {
 }
 
 type Dog struct {
-	ID    string `json:"id"`
+	ID    int    `json:"id"`
 	Name  string `json:"name"`
 	Type  string `json:"type"`
 	Breed string `json:"breed"`
 }
 
 func (Dog) IsAnimal()            {}
-func (this Dog) GetID() string   { return this.ID }
+func (this Dog) GetID() int      { return this.ID }
 func (this Dog) GetName() string { return this.Name }
 func (this Dog) GetType() string { return this.Type }
 

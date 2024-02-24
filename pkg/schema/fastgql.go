@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"github.com/spf13/cast"
 	"go/types"
 	"io/fs"
 	"os"
@@ -130,15 +131,17 @@ func (f *FastGqlPlugin) Implement(field *codegen.Field) string {
 	baseFuncs["deref"] = deref
 	var implementors = make(map[string]codegen.InterfaceImplementor)
 	var fieldType = field.TypeReference.GO
+	var implTypeName = "typename"
 	interfaces, ok := f.codgen.Interfaces[field.Type.Name()]
 	if ok {
+		implTypeName = getTypeName(field.Directives)
 		fieldType = interfaces.Type
 		for _, implementor := range interfaces.Implementors {
 			implementors[implementor.Name] = implementor
 		}
 	}
 
-	fResolver := fastGQLResolver{field, fieldType, implementors, "postgres"}
+	fResolver := fastGQLResolver{field, fieldType, implementors, implTypeName, "postgres"}
 	t := template.New("").Funcs(baseFuncs)
 	t, err := t.New("fastgql.tpl").Parse(fastGqlTpl)
 	if err != nil {
@@ -180,8 +183,21 @@ func deref(p types.Type) string {
 }
 
 type fastGQLResolver struct {
-	Field        *codegen.Field
-	FieldType    types.Type
-	Implementors map[string]codegen.InterfaceImplementor
-	Dialect      string
+	Field                *codegen.Field
+	FieldType            types.Type
+	Implementors         map[string]codegen.InterfaceImplementor
+	ImplementorsTypeName string
+	Dialect              string
+}
+
+func getTypeName(directives []*codegen.Directive) string {
+	for _, d := range directives {
+		if d.Name != "typename" {
+			continue
+		}
+		for _, a := range d.Args {
+			return cast.ToString(a.Value)
+		}
+	}
+	return "typename"
 }

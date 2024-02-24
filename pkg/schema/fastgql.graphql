@@ -26,6 +26,10 @@ directive @relation(type: _relationType!, fields: [String!]!, references: [Strin
 # This will make the field skipped in select, this is useful for fields that are not columns in the database, and you want to resolve it manually
 directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 
+# Typename is the field name that will be used to resolve the type of the interface,
+# default model is the default model that will be used to resolve the interface if none is found.
+directive @typename(name: String!) on INTERFACE
+
 # ================== Default Filter input types supported by fastgql ==================
 
 enum _relationType {

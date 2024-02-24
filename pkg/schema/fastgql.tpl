@@ -13,13 +13,13 @@ scanner := execution.NewTypeNameScanner[{{.FieldType | ref}}](map[string]reflect
 {{- range  $key, $value := .Implementors }}
     {{$key|quote}}: reflect.TypeOf({{$value.Type | deref}}{}),
 {{- end -}}
-}, nil, "type")
+}, {{.ImplementorsTypeName|quote}})
 q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 if err != nil {
     return nil, err
 }
 return sql.Collect[{{.FieldType | ref}}](ctx, r.Executor, func(row pgx.CollectableRow) ({{.FieldType | ref}}, error) {
-    return scanner.Scan(row.RawValues()[0])
+    return scanner.ScanRow(row)
 }, q, args...)
 {{- else -}}
 var data {{.Field.TypeReference.GO | ref}}

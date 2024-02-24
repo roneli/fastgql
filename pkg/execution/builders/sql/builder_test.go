@@ -86,6 +86,33 @@ func TestBuilder_Query(t *testing.T) {
 			ExpectedSQL:       `SELECT "sq0"."name" AS "name", "sq1"."someOtherName" AS "someOtherName" FROM "app"."users" AS "sq0" LEFT JOIN LATERAL (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq1"."name")), '[]'::jsonb) AS "someOtherName" FROM "posts" AS "sq1" WHERE sq0.id = sq1.user_id LIMIT $1) AS "sq1" ON true LIMIT $2`,
 			ExpectedArguments: []interface{}{int64(5), int64(100)},
 		},
+		{
+			Name:       "query_interface",
+			SchemaFile: "testdata/schema_simple.graphql",
+			GraphQLQuery: `query {
+							  animals {
+								id
+								name
+							}
+						}`,
+			ExpectedSQL:       `SELECT "sq0"."type" AS "type", "sq0"."id" AS "id", "sq0"."name" AS "name" FROM "app"."animals" AS "sq0" LIMIT $1`,
+			ExpectedArguments: []interface{}{int64(100)},
+		},
+		{
+			Name:       "query_on_interface",
+			SchemaFile: "testdata/schema_simple.graphql",
+			GraphQLQuery: `query {
+				animals {
+				  id
+				  name	
+				  ... on Dog {	
+					breed	
+				  }
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."type" AS "type", "sq0"."id" AS "id", "sq0"."name" AS "name", "sq0"."breed" AS "breed" FROM "app"."animals" AS "sq0" LIMIT $1`,
+			ExpectedArguments: []interface{}{int64(100)},
+		},
 	}
 	_ = os.Chdir("/testdata")
 	for _, testCase := range testCases {

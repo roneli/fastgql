@@ -43,6 +43,7 @@ type ResolverRoot interface {
 
 type DirectiveRoot struct {
 	FastgqlField func(ctx context.Context, obj interface{}, next graphql.Resolver, skipSelect *bool) (res interface{}, err error)
+	Typename     func(ctx context.Context, obj interface{}, next graphql.Resolver, name string) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -877,6 +878,7 @@ directive @generateFilterInput(description: String) on OBJECT
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+directive @typename(name: String!) on INTERFACE
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean
@@ -960,13 +962,13 @@ enum _relationType {
 	MANY_TO_MANY
 }
 `, BuiltIn: false},
-	{Name: "../schema.graphql", Input: `interface Animal @table(name: "animals") {
-	id: ID!
+	{Name: "../schema.graphql", Input: `interface Animal @table(name: "animals") @typename(name: "type") {
+	id: Int!
 	name: String!
 	type: String!
 }
 type Cat implements Animal {
-	id: ID!
+	id: Int!
 	name: String!
 	type: String!
 	color: String!
@@ -976,7 +978,7 @@ type Category @generateFilterInput {
 	name: String
 }
 type Dog implements Animal {
-	id: ID!
+	id: Int!
 	name: String!
 	type: String!
 	breed: String!
@@ -1123,6 +1125,21 @@ func (ec *executionContext) dir_fastgqlField_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["skipSelect"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) dir_typename_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
 	return args, nil
 }
 
@@ -1713,9 +1730,9 @@ func (ec *executionContext) _Cat_id(ctx context.Context, field graphql.Collected
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Cat_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1725,7 +1742,7 @@ func (ec *executionContext) fieldContext_Cat_id(ctx context.Context, field graph
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2200,9 +2217,9 @@ func (ec *executionContext) _Dog_id(ctx context.Context, field graphql.Collected
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Dog_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2212,7 +2229,7 @@ func (ec *executionContext) fieldContext_Dog_id(ctx context.Context, field graph
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil

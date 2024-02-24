@@ -1,10 +1,10 @@
-interface Animal @table(name: "animals") {
-	id: ID!
+interface Animal @table(name: "animals") @typename(name: "type") {
+	id: Int!
 	name: String!
 	type: String!
 }
 type Cat implements Animal {
-	id: ID!
+	id: Int!
 	name: String!
 	type: String!
 	color: String!
@@ -14,7 +14,7 @@ type Category @generateFilterInput {
 	name: String
 }
 type Dog implements Animal {
-	id: ID!
+	id: Int!
 	name: String!
 	type: String!
 	breed: String!
