@@ -13,6 +13,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/spf13/cast"
+
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/templates"
 
@@ -27,7 +29,7 @@ var (
 	FastGQLSchema string
 	//go:embed server.gotpl
 	fastGqlServerTpl  string
-	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "skipGenerate", "generateMutations", "relation"}
+	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "isInterfaceFilter", "skipGenerate", "generateMutations", "relation"}
 	defaultAugmenters = []Augmenter{
 		MutationsAugmenter,
 		PaginationAugmenter,
@@ -53,21 +55,22 @@ type FastGqlPlugin struct {
 	rootDirectory  string
 	generateServer bool
 	serverFilename string
+	codgen         *codegen.Data
 }
 
-func NewFastGQLPlugin(rootDir, serverFileName string, generateServer bool) FastGqlPlugin {
-	return FastGqlPlugin{
+func NewFastGQLPlugin(rootDir, serverFileName string, generateServer bool) *FastGqlPlugin {
+	return &FastGqlPlugin{
 		rootDirectory:  rootDir,
 		generateServer: generateServer,
 		serverFilename: serverFileName,
 	}
 }
 
-func (f FastGqlPlugin) Name() string {
+func (f *FastGqlPlugin) Name() string {
 	return "fastGQLPlugin"
 }
 
-func (f FastGqlPlugin) MutateConfig(c *config.Config) error {
+func (f *FastGqlPlugin) MutateConfig(c *config.Config) error {
 	// Skip runtime checks for all FastGQL directives as they only used on the server side schema
 	for _, d := range FastGQLDirectives {
 		c.Directives[d] = config.DirectiveConfig{SkipRuntime: true}
@@ -75,7 +78,8 @@ func (f FastGqlPlugin) MutateConfig(c *config.Config) error {
 	return nil
 }
 
-func (f FastGqlPlugin) GenerateCode(data *codegen.Data) error {
+func (f *FastGqlPlugin) GenerateCode(data *codegen.Data) error {
+	f.codgen = data
 	if _, err := os.Stat(data.Config.Resolver.Filename); errors.Is(err, fs.ErrNotExist) {
 		err := templates.Render(templates.Options{
 			PackageName: data.Config.Resolver.Package,
@@ -114,24 +118,31 @@ func (f FastGqlPlugin) GenerateCode(data *codegen.Data) error {
 	return nil
 }
 
-func (f FastGqlPlugin) Implement(field *codegen.Field) string {
+func (f *FastGqlPlugin) Implement(field *codegen.Field) string {
 	buf := &bytes.Buffer{}
 	if field.TypeReference.Definition.Directives.ForName("generate") != nil {
 		return `panic(fmt.Errorf("not implemented"))`
 	}
-	if field.TypeReference.Definition.IsAbstractType() {
-		return `panic(fmt.Errorf("interface not supported"))`
-	}
 	if field.TypeReference.Definition.IsLeafType() || field.TypeReference.Definition.IsInputType() {
 		return `panic(fmt.Errorf("not implemented"))`
 	}
-
 	baseFuncs := templates.Funcs()
 	baseFuncs["hasSuffix"] = strings.HasSuffix
 	baseFuncs["hasPrefix"] = strings.HasPrefix
 	baseFuncs["deref"] = deref
+	var implementors = make(map[string]codegen.InterfaceImplementor)
+	var fieldType = field.TypeReference.GO
+	var implTypeName = "typename"
+	interfaces, ok := f.codgen.Interfaces[field.Type.Name()]
+	if ok {
+		implTypeName = getTypeName(field.Directives)
+		fieldType = interfaces.Type
+		for _, implementor := range interfaces.Implementors {
+			implementors[implementor.Name] = implementor
+		}
+	}
 
-	fResolver := fastGQLResolver{field, "postgres"}
+	fResolver := fastGQLResolver{field, fieldType, implementors, implTypeName, "postgres"}
 	t := template.New("").Funcs(baseFuncs)
 	t, err := t.New("fastgql.tpl").Parse(fastGqlTpl)
 	if err != nil {
@@ -143,14 +154,9 @@ func (f FastGqlPlugin) Implement(field *codegen.Field) string {
 	return buf.String()
 }
 
-type fastGQLResolver struct {
-	Field   *codegen.Field
-	Dialect string
-}
-
 // CreateAugmented augments *ast.Schema returning []*ast.Source files that are augmented with filters, mutations etc'
 // so gqlgen can generate an augmented fastGQL server
-func (f FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters ...Augmenter) ([]*ast.Source, error) {
+func (f *FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters ...Augmenter) ([]*ast.Source, error) {
 	if len(augmenters) == 0 {
 		augmenters = defaultAugmenters
 	}
@@ -175,4 +181,24 @@ func ref(p types.Type) string {
 
 func deref(p types.Type) string {
 	return strings.TrimPrefix(ref(p), "*")
+}
+
+type fastGQLResolver struct {
+	Field                *codegen.Field
+	FieldType            types.Type
+	Implementors         map[string]codegen.InterfaceImplementor
+	ImplementorsTypeName string
+	Dialect              string
+}
+
+func getTypeName(directives []*codegen.Directive) string {
+	for _, d := range directives {
+		if d.Name != "typename" {
+			continue
+		}
+		for _, a := range d.Args {
+			return cast.ToString(a.Value)
+		}
+	}
+	return "typename"
 }

@@ -8,6 +8,19 @@ if err := r.Executor.Scan(ctx, {{.Dialect | quote}}, &data); err != nil {
     return nil, err
 }
 return &data, nil
+{{- else if eq .Field.TypeReference.Definition.Kind  "INTERFACE" -}}
+scanner := execution.NewTypeNameScanner[{{.FieldType | ref}}](map[string]reflect.Type{
+{{- range  $key, $value := .Implementors }}
+    {{$key|quote}}: reflect.TypeOf({{$value.Type | deref}}{}),
+{{- end -}}
+}, {{.ImplementorsTypeName|quote}})
+q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
+if err != nil {
+    return nil, err
+}
+return sql.Collect[{{.FieldType | ref}}](ctx, r.Executor, func(row pgx.CollectableRow) ({{.FieldType | ref}}, error) {
+    return scanner.ScanRow(row)
+}, q, args...)
 {{- else -}}
 var data {{.Field.TypeReference.GO | ref}}
 q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
@@ -15,7 +28,11 @@ if err != nil {
     return nil, err
 }
 if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+{{- if eq .Field.TypeReference.Definition.Kind "LIST" -}}
     return pgxscan.ScanAll(&data, rows)
+{{- else -}}
+    return pgxscan.ScanOne(&data, rows)
+{{- end -}}
 }, q, args...); err != nil {
     return nil, err
 }

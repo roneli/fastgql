@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.41
 	github.com/doug-martin/goqu/v9 v9.10.0
 	github.com/georgysavva/scany/v2 v2.0.0
+	github.com/go-viper/mapstructure/v2 v2.0.0-alpha.1
 	github.com/iancoleman/strcase v0.1.3
 	github.com/jackc/pgx/v4 v4.10.1
 	github.com/jackc/pgx/v5 v5.5.0

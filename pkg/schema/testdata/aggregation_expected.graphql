@@ -17,5 +17,5 @@ type Query {
     """
     generateField Aggregate
     """
-    _generateFieldAggregate: ObjectWithRecursivesAggregate!
+    _generateFieldAggregate: ObjectWithRecursivesAggregate! @generate(filter:true)
 }

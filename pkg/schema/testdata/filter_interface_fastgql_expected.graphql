@@ -1,0 +1,57 @@
+input AnimalFilterInput {
+    id: IntComparator
+    name: StringComparator
+    type: StringComparator
+    cat: CatFilterInput @isInterfaceFilter
+    dog: DogFilterInput @isInterfaceFilter
+    """
+    Logical AND of FilterInput
+    """
+    AND: [AnimalFilterInput]
+    """
+    Logical OR of FilterInput
+    """
+    OR: [AnimalFilterInput]
+    """
+    Logical NOT of FilterInput
+    """
+    NOT: AnimalFilterInput
+}
+
+input CatFilterInput {
+    id: IntComparator
+    name: StringComparator
+    type: StringComparator
+    color: StringComparator
+    """
+    Logical AND of FilterInput
+    """
+    AND: [CatFilterInput]
+    """
+    Logical OR of FilterInput
+    """
+    OR: [CatFilterInput]
+    """
+    Logical NOT of FilterInput
+    """
+    NOT: CatFilterInput
+}
+
+input DogFilterInput {
+    id: IntComparator
+    name: StringComparator
+    type: StringComparator
+    breed: StringComparator
+    """
+    Logical AND of FilterInput
+    """
+    AND: [DogFilterInput]
+    """
+    Logical OR of FilterInput
+    """
+    OR: [DogFilterInput]
+    """
+    Logical NOT of FilterInput
+    """
+    NOT: DogFilterInput
+}

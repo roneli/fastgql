@@ -212,6 +212,17 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 	query := queryHelper{goqu.From(table), table, tableAlias, nil}
 
 	fieldsAdded := make(map[string]struct{})
+	// if type is abstract check if it has a typename
+	if field.TypeDefinition.IsAbstractType() {
+		// add type name field
+		d := field.TypeDefinition.Directives.ForName("typename")
+		if d != nil {
+			name := d.Arguments.ForName("name")
+			query.selects = append(query.selects, column{table: query.alias, name: b.CaseConverter(name.Value.Raw), alias: name.Value.Raw})
+			b.Logger.Debug("adding typename field for interface", "interface", field.TypeDefinition.Name, "tableDefinition", tableDef.name, "fieldName", name.Value.Raw)
+			fieldsAdded[name.Value.Raw] = struct{}{}
+		}
+	}
 	// Add field columns
 	for _, childField := range field.Selections {
 		if _, ok := fieldsAdded[childField.Name]; ok {
@@ -393,6 +404,13 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			if !ok {
 				return nil, fmt.Errorf("fatal value of bool exp not map")
 			}
+			fid := filterInputDef.Fields.ForName(k)
+			if fid.Directives.ForName("isInterfaceFilter") != nil {
+				// add type filter + interface filter
+				expBuilder = expBuilder.Append(b.buildInterfaceFilter(table, astDefinition, b.Schema.Types[strcase.ToCamel(k)], kv))
+				continue
+			}
+
 			ffd := astDefinition.Fields.ForName(k)
 			// Create a Builder
 			d := ffd.Directives.ForName("relation")
@@ -529,6 +547,15 @@ func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, r
 	}
 	fq.SelectDataset = fq.Where(expBuilder)
 	return fq, nil
+}
+
+func (b Builder) buildInterfaceFilter(table tableHelper, parentDef, definition *ast.Definition, kv map[string]any) goqu.Expression {
+	d := parentDef.Directives.ForName("typename").Arguments.ForName("name").Value.Raw
+	filterExp, err := b.buildFilterExp(table, definition, kv)
+	if err != nil {
+		panic(err)
+	}
+	return goqu.And(filterExp, table.table.Col(d).Eq(strings.ToLower(definition.Name)))
 }
 
 // buildOperation creates a goqu.Expression SQL operator

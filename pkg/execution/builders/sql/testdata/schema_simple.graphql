@@ -19,10 +19,31 @@ type Category @table(name:"categories", schema:"") @generateFilterInput {
     name: String
 }
 
+
+interface Animal @table(name: "animals", schema: "app") @typename(name: "type") {
+    id: ID!
+    name: String!
+    type: String!
+}
+type Cat implements Animal {
+    id: ID!
+    name: String!
+    type: String!
+    color: String!
+}
+
+type Dog implements Animal {
+    id: ID!
+    name: String!
+    type: String!
+    breed: String!
+}
+
 type Query  {
     posts: [Post] @generate
     users: [User] @generate
     categories: [Category] @generate
+    animals: [Animal] @generate
 }
 
 # ================== schema generation fastgql directives  ==================
@@ -52,6 +73,8 @@ directive @relation(type: _relationType!, fields: [String!]!, references: [Strin
 
 # This will make the field skipped in select, this is useful for fields that are not columns in the database, and you want to resolve it manually
 directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+
+directive @typename(name: String!) on INTERFACE
 
 # ================== Default Filter input types supported by fastgql ==================
 

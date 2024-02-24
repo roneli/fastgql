@@ -164,13 +164,13 @@ func CollectFields(ctx context.Context, schema *ast.Schema) Field {
 		}
 	}
 	f := NewField(nil, resCtx.Field.Field, schema, args)
-	f.Selections = collectFields(&f, schema, opCtx, make(map[string]bool))
+	f.Selections = collectFields(&f, f.SelectionSet, schema, opCtx, make(map[string]bool))
 	return f
 }
 
 func CollectFromQuery(field *ast.Field, schema *ast.Schema, opCtx *graphql.OperationContext, args map[string]interface{}) Field {
 	f := NewField(nil, field, schema, args)
-	f.Selections = collectFields(&f, schema, opCtx, make(map[string]bool))
+	f.Selections = collectFields(&f, f.SelectionSet, schema, opCtx, make(map[string]bool))
 	return f
 }
 
@@ -183,10 +183,9 @@ func getTypeName(f *ast.Field) string {
 	return typeName
 }
 
-func collectFields(parent *Field, schema *ast.Schema, opCtx *graphql.OperationContext, visited map[string]bool) []Field {
+func collectFields(parent *Field, selectionSet ast.SelectionSet, schema *ast.Schema, opCtx *graphql.OperationContext, visited map[string]bool) []Field {
 	groupedFields := make([]Field, 0)
-
-	for _, sel := range parent.Field.SelectionSet {
+	for _, sel := range selectionSet {
 		switch sel := sel.(type) {
 		case *ast.Field:
 			if !shouldIncludeNode(sel.Directives, opCtx.Variables) {
@@ -195,7 +194,7 @@ func collectFields(parent *Field, schema *ast.Schema, opCtx *graphql.OperationCo
 			selField := getOrCreateAndAppendField(&groupedFields, sel.Alias, sel.ObjectDefinition, func() Field {
 				return NewField(parent, sel, schema, resolveArguments(sel, opCtx.Variables))
 			})
-			// Add filter fields for relation form different provider, so they are returned by builder query
+			// Add filter fields for relation from different provider, so they are returned by builder query
 			if selField.FieldType == TypeRelation && selField.Table().Dialect != parent.Table().Dialect {
 				for _, relationField := range selField.Relation().Fields {
 					groupedFields = append(groupedFields, Field{
@@ -212,13 +211,14 @@ func collectFields(parent *Field, schema *ast.Schema, opCtx *graphql.OperationCo
 			}
 			if selField.Field.SelectionSet != nil {
 				// Add any sub selections of this field
-				selField.Selections = append(selField.Selections, collectFields(selField, schema, opCtx, map[string]bool{})...)
+				selField.Selections = append(selField.Selections, collectFields(selField, selField.SelectionSet, schema, opCtx, map[string]bool{})...)
 			}
 		case *ast.InlineFragment:
 			if !shouldIncludeNode(sel.Directives, opCtx.Variables) {
 				continue
 			}
-			for _, childField := range collectFields(parent, schema, opCtx, visited) {
+
+			for _, childField := range collectFields(parent, sel.SelectionSet, schema, opCtx, visited) {
 				f := getOrCreateAndAppendField(&groupedFields, childField.Name, childField.ObjectDefinition, func() Field { return childField })
 				f.Selections = append(f.Selections, childField.Selections...)
 			}
@@ -239,7 +239,7 @@ func collectFields(parent *Field, schema *ast.Schema, opCtx *graphql.OperationCo
 				panic(fmt.Errorf("missing fragment %s", fragmentName))
 			}
 
-			for _, childField := range collectFields(parent, schema, opCtx, visited) {
+			for _, childField := range collectFields(parent, fragment.SelectionSet, schema, opCtx, visited) {
 				f := getOrCreateAndAppendField(&groupedFields, childField.Name, childField.ObjectDefinition, func() Field { return childField })
 				f.Selections = append(f.Selections, childField.Selections...)
 			}
@@ -257,9 +257,7 @@ func getOrCreateAndAppendField(c *[]Field, name string, objectDefinition *ast.De
 			return &(*c)[i]
 		}
 	}
-
 	f := creator()
-
 	*c = append(*c, f)
 	return &(*c)[len(*c)-1]
 }
