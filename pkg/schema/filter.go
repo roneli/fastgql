@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"github.com/iancoleman/strcase"
 	"log"
 	"strings"
 
@@ -149,7 +150,7 @@ func buildFilterInput(s *ast.Schema, input *ast.Definition, object *ast.Definiti
 					log.Printf("adding filter input for interface implementation %s\n", k)
 					name := fmt.Sprintf("%sFilterInput", k)
 					input.Fields = append(input.Fields, &ast.FieldDefinition{
-						Name:       k,
+						Name:       strcase.ToLowerCamel(k),
 						Type:       &ast.Type{NamedType: name},
 						Directives: []*ast.Directive{{Name: "isInterfaceFilter"}},
 					})

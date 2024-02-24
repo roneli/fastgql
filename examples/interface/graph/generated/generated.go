@@ -656,8 +656,8 @@ var sources = []*ast.Source{
 	id: IntComparator
 	name: StringComparator
 	type: StringComparator
-	Cat: CatFilterInput @isInterfaceFilter
-	Dog: DogFilterInput @isInterfaceFilter
+	dog: DogFilterInput @isInterfaceFilter
+	cat: CatFilterInput @isInterfaceFilter
 	"""
 	Logical AND of FilterInput
 	"""
@@ -5719,7 +5719,7 @@ func (ec *executionContext) unmarshalInputAnimalFilterInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name", "type", "Cat", "Dog", "AND", "OR", "NOT"}
+	fieldsInOrder := [...]string{"id", "name", "type", "dog", "cat", "AND", "OR", "NOT"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5747,20 +5747,20 @@ func (ec *executionContext) unmarshalInputAnimalFilterInput(ctx context.Context,
 				return it, err
 			}
 			it.Type = data
-		case "Cat":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Cat"))
-			data, err := ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Cat = data
-		case "Dog":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Dog"))
+		case "dog":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dog"))
 			data, err := ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Dog = data
+		case "cat":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cat"))
+			data, err := ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Cat = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
 			data, err := ec.unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)

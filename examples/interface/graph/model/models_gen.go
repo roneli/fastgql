@@ -18,8 +18,8 @@ type AnimalFilterInput struct {
 	ID   *IntComparator    `json:"id,omitempty"`
 	Name *StringComparator `json:"name,omitempty"`
 	Type *StringComparator `json:"type,omitempty"`
-	Cat  *CatFilterInput   `json:"Cat,omitempty"`
-	Dog  *DogFilterInput   `json:"Dog,omitempty"`
+	Dog  *DogFilterInput   `json:"dog,omitempty"`
+	Cat  *CatFilterInput   `json:"cat,omitempty"`
 	// Logical AND of FilterInput
 	And []*AnimalFilterInput `json:"AND,omitempty"`
 	// Logical OR of FilterInput

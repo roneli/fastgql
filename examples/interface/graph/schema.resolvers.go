@@ -23,9 +23,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -38,9 +36,7 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -53,9 +49,7 @@ func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int,
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -82,9 +76,7 @@ func (r *queryResolver) PostsAggregate(ctx context.Context) (*model.PostsAggrega
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -97,9 +89,7 @@ func (r *queryResolver) UsersAggregate(ctx context.Context) (*model.UsersAggrega
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -112,9 +102,7 @@ func (r *queryResolver) CategoriesAggregate(ctx context.Context) (*model.Categor
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -127,9 +115,7 @@ func (r *queryResolver) AnimalsAggregate(ctx context.Context) (*model.AnimalsAgg
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil

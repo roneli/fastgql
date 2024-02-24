@@ -28,7 +28,11 @@ if err != nil {
     return nil, err
 }
 if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+{{- if eq .Field.TypeReference.Definition.Kind "LIST" -}}
     return pgxscan.ScanAll(&data, rows)
+{{- else -}}
+    return pgxscan.ScanOne(&data, rows)
+{{- end -}}
 }, q, args...); err != nil {
     return nil, err
 }

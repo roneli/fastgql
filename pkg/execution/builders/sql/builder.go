@@ -407,7 +407,7 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			fid := filterInputDef.Fields.ForName(k)
 			if fid.Directives.ForName("isInterfaceFilter") != nil {
 				// add type filter + interface filter
-				expBuilder = expBuilder.Append(b.buildInterfaceFilter(table, astDefinition, b.Schema.Types[k], kv))
+				expBuilder = expBuilder.Append(b.buildInterfaceFilter(table, astDefinition, b.Schema.Types[strcase.ToCamel(k)], kv))
 				continue
 			}
 
@@ -437,15 +437,6 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 		}
 	}
 	return expBuilder, nil
-}
-
-func (b Builder) buildInterfaceFilter(table tableHelper, parentDef, definition *ast.Definition, kv map[string]any) goqu.Expression {
-	d := parentDef.Directives.ForName("typename").Arguments.ForName("name").Value.Raw
-	filterExp, err := b.buildFilterExp(table, definition, kv)
-	if err != nil {
-		panic(err)
-	}
-	return goqu.And(filterExp, table.table.Col(d).Eq(strings.ToLower(definition.Name)))
 }
 
 func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) error {
@@ -556,6 +547,15 @@ func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, r
 	}
 	fq.SelectDataset = fq.Where(expBuilder)
 	return fq, nil
+}
+
+func (b Builder) buildInterfaceFilter(table tableHelper, parentDef, definition *ast.Definition, kv map[string]any) goqu.Expression {
+	d := parentDef.Directives.ForName("typename").Arguments.ForName("name").Value.Raw
+	filterExp, err := b.buildFilterExp(table, definition, kv)
+	if err != nil {
+		panic(err)
+	}
+	return goqu.And(filterExp, table.table.Col(d).Eq(strings.ToLower(definition.Name)))
 }
 
 // buildOperation creates a goqu.Expression SQL operator
