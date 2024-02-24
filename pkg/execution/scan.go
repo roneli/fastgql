@@ -2,10 +2,11 @@ package execution
 
 import (
 	"fmt"
-	"github.com/go-viper/mapstructure/v2"
-	"github.com/jackc/pgx/v5"
 	"reflect"
 	"strings"
+
+	"github.com/go-viper/mapstructure/v2"
+	"github.com/jackc/pgx/v5"
 
 	jsoniter "github.com/json-iterator/go"
 )

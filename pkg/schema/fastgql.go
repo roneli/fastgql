@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"github.com/spf13/cast"
 	"go/types"
 	"io/fs"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"runtime"
 	"strings"
 	"text/template"
+
+	"github.com/spf13/cast"
 
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/templates"

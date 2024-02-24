@@ -3,6 +3,9 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"os"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -11,8 +14,6 @@ import (
 	"github.com/roneli/fastgql/pkg/execution/builders"
 	"github.com/roneli/fastgql/pkg/log/adapters"
 	"github.com/rs/zerolog/log"
-	"net/http"
-	"os"
 )
 
 const defaultPort = "8081"

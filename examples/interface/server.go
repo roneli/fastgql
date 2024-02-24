@@ -3,9 +3,10 @@ package main
 
 import (
 	"context"
-	"github.com/roneli/fastgql/pkg/log/adapters"
 	"net/http"
 	"os"
+
+	"github.com/roneli/fastgql/pkg/log/adapters"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
