@@ -6,13 +6,15 @@
 # for filter to work @generateFilterInput must be defined on the object, if its missing you will get an error
 # recursive will generate pagination, filtering, ordering and aggregate for all the relations of the object,
 # this will modify the object itself and add arguments to the object fields.
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on FIELD_DEFINITION
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
 
 # Generate mutations for an object
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 
 # Generate filter input on an object
-directive @generateFilterInput(description: String) repeatable on OBJECT
+directive @generateFilterInput(description: String) repeatable on OBJECT | INTERFACE
+
+directive @isInterfaceFilter on INPUT_FIELD_DEFINITION
 
 # ================== Directives supported by fastgql for Querying ==================
 
@@ -26,6 +28,12 @@ directive @relation(type: _relationType!, fields: [String!]!, references: [Strin
 # This will make the field skipped in select, this is useful for fields that are not columns in the database, and you want to resolve it manually
 directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 
+# Typename is the field name that will be used to resolve the type of the interface,
+# default model is the default model that will be used to resolve the interface if none is found.
+directive @typename(name: String!) on INTERFACE
+
+# =================== Default Scalar types supported by fastgql ===================
+scalar Map
 # ================== Default Filter input types supported by fastgql ==================
 
 enum _relationType {
