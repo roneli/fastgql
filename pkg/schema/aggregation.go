@@ -260,4 +260,3 @@ func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition
 		},
 	}
 }
-```
