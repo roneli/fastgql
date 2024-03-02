@@ -22,7 +22,6 @@ jobs:
             options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - run: |
-          apt-get update
           apt-get install --yes --no-install-recommends postgresql-client
       # run the sql script init.sql in workflows/data
       - run: |
