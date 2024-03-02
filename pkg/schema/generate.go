@@ -2,8 +2,9 @@ package schema
 
 import (
 	"fmt"
-	"github.com/99designs/gqlgen/plugin/modelgen"
 	"log"
+
+	"github.com/99designs/gqlgen/plugin/modelgen"
 
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"

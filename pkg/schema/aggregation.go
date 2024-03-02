@@ -2,8 +2,9 @@ package schema
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"log"
+
+	"github.com/iancoleman/strcase"
 
 	"github.com/jinzhu/inflection"
 	"github.com/spf13/cast"
@@ -34,7 +35,6 @@ func AggregationAugmenter(s *ast.Schema) error {
 		if p, ok := args["aggregate"]; ok && cast.ToBool(p) {
 			addAggregationField(s, s.Query, v)
 		}
-		// TODO: add recursive aggregation
 	}
 	return nil
 }
