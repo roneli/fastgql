@@ -23,7 +23,9 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+		return pgxscan.ScanAll(&data, rows)
+	}, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -36,7 +38,9 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, orde
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+		return pgxscan.ScanAll(&data, rows)
+	}, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -49,7 +53,9 @@ func (r *queryResolver) Categories(ctx context.Context, limit *int, offset *int,
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+		return pgxscan.ScanAll(&data, rows)
+	}, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -70,52 +76,60 @@ func (r *queryResolver) Animals(ctx context.Context, limit *int, offset *int, or
 }
 
 // PostsAggregate is the resolver for the _postsAggregate field.
-func (r *queryResolver) PostsAggregate(ctx context.Context, filter *model.PostFilterInput) (*model.PostsAggregate, error) {
-	var data *model.PostsAggregate
+func (r *queryResolver) PostsAggregate(ctx context.Context, groupBy []model.PostGroupBy, filter *model.PostFilterInput) ([]*model.PostsAggregate, error) {
+	var data []*model.PostsAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+		return pgxscan.ScanAll(&data, rows)
+	}, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
 // UsersAggregate is the resolver for the _usersAggregate field.
-func (r *queryResolver) UsersAggregate(ctx context.Context, filter *model.UserFilterInput) (*model.UsersAggregate, error) {
-	var data *model.UsersAggregate
+func (r *queryResolver) UsersAggregate(ctx context.Context, groupBy []model.UserGroupBy, filter *model.UserFilterInput) ([]*model.UsersAggregate, error) {
+	var data []*model.UsersAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+		return pgxscan.ScanAll(&data, rows)
+	}, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
 // CategoriesAggregate is the resolver for the _categoriesAggregate field.
-func (r *queryResolver) CategoriesAggregate(ctx context.Context, filter *model.CategoryFilterInput) (*model.CategoriesAggregate, error) {
-	var data *model.CategoriesAggregate
+func (r *queryResolver) CategoriesAggregate(ctx context.Context, groupBy []model.CategoryGroupBy, filter *model.CategoryFilterInput) ([]*model.CategoriesAggregate, error) {
+	var data []*model.CategoriesAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+		return pgxscan.ScanAll(&data, rows)
+	}, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
 // AnimalsAggregate is the resolver for the _animalsAggregate field.
-func (r *queryResolver) AnimalsAggregate(ctx context.Context, filter *model.AnimalFilterInput) (*model.AnimalsAggregate, error) {
-	var data *model.AnimalsAggregate
+func (r *queryResolver) AnimalsAggregate(ctx context.Context, groupBy []model.AnimalGroupBy, filter *model.AnimalFilterInput) ([]*model.AnimalsAggregate, error) {
+	var data []*model.AnimalsAggregate
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
 		return nil, err
 	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error { return pgxscan.ScanOne(&data, rows) }, q, args...); err != nil {
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+		return pgxscan.ScanAll(&data, rows)
+	}, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil

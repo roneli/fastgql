@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"github.com/99designs/gqlgen/plugin/modelgen"
 	"log"
 
 	"github.com/99designs/gqlgen/api"
@@ -43,9 +44,13 @@ func Generate(configPath string, generateServer, saveFiles bool, sources ...*ast
 			return err
 		}
 	}
+	// Attaching the mutation function onto modelgen plugin
+	p := modelgen.Plugin{
+		MutateHook: mutateHook,
+	}
 	// skip validation for now, as after code generation we need to mod tidy again
 	cfg.SkipValidation = true
-	if err = api.Generate(cfg, api.PrependPlugin(fgqlPlugin)); err != nil {
+	if err = api.Generate(cfg, api.PrependPlugin(fgqlPlugin), api.ReplacePlugin(&p)); err != nil {
 		return err
 	}
 	log.Print("fastgql generated successfully")

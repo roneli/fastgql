@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"github.com/iancoleman/strcase"
 	"log"
 
 	"github.com/jinzhu/inflection"
@@ -44,7 +45,7 @@ func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDef
 	if !ok || !fieldDef.IsCompositeType() {
 		return
 	}
-	aggDef := buildAggregateObject(s, fieldDef)
+	aggDef := addAggregateObject(s, fieldDef)
 	if aggDef == nil {
 		log.Printf("aggreationField for field %s@%s already exists skipping\n", field.Name, obj.Name)
 	}
@@ -60,13 +61,33 @@ func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDef
 		}
 		return
 	}
+	addAggregateField(s, obj, field, aggDef)
 	log.Printf("adding aggregation field to field %s@%s\n", field.Name, obj.Name)
+
+}
+
+func addAggregateField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDefinition, aggDef *ast.Definition) {
+	aggregateName := fmt.Sprintf("_%sAggregate", field.Name)
 	obj.Fields = append(obj.Fields, &ast.FieldDefinition{
 		Name:        aggregateName,
 		Description: fmt.Sprintf("%s Aggregate", field.Name),
+		Arguments: ast.ArgumentDefinitionList{
+			{
+				Name: "groupBy",
+				Type: &ast.Type{
+					Elem: &ast.Type{
+						NamedType: fmt.Sprintf("%sGroupBy", strcase.ToCamel(field.Type.Name())),
+						NonNull:   true,
+					},
+				},
+			},
+		},
 		Type: &ast.Type{
-			NamedType: aggDef.Name,
-			NonNull:   true,
+			Elem: &ast.Type{
+				NamedType: aggDef.Name,
+				NonNull:   true,
+			},
+			NonNull: true,
 		},
 		// add directive to field, so filter can be generated
 		Directives: ast.DirectiveList{addGenerateDirective(s)},
@@ -89,8 +110,58 @@ func addGenerateDirective(s *ast.Schema) *ast.Directive {
 	}
 }
 
-func buildAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
+// addAggregateGroupByObject builds the group by object for the aggregate
+func addAggregateGroupByObject(s *ast.Schema, obj *ast.Definition) {
+	// check if group by object already exists, if so, skip
+	if _, ok := s.Types[fmt.Sprintf("%sGroupBy", obj.Name)]; ok {
+		log.Printf("group by object for %s already exists skipping\n", obj.Name)
+		return
+	}
+	groupBy := &ast.Definition{
+		Kind:        ast.Enum,
+		Description: fmt.Sprintf("Group by %s", obj.Name),
+		Name:        fmt.Sprintf("%sGroupBy", obj.Name),
+	}
+
+	for _, f := range obj.Fields {
+		if IsListType(f.Type) {
+			continue
+		}
+		t := GetType(f.Type)
+		fieldDef := s.Types[t.Name()]
+		// we only support scalar types as aggregate fields
+		if !fieldDef.IsLeafType() {
+			continue
+		}
+		log.Printf("adding field %s to group by aggregates for %s\n", f.Name, obj.Name)
+		groupBy.EnumValues = append(groupBy.EnumValues, &ast.EnumValueDefinition{
+			Description: fmt.Sprintf("Group by %s", f.Name),
+			Name:        strcase.ToScreamingSnake(f.Name),
+		})
+	}
+	// add object to schema
+	s.Types[groupBy.Name] = groupBy
+	addRecursiveAggregation(s, obj)
+}
+
+func addRecursiveAggregation(s *ast.Schema, obj *ast.Definition) {
+	for _, f := range obj.Fields {
+		// aggregate only on fields with the @relation directive
+		if f.Directives.ForName("relation") == nil {
+			continue
+		}
+		def := s.Types[f.Type.Name()]
+		aggDef := addAggregateObject(s, def)
+		if def != nil {
+			addAggregateField(s, obj, f, aggDef)
+		}
+	}
+}
+
+func addAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
 	payloadObjectName := fmt.Sprintf("%sAggregate", inflection.Plural(obj.Name))
+	// Add group by if not exists
+	addAggregateGroupByObject(s, obj)
 	if payloadObject, ok := s.Types[payloadObjectName]; ok {
 		return payloadObject
 	}
@@ -99,6 +170,14 @@ func buildAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
 		Description: fmt.Sprintf("Aggregate %s", obj.Name),
 		Name:        payloadObjectName,
 		Fields: []*ast.FieldDefinition{
+			{
+				Description: "Group",
+				Name:        "group",
+				Type: &ast.Type{
+					NamedType: "Map",
+					NonNull:   false,
+				},
+			},
 			{
 				Description: "Count results",
 				Name:        "count",
@@ -111,7 +190,6 @@ func buildAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
 	}
 	// Add other aggregate functions max/min
 	payloadObject.Fields = append(payloadObject.Fields, buildMinMaxField(s, obj)...)
-
 	s.Types[payloadObjectName] = payloadObject
 	return payloadObject
 }
@@ -182,3 +260,4 @@ func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition
 		},
 	}
 }
+```
