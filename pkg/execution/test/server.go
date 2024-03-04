@@ -9,9 +9,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/roneli/fastgql/pkg/execution"
 	"github.com/roneli/fastgql/pkg/execution/builders"
-	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 	"github.com/roneli/fastgql/pkg/execution/test/graph"
 	"github.com/roneli/fastgql/pkg/execution/test/graph/generated"
 	"github.com/roneli/fastgql/pkg/log/adapters"
@@ -35,14 +33,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	resolver := &graph.Resolver{}
+	defer pool.Close()
+	resolver := &graph.Resolver{Executor: pool}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
-	// Set configuration
+	// Add logger to config for building trace logging
 	cfg := &builders.Config{Schema: executableSchema.Schema(), Logger: adapters.NewZerologAdapter(log.Logger)}
 	resolver.Cfg = cfg
-	resolver.Executor = execution.NewExecutor(map[string]execution.Driver{
-		"postgres": sql.NewDriver("postgres", cfg, pool),
-	})
+	resolver.Executor = pool
 	srv := handler.NewDefaultServer(executableSchema)
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
