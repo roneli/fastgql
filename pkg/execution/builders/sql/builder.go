@@ -293,7 +293,7 @@ func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) 
 	b.Logger.Debug("building aggregate", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
-	query := &queryHelper{goqu.From(table), table, tableAlias, nil}
+	query := &queryHelper{goqu.Dialect("postgres").From(table), table, tableAlias, nil}
 	for _, f := range field.Selections {
 		switch f.Name {
 		case "group":
