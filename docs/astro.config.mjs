@@ -1,8 +1,17 @@
 import {defineConfig} from 'astro/config';
 import starlight from '@astrojs/starlight';
+// Also can be @astrojs/vercel/static
+import vercel from '@astrojs/vercel/serverless';
 
 // https://astro.build/config
 export default defineConfig({
+    output: 'server',
+    adapter:  vercel({
+        webAnalytics: {
+            enabled: true,
+        },
+        maxDuration: 8,
+    }),
     site: 'https://fastgql.com',
     base: "/docs",
     integrations: [
