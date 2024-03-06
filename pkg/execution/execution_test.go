@@ -43,7 +43,7 @@ func TestPostgresGraph(t *testing.T) {
 		{
 			name:       "FetchPosts",
 			query:      &graphql.RawParams{Query: `query { posts { name } }`},
-			want:       "{\"data\":{\"posts\":[{\"name\":\"Hello World\"},{\"name\":\"GraphQL is awesome\"},{\"name\":\"Postgres is cool\"},{\"name\":\"Deno is interesting\"},{\"name\":\"Node.js is fast\"},{\"name\":\"ron_post_2\"}]}}",
+			want:       "{\"data\":{\"posts\":[{\"name\":\"Hello World\"},{\"name\":\"GraphQL is awesome\"},{\"name\":\"Postgres is cool\"},{\"name\":\"Deno is interesting\"},{\"name\":\"Node.js is fast\"}]}}",
 			statusCode: 200,
 		},
 		{
