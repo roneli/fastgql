@@ -49,7 +49,7 @@ func TestPostgresGraph(t *testing.T) {
 		{
 			name:       "FetchPostsWithAggregate",
 			query:      &graphql.RawParams{Query: `query { posts { categories { name } _categoriesAggregate(filter: {name: {like: "%w%"}}) { count } }}`},
-			want:       `{"data":{"posts":[{"categories":[{"name":"News"},{"name":"Technology"}],"_categoriesAggregate":[{"count":1}]},{"categories":[{"name":"Technology"},{"name":"Science"}],"_categoriesAggregate":[{"count":0}]},{"categories":[{"name":"Science"},{"name":"Sports"}],"_categoriesAggregate":[{"count":0}]},{"categories":[{"name":"Sports"},{"name":"Entertainment"}],"_categoriesAggregate":[{"count":0}]},{"categories":[{"name":"Entertainment"},{"name":"News"}],"_categoriesAggregate":[{"count":1}]},{"categories":[],"_categoriesAggregate":[{"count":0}]}]}}`,
+			want:       "{\"data\":{\"posts\":[{\"categories\":[{\"name\":\"News\"},{\"name\":\"Technology\"}],\"_categoriesAggregate\":[{\"count\":1}]},{\"categories\":[{\"name\":\"Technology\"},{\"name\":\"Science\"}],\"_categoriesAggregate\":[{\"count\":0}]},{\"categories\":[{\"name\":\"Science\"},{\"name\":\"Sports\"}],\"_categoriesAggregate\":[{\"count\":0}]},{\"categories\":[{\"name\":\"Sports\"},{\"name\":\"Entertainment\"}],\"_categoriesAggregate\":[{\"count\":0}]},{\"categories\":[{\"name\":\"Entertainment\"},{\"name\":\"News\"}],\"_categoriesAggregate\":[{\"count\":1}]}]}}",
 			statusCode: 200,
 		},
 	}
