@@ -31,7 +31,7 @@ func main() {
 
 	pool, err := pgxpool.New(context.Background(), pgConnectionString)
 	if err != nil {
-		panic(err)
+		return
 	}
 	defer pool.Close()
 	resolver := &graph.Resolver{Executor: pool}
@@ -47,6 +47,6 @@ func main() {
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal().Err(err)
+		log.Error().Err(err)
 	}
 }

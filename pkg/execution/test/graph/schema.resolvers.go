@@ -8,10 +8,9 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/roneli/fastgql/pkg/execution"
-
 	"github.com/georgysavva/scany/v2/pgxscan"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/roneli/fastgql/pkg/execution"
 	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 	"github.com/roneli/fastgql/pkg/execution/test/graph/generated"
 	"github.com/roneli/fastgql/pkg/execution/test/graph/model"

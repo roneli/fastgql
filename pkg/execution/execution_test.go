@@ -46,6 +46,12 @@ func TestPostgresGraph(t *testing.T) {
 			want:       "{\"data\":{\"posts\":[{\"name\":\"Hello World\"},{\"name\":\"GraphQL is awesome\"},{\"name\":\"Postgres is cool\"},{\"name\":\"Deno is interesting\"},{\"name\":\"Node.js is fast\"},{\"name\":\"ron_post_2\"}]}}",
 			statusCode: 200,
 		},
+		{
+			name:       "FetchPostsWithAggregate",
+			query:      &graphql.RawParams{Query: `query { posts { categories { name } _categoriesAggregate(filter: {name: {like: "%w%"}}) { count } }}`},
+			want:       `{"data":{"posts":[{"categories":[{"name":"News"},{"name":"Technology"}],"_categoriesAggregate":[{"count":1}]},{"categories":[{"name":"Technology"},{"name":"Science"}],"_categoriesAggregate":[{"count":0}]},{"categories":[{"name":"Science"},{"name":"Sports"}],"_categoriesAggregate":[{"count":0}]},{"categories":[{"name":"Sports"},{"name":"Entertainment"}],"_categoriesAggregate":[{"count":0}]},{"categories":[{"name":"Entertainment"},{"name":"News"}],"_categoriesAggregate":[{"count":1}]},{"categories":[],"_categoriesAggregate":[{"count":0}]}]}}`,
+			statusCode: 200,
+		},
 	}
 
 	pool, err := pgxpool.New(context.Background(), defaultPGConnection)

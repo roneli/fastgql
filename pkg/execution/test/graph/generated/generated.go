@@ -1219,7 +1219,7 @@ type Cat implements Animal {
 	type: String!
 	color: String!
 }
-type Category @generateFilterInput @table(name: "categories") {
+type Category @generateFilterInput @table(name: "category") {
 	id: Int!
 	name: String
 }
@@ -1229,7 +1229,7 @@ type Dog implements Animal {
 	type: String!
 	breed: String!
 }
-type Post @generateFilterInput @table(name: "posts") {
+type Post @generateFilterInput @table(name: "post") {
 	id: Int!
 	name: String
 	categories(
