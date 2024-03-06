@@ -32,6 +32,8 @@ directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 # default model is the default model that will be used to resolve the interface if none is found.
 directive @typename(name: String!) on INTERFACE
 
+# =================== Default Scalar types supported by fastgql ===================
+scalar Map
 # ================== Default Filter input types supported by fastgql ==================
 
 enum _relationType {

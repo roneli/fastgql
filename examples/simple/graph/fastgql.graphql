@@ -4,6 +4,7 @@ directive @generateFilterInput(description: String) on OBJECT
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+scalar Map
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean

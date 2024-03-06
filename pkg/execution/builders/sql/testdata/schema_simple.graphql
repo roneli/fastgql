@@ -76,6 +76,8 @@ directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 
 directive @typename(name: String!) on INTERFACE
 
+# =================== Default Scalar types supported by fastgql ===================
+scalar Map
 # ================== Default Filter input types supported by fastgql ==================
 
 enum _relationType {

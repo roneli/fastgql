@@ -1,4 +1,17 @@
 """
+Group by ObjectWithRecursive
+"""
+enum ObjectWithRecursiveGroupBy {
+    """
+    Group by id
+    """
+    ID
+    """
+    Group by name
+    """
+    NAME
+}
+"""
 max aggregator for ObjectWithRecursive
 """
 type ObjectWithRecursiveMin {
@@ -15,6 +28,10 @@ type ObjectWithRecursiveMin {
 Aggregate ObjectWithRecursive
 """
 type ObjectWithRecursivesAggregate {
+    """
+    Group
+    """
+    group: Map
     """
     Count results
     """

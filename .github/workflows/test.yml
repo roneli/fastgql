@@ -9,13 +9,30 @@ on:
 jobs:
   unitests:
     runs-on: 'ubuntu-latest'
+    services:
+        postgres:
+            image: postgres:latest
+            env:
+              POSTGRES_USER: postgres
+              POSTGRES_DB: postgres
+              POSTGRES_PASSWORD: ""
+              POSTGRES_HOST_AUTH_METHOD: trust
+            ports:
+              - 5432:5432
+            options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
+      - run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
           go-version: ^1.17
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+      # run the sql script init.sql in workflows/data
+      - run: |
+          psql -h localhost -U postgres -f .github/workflows/data/init.sql
       - run: go mod download
       - name: Test
         run: go test -v ./...

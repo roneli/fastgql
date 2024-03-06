@@ -191,6 +191,9 @@ func collectFields(parent *Field, selectionSet ast.SelectionSet, schema *ast.Sch
 			if !shouldIncludeNode(sel.Directives, opCtx.Variables) {
 				continue
 			}
+			if sel.Name == "__typename" {
+				continue
+			}
 			selField := getOrCreateAndAppendField(&groupedFields, sel.Alias, sel.ObjectDefinition, func() Field {
 				return NewField(parent, sel, schema, resolveArguments(sel, opCtx.Variables))
 			})

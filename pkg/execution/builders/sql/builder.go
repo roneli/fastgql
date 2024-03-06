@@ -278,25 +278,46 @@ func (b Builder) buildPayloadQuery(withTable exp.IdentifierExpression, baseQuery
 	return goqu.Select(cols...).With(withTable.GetTable(), baseQuery), nil
 }
 
+func (b Builder) buildAggregateGroupBy(table exp.AliasedExpression, groupBy []string) ([]any, []any) {
+	groupByCols := make([]any, 0, len(groupBy))
+	groupByResult := make([]any, 0, 2*len(groupBy))
+	for _, k := range groupBy {
+		groupByCols = append(groupByCols, table.Col(b.CaseConverter(k)))
+		groupByResult = append(groupByResult, goqu.L(fmt.Sprintf("'%s'", b.CaseConverter(k))), table.Col(b.CaseConverter(k)))
+	}
+	return groupByCols, groupByResult
+
+}
+
 func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {
 	b.Logger.Debug("building aggregate", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
-	query := &queryHelper{goqu.From(table), table, tableAlias, nil}
-
-	var aggColumns []any
+	query := &queryHelper{goqu.Dialect("postgres").From(table), table, tableAlias, nil}
 	for _, f := range field.Selections {
 		switch f.Name {
+		case "group":
+			groupBy, ok := field.Arguments["groupBy"]
+			if !ok {
+				continue
+			}
+			groupByMap, err := cast.ToStringSliceE(groupBy)
+			if err != nil {
+				return nil, fmt.Errorf("expected group by map got %T", groupBy)
+			}
+			groupByCols, groupByResult := b.buildAggregateGroupBy(table, groupByMap)
+			query.selects = append(query.selects, column{table: query.alias, name: f.Name, expression: goqu.Func("json_build_object", groupByResult...).As("group")})
+			query.SelectDataset = query.SelectDataset.GroupBy(groupByCols...)
 		case "count":
-			aggColumns = append(aggColumns, goqu.L("'count'"), goqu.COUNT(goqu.L("1")))
+			b.Logger.Debug("adding field", "tableDefinition", tableDef.name, "fieldName", f.Name)
+			query.selects = append(query.selects, column{table: query.alias, name: f.Name, alias: f.Name, expression: goqu.COUNT(goqu.L("1")).As(f.Name)})
 		default:
 			if op, ok := b.AggregatorOperators[f.Name]; ok {
 				aggExp, err := op(table, f.Selections)
 				if err != nil {
 					return nil, err
 				}
-				aggColumns = append(aggColumns, goqu.L(fmt.Sprintf("'%s'", f.Name)), aggExp)
-
+				query.selects = append(query.selects, column{table: query.alias, name: f.Name, alias: f.Name, expression: aggExp})
 			} else {
 				return nil, fmt.Errorf("aggrgator %s not supported", f.Name)
 			}
@@ -305,8 +326,6 @@ func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) 
 	if err := b.buildFiltering(query, field); err != nil {
 		return nil, err
 	}
-
-	query.SelectDataset = query.Select(goqu.Func("json_build_object", aggColumns...).As(field.Name))
 	return query, nil
 }
 
@@ -493,24 +512,25 @@ func (b Builder) buildRelationAggregate(parentQuery *queryHelper, rf builders.Fi
 	if err != nil {
 		return errors.Wrap(err, "failed building relation")
 	}
-
 	originalDef := rf.ObjectDefinition.Fields.ForName(strings.Split(rf.Name, "Aggregate")[0][1:])
-	rel := parseRelationDirective(originalDef.Directives.ForName("sqlRelation"))
+	rel := parseRelationDirective(originalDef.Directives.ForName("relation"))
+	name := b.CaseConverter(rf.Name)
+	// TODO: finish this
 	switch rel.relType {
-	case OneToMany:
+	case OneToMany, OneToOne:
 		parentQuery.SelectDataset = parentQuery.SelectDataset.LeftJoin(
-			goqu.Lateral(aggQuery.As(aggQuery.alias).
-				Where(buildCrossCondition(parentQuery.alias, rel.fields, aggQuery.alias, rel.references))),
+			goqu.Lateral(goqu.Select(goqu.Func("jsonb_agg", aggQuery.table.Col(name)).As(name)).From(aggQuery.SelectJson(name).As(aggQuery.alias).
+				Where(buildCrossCondition(parentQuery.alias, rel.fields, aggQuery.alias, rel.references)))).As(aggQuery.alias),
 			goqu.On(goqu.L("true")),
 		)
-		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: aggQuery.alias})
+		parentQuery.selects = append(parentQuery.selects, column{name: name, alias: "", table: aggQuery.alias})
 	case ManyToMany:
 		m2mTableName := b.TableNameGenerator.Generate(6)
 		jExps := buildJoinCondition(parentQuery.alias, rel.fields, m2mTableName, rel.manyToManyFields)
 		jExps = append(jExps, buildJoinCondition(m2mTableName, rel.manyToManyReferences, aggQuery.alias, rel.references)...)
 		aggQuery.SelectDataset = aggQuery.InnerJoin(goqu.T(rel.manyToManyTable).As(m2mTableName), goqu.On(jExps...))
-		parentQuery.SelectDataset = parentQuery.CrossJoin(goqu.Lateral(aggQuery).As(aggQuery.alias))
-		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: aggQuery.alias})
+		parentQuery.SelectDataset = parentQuery.CrossJoin(goqu.Lateral(goqu.Select(goqu.Func("jsonb_agg", aggQuery.table.Col(name)).As(name)).From(aggQuery.SelectJson(name).As(aggQuery.alias))).As(aggQuery.alias))
+		parentQuery.selects = append(parentQuery.selects, column{name: b.CaseConverter(name), alias: "", table: aggQuery.alias})
 	}
 	return nil
 }

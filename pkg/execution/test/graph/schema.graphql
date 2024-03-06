@@ -1,25 +1,39 @@
-type User @generateFilterInput @table(name: "users"){
+interface Animal @table(name: "animals") @typename(name: "type") @generateFilterInput {
     id: Int!
     name: String!
-    posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+    type: String!
 }
-
-type Post @generateFilterInput @table(name: "posts") @generateMutations(create: true, delete: true, update: true) {
+type Cat implements Animal {
+    id: Int!
+    name: String!
+    type: String!
+    color: String!
+}
+type Category @generateFilterInput @table(name: "category") {
     id: Int!
     name: String
-    categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"]
-        manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+}
+type Dog implements Animal {
+    id: Int!
+    name: String!
+    type: String!
+    breed: String!
+}
+type Post @generateFilterInput @table(name: "post") {
+    id: Int!
+    name: String
+    categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+    user_id: Int
     user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
 }
-
-
-type Category @table(name:"categories", schema:"") @generateFilterInput {
-    id: Int!
-    name: String
-}
-
 type Query {
     posts: [Post] @generate
     users: [User] @generate
-    categories: [Category]
+    categories: [Category] @generate
+    animals: [Animal] @generate
+}
+type User @table(name: "user") @generateFilterInput {
+    id: Int!
+    name: String!
+    posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 }

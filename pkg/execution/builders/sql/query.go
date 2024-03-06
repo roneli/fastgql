@@ -8,12 +8,16 @@ import (
 )
 
 type column struct {
-	table string
-	name  string
-	alias string
+	table      string
+	name       string
+	alias      string
+	expression exp.Expression
 }
 
-func (c column) Expression() exp.AliasedExpression {
+func (c column) Expression() exp.Expression {
+	if c.expression != nil {
+		return c.expression
+	}
 	if c.alias != "" {
 		return goqu.T(c.table).Col(c.name).As(c.alias)
 	}
