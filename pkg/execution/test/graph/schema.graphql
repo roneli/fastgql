@@ -19,7 +19,7 @@ type Dog implements Animal {
     type: String!
     breed: String!
 }
-type Post @generateFilterInput @table(name: "post") {
+type Post @generateFilterInput @table(name: "post") @generateMutations {
     id: Int!
     name: String
     categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])

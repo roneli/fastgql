@@ -28,10 +28,13 @@ const defaultPGConnection = "postgresql://localhost/postgres?user=postgres&passw
 // NOTE: run init.sql on the postgres so data will be seeded
 func TestPostgresGraph(t *testing.T) {
 	tt := []struct {
-		name       string
-		query      *graphql.RawParams
-		want       string
-		statusCode int
+		name         string
+		query        *graphql.RawParams
+		want         string
+		statusCode   int
+		cleanupQuery *graphql.RawParams
+		cleanupCode  int
+		cleanupWant  string
 	}{
 		{
 			name:       "BaseQuery",
@@ -52,6 +55,15 @@ func TestPostgresGraph(t *testing.T) {
 			want:       "{\"data\":{\"posts\":[{\"categories\":[{\"name\":\"News\"},{\"name\":\"Technology\"}],\"_categoriesAggregate\":[{\"count\":1}]},{\"categories\":[{\"name\":\"Technology\"},{\"name\":\"Science\"}],\"_categoriesAggregate\":[{\"count\":0}]},{\"categories\":[{\"name\":\"Science\"},{\"name\":\"Sports\"}],\"_categoriesAggregate\":[{\"count\":0}]},{\"categories\":[{\"name\":\"Sports\"},{\"name\":\"Entertainment\"}],\"_categoriesAggregate\":[{\"count\":0}]},{\"categories\":[{\"name\":\"Entertainment\"},{\"name\":\"News\"}],\"_categoriesAggregate\":[{\"count\":1}]}]}}",
 			statusCode: 200,
 		},
+		{
+			name:         "InsertPost",
+			query:        &graphql.RawParams{Query: `mutation { createPosts(inputs: [{id: 66, name: "ron", user_id: 1}]) { rows_affected posts { id name user { id name } }}}`},
+			want:         "{\"data\":{\"createPosts\":{\"rows_affected\":1,\"posts\":[{\"id\":66,\"name\":\"ron\",\"user\":{\"id\":1,\"name\":\"Alice\"}}]}}}",
+			statusCode:   200,
+			cleanupQuery: &graphql.RawParams{Query: `mutation { deletePosts(filter: {id: {eq: 66}}) { rows_affected }}`},
+			cleanupCode:  200,
+			cleanupWant:  "{\"data\":{\"deletePosts\":{\"rows_affected\":1}}}",
+		},
 	}
 
 	pool, err := pgxpool.New(context.Background(), defaultPGConnection)
@@ -69,14 +81,21 @@ func TestPostgresGraph(t *testing.T) {
 	graphServer := handler.NewDefaultServer(executableSchema)
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			data, err := json.Marshal(tc.query)
-			require.Nil(t, err)
-			request := httptest.NewRequest("POST", "/", bytes.NewBuffer(data))
-			request.Header.Add("Content-Type", "application/json")
-			responseRecorder := httptest.NewRecorder()
-			graphServer.ServeHTTP(responseRecorder, request)
-			assert.Equal(t, tc.want, responseRecorder.Body.String())
+			testQuery(t, graphServer, tc.query, tc.want, tc.statusCode)
+			if tc.cleanupQuery != nil {
+				testQuery(t, graphServer, tc.cleanupQuery, tc.cleanupWant, tc.cleanupCode)
+			}
 		})
 	}
+}
 
+func testQuery(t *testing.T, server *handler.Server, params *graphql.RawParams, want string, wantCode int) {
+	data, err := json.Marshal(params)
+	require.Nil(t, err)
+	request := httptest.NewRequest("POST", "/", bytes.NewBuffer(data))
+	request.Header.Add("Content-Type", "application/json")
+	responseRecorder := httptest.NewRecorder()
+	server.ServeHTTP(responseRecorder, request)
+	assert.Equal(t, want, responseRecorder.Body.String())
+	assert.Equal(t, wantCode, responseRecorder.Code)
 }

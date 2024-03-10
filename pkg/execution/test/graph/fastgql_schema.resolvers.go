@@ -9,14 +9,13 @@ import (
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	pgx "github.com/jackc/pgx/v5"
-	model1 "github.com/roneli/fastgql/examples/interface/graph/model"
-	"github.com/roneli/fastgql/examples/mutations/graph/generated"
-	"github.com/roneli/fastgql/examples/mutations/graph/model"
 	"github.com/roneli/fastgql/pkg/execution/builders/sql"
+	"github.com/roneli/fastgql/pkg/execution/test/graph/generated"
+	"github.com/roneli/fastgql/pkg/execution/test/graph/model"
 )
 
 // CreatePosts is the resolver for the createPosts field.
-func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []*model.CreatePostInput) (*model.PostsPayload, error) {
+func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.CreatePostInput) (*model.PostsPayload, error) {
 	var data model.PostsPayload
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -31,7 +30,7 @@ func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []*model.Crea
 }
 
 // DeletePosts is the resolver for the deletePosts field.
-func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model1.PostFilterInput) (*model.PostsPayload, error) {
+func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model.PostFilterInput) (*model.PostsPayload, error) {
 	var data model.PostsPayload
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -46,7 +45,7 @@ func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filte
 }
 
 // UpdatePosts is the resolver for the updatePosts field.
-func (r *mutationResolver) UpdatePosts(ctx context.Context, input model.UpdatePostInput, filter *model1.PostFilterInput) (*model.PostsPayload, error) {
+func (r *mutationResolver) UpdatePosts(ctx context.Context, input model.UpdatePostInput, filter *model.PostFilterInput) (*model.PostsPayload, error) {
 	var data model.PostsPayload
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
