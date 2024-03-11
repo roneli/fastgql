@@ -1,11 +1,13 @@
 ---
-title: Welcome to FastGQL.io
+title: FastGQL
 description: Get started building your docs site with Starlight.
 template: splash
 hero:
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/logo_dark.svg
+  tagline: Schema-First Golang Server.
+        <div class="roller">
+        <span id="pre_text">Easily</span>
+        <span id="changing_text">generate Queries.</span>
+        </div>
   actions:
     - text: Get Started
       link: /start/setup/
@@ -16,12 +18,12 @@ hero:
       icon: external
 ---
 
+import "/src/styles/overrides.css";
 import { Card, CardGrid } from '@astrojs/starlight/components';
-
-## Next steps
+import ScriptWorkaround from "/src/components/ScriptComponent.astro";
 
 <CardGrid stagger>
-	<Card title="Update content" icon="pencil">
+	<Card title="Update content" icon="fire" class="">
 		Edit `src/content/docs/index.mdx` to see this page change.
 	</Card>
 	<Card title="Add new content" icon="add-document">

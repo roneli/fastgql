@@ -1,0 +1,65 @@
+---
+import { Icon } from "astro-icon/components";
+---
+
+<button
+        id="theme-switcher"
+        type="button"
+        class="origin-[right_center] py-1 transition-all duration-500"
+>
+    <div id="icon-theme-light">
+        <Icon name="mdi:white-balance-sunny" class="<size-5></size-5>" />
+        <span class="sr-only">Use light theme</span>
+    </div>
+    <div id="icon-theme-dark" class="hidden">
+        <Icon name="mdi:weather-night" class="size-5" />
+        <span class="sr-only">Use dark theme</span>
+    </div>
+</button>
+
+{/* Inlined to avoid FOUC. Uses global scope from `ThemeProvider.astro` */}
+<script is:inline>
+    StarlightThemeProvider.updatePickers();
+</script>
+
+<script>
+    import invariant from "tiny-invariant";
+
+    const themes = ["light", "dark"];
+    const button = document.querySelector("#theme-switcher");
+    invariant(button, "button should not be null");
+
+    const getThemeCurrent = () => document.documentElement.dataset.theme;
+    const getThemeNext = () => {
+        const themeCurrent = getThemeCurrent();
+        invariant(themeCurrent, "themeCurrent should not be undefined");
+        const indexThemeCurrent = themes.indexOf(themeCurrent);
+        return themes[(indexThemeCurrent + 1) % themes.length];
+    };
+
+    const updateIcon = () => {
+        const themeCurrent = getThemeCurrent();
+        document
+            .querySelector(`#icon-theme-${themeCurrent}`)
+            ?.classList.add("hidden");
+        const themeNext = getThemeNext();
+        document
+            .querySelector(`#icon-theme-${themeNext}`)
+            ?.classList.remove("hidden");
+    };
+
+    button.addEventListener("click", () => {
+        const themeNext = getThemeNext();
+        document.documentElement.dataset.theme = themeNext;
+        localStorage.setItem("theme", themeNext);
+        updateIcon();
+    });
+
+    updateIcon();
+</script>
+
+<style>
+    :global(.fixed-header) #theme-switcher {
+        @apply ml-0 scale-100;
+    }
+</style>

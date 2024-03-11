@@ -1,0 +1,37 @@
+@font-face {
+    font-family: GreekCesarFont;
+    src: url("docs/src/assets/fonts/Interfearence.ttf");
+}
+
+.roller {
+    max-width:90vw;  /* Set a width that can accommodate the longest text string */
+    white-space: nowrap;  /* Prevent the text from wrapping */
+    overflow: hidden;  /* Hide the overflowed text */
+}
+
+#changing_text {
+    text-transform: uppercase;
+    font-family: GreekCesarFont, serif;
+    color: lightskyblue;
+    font-size: 0.9em;
+}
+
+
+@keyframes animate {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+
+.hero {
+    padding-bottom: 3.5rem !important;
+}
