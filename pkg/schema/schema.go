@@ -7,3 +7,10 @@ const (
 	FilterInput ArgName = "filter"
 	OrderBy     ArgName = "orderBy"
 )
+
+const (
+	generateDirectiveName     = "generate"
+	skipGenerateDirectiveName = "skipGenerate"
+	tableDirectiveName        = "table"
+	relationDirectiveName     = "relation"
+)

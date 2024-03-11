@@ -14,7 +14,7 @@ import (
 type Aggregation struct{}
 
 func (a Aggregation) DirectiveName() string {
-	return "generate"
+	return generateDirectiveName
 }
 
 func (a Aggregation) Name() string {
@@ -23,7 +23,7 @@ func (a Aggregation) Name() string {
 
 func AggregationAugmenter(s *ast.Schema) error {
 	for _, v := range s.Query.Fields {
-		d := v.Directives.ForName("generate")
+		d := v.Directives.ForName(generateDirectiveName)
 		if d == nil {
 			continue
 		}
@@ -55,7 +55,7 @@ func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDef
 	// check if field already exists, if so, skip
 	if def := obj.Fields.ForName(aggregateName); def != nil {
 		log.Printf("aggreationField for field %s@%s already exists skipping\n", field.Name, obj.Name)
-		if def.Directives.ForName("generate") == nil {
+		if def.Directives.ForName(generateDirectiveName) == nil {
 			// add directive to field, so filter can be generated
 			def.Directives = append(def.Directives, addGenerateDirective(s))
 		}
@@ -96,7 +96,7 @@ func addAggregateField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDefin
 
 func addGenerateDirective(s *ast.Schema) *ast.Directive {
 	return &ast.Directive{
-		Name: "generate",
+		Name: generateDirectiveName,
 		Arguments: []*ast.Argument{
 			{
 				Name: "filter",
@@ -106,7 +106,7 @@ func addGenerateDirective(s *ast.Schema) *ast.Directive {
 				},
 			},
 		},
-		Definition: s.Directives["generate"],
+		Definition: s.Directives[generateDirectiveName],
 	}
 }
 

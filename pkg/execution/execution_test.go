@@ -64,6 +64,15 @@ func TestPostgresGraph(t *testing.T) {
 			cleanupCode:  200,
 			cleanupWant:  "{\"data\":{\"deletePosts\":{\"rows_affected\":1}}}",
 		},
+		{
+			name:         "UpdatePost",
+			query:        &graphql.RawParams{Query: `mutation { updatePosts(filter: {id: {eq: 1}}, input: {name: "ron"}) { rows_affected posts { id name user { id name } }}}`},
+			want:         "{\"data\":{\"updatePosts\":{\"rows_affected\":1,\"posts\":[{\"id\":1,\"name\":\"ron\",\"user\":{\"id\":1,\"name\":\"Alice\"}}]}}}",
+			statusCode:   200,
+			cleanupQuery: &graphql.RawParams{Query: `mutation { updatePosts(filter: {id: {eq: 1}}, input: {name: "Hello World"}) { rows_affected posts { id name user { id name } }}}`},
+			cleanupCode:  200,
+			cleanupWant:  "{\"data\":{\"updatePosts\":{\"rows_affected\":1,\"posts\":[{\"id\":1,\"name\":\"Hello World\",\"user\":{\"id\":1,\"name\":\"Alice\"}}]}}}",
+		},
 	}
 
 	pool, err := pgxpool.New(context.Background(), defaultPGConnection)
