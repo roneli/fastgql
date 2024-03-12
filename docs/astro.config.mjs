@@ -89,7 +89,5 @@ export default defineConfig({
                 directory: 'reference'
             }
         }]
-    }), icon(), tailwind()
-        image({ serviceEntryPoint: '@astrojs/image/sharp' })
-    ]
+    }), icon(), tailwind()]
 });
