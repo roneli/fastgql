@@ -25,7 +25,7 @@ func GetType(a *ast.Type) *ast.Type {
 	return a
 }
 
-func GetDirectiveValue(d *ast.Directive, name string) interface{} {
+func GetDirectiveValue(d *ast.Directive, name string) any {
 	if d == nil {
 		return nil
 	}

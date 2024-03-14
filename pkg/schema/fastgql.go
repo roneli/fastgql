@@ -5,12 +5,13 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"github.com/spf13/cast"
 	"go/types"
 	"io/fs"
 	"os"
 	"strings"
 	"text/template"
+
+	"github.com/spf13/cast"
 
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/templates"
@@ -163,7 +164,7 @@ func (f *FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters ...Augmen
 		}
 	}
 	// Format augmented schema to *.graphql files
-	return FormatSchema(f.rootDirectory, schema), nil
+	return formatSchema(f.rootDirectory, schema), nil
 }
 
 type fastGQLResolver struct {
