@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/roneli/fastgql/pkg/schema"
+
 	"github.com/iancoleman/strcase"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -85,21 +87,17 @@ func (f Field) GetTypeName() string {
 }
 
 // Relation directive on field, if it exists
-func (f Field) Relation() *RelationDirective {
-	return GetRelationDirective(f.Definition)
+func (f Field) Relation() *schema.RelationDirective {
+	return schema.GetRelationDirective(f.Definition)
 }
 
 // Table directive on field, if it exists
-func (f Field) Table() *TableDirective {
-	d := f.TypeDefinition.Directives.ForName("table")
-	if d == nil {
+func (f Field) Table() *schema.TableDirective {
+	t, err := schema.GetTableDirective(f.TypeDefinition)
+	if err != nil {
 		return nil
 	}
-	return &TableDirective{
-		Name:    GetArgumentValue(d.Arguments, "name"),
-		Schema:  GetArgumentValue(d.Arguments, "schema"),
-		Dialect: GetArgumentValue(d.Arguments, "dialect"),
-	}
+	return t
 }
 
 func GetFilterInput(s *ast.Schema, f *ast.Definition) *ast.Definition {

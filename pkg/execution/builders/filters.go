@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/roneli/fastgql/pkg/schema"
+
 	"github.com/vektah/gqlparser/v2/ast"
 
 	"github.com/iancoleman/strcase"
@@ -20,7 +22,7 @@ type FilterFieldContext struct {
 func AddRelationFilters(ctx context.Context, s *ast.Schema, obj interface{}) context.Context {
 	// TODO: Use collect field
 	field := CollectFields(ctx, s)
-	relation := GetRelationDirective(field.ObjectDefinition.Fields.ForName(field.Name))
+	relation := schema.GetRelationDirective(field.ObjectDefinition.Fields.ForName(field.Name))
 	filters := make(map[string]interface{}, len(relation.Fields))
 	for i := 0; i < len(relation.Fields); i++ {
 		fieldValue := getFieldValue(obj, strcase.ToLowerCamel(relation.Fields[i]))

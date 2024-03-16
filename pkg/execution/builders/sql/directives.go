@@ -4,31 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/roneli/fastgql/pkg/schema"
-
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/jinzhu/inflection"
-	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 )
-
-type RelationType string
-
-const (
-	OneToMany  RelationType = "ONE_TO_MANY"
-	OneToOne   RelationType = "ONE_TO_ONE"
-	ManyToMany RelationType = "MANY_TO_MANY"
-)
-
-type relation struct {
-	relType              RelationType
-	fields               []string
-	references           []string
-	manyToManyTable      string
-	manyToManyReferences []string
-	manyToManyFields     []string
-}
 
 type tableDefinition struct {
 	name    string
@@ -49,20 +29,6 @@ func (t tableDefinition) String() string {
 		return fmt.Sprintf(`"%s"."%s"`, t.schema, t.name)
 	}
 	return fmt.Sprintf(`"%s"`, t.name)
-}
-
-// parseRelationDirective parses the sqlRelation directive to connect graphQL Resources with SQL relations, this directive
-// is also important for creating relational filters.
-func parseRelationDirective(d *ast.Directive) relation {
-	relType := d.Arguments.ForName("type").Value.Raw
-	return relation{
-		relType:              RelationType(relType),
-		fields:               cast.ToStringSlice(schema.GetDirectiveValue(d, "fields")),
-		references:           cast.ToStringSlice(schema.GetDirectiveValue(d, "references")),
-		manyToManyTable:      cast.ToString(schema.GetDirectiveValue(d, "manyToManyTable")),
-		manyToManyFields:     cast.ToStringSlice(schema.GetDirectiveValue(d, "manyToManyFields")),
-		manyToManyReferences: cast.ToStringSlice(schema.GetDirectiveValue(d, "manyToManyReferences")),
-	}
 }
 
 // getTableNameFromField returns the field's type tableDefinition name in the database, if no directive is defined, type name is presumed

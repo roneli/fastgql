@@ -91,7 +91,13 @@ func (q queryHelper) buildJsonObject() exp.SQLFunctionExpression {
 		} else {
 			args[i*2] = goqu.L(fmt.Sprintf("'%s'", c.name))
 		}
-		args[i*2+1] = goqu.I(fmt.Sprintf("%s.%s", c.table, c.name))
+		if c.expression != nil {
+			args[i*2+1] = c.expression
+
+		} else {
+			args[i*2+1] = goqu.I(fmt.Sprintf("%s.%s", c.table, c.name))
+		}
+
 	}
 	return goqu.Func("jsonb_build_object", args...)
 }

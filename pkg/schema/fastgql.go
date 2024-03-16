@@ -8,8 +8,6 @@ import (
 	"go/types"
 	"io/fs"
 	"os"
-	"reflect"
-	"runtime"
 	"strings"
 	"text/template"
 
@@ -29,7 +27,7 @@ var (
 	FastGQLSchema string
 	//go:embed server.gotpl
 	fastGqlServerTpl  string
-	FastGQLDirectives = []string{"table", "generate", "relation", "generateFilterInput", "isInterfaceFilter", "skipGenerate", "generateMutations", "relation"}
+	FastGQLDirectives = []string{tableDirectiveName, generateDirectiveName, "generateFilterInput", "isInterfaceFilter", skipGenerateDirectiveName, "generateMutations", relationDirectiveName}
 	defaultAugmenters = []Augmenter{
 		MutationsAugmenter,
 		PaginationAugmenter,
@@ -120,7 +118,7 @@ func (f *FastGqlPlugin) GenerateCode(data *codegen.Data) error {
 
 func (f *FastGqlPlugin) Implement(field *codegen.Field) string {
 	buf := &bytes.Buffer{}
-	if field.TypeReference.Definition.Directives.ForName("generate") != nil {
+	if field.TypeReference.Definition.Directives.ForName(generateDirectiveName) != nil {
 		return `panic(fmt.Errorf("not implemented"))`
 	}
 	if field.TypeReference.Definition.IsLeafType() || field.TypeReference.Definition.IsInputType() {
@@ -162,25 +160,11 @@ func (f *FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters ...Augmen
 	}
 	for _, a := range augmenters {
 		if err := a(schema); err != nil {
-			return nil, fmt.Errorf("augmenter %v failed: %w", GetFunctionName(a), err)
+			return nil, fmt.Errorf("augmenter %v failed: %w", getFunctionName(a), err)
 		}
 	}
 	// Format augmented schema to *.graphql files
-	return FormatSchema(f.rootDirectory, schema), nil
-}
-
-func GetFunctionName(i interface{}) string {
-	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
-}
-
-func ref(p types.Type) string {
-	return types.TypeString(p, func(pkg *types.Package) string {
-		return pkg.Name()
-	})
-}
-
-func deref(p types.Type) string {
-	return strings.TrimPrefix(ref(p), "*")
+	return formatSchema(f.rootDirectory, schema), nil
 }
 
 type fastGQLResolver struct {
