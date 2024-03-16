@@ -2,46 +2,93 @@
 Group by ObjectWithRecursive
 """
 enum ObjectWithRecursiveGroupBy {
-    """
-    Group by id
-    """
-    ID
-    """
-    Group by name
-    """
-    NAME
-}
-"""
-max aggregator for ObjectWithRecursive
-"""
-type ObjectWithRecursiveMin {
-    """
-    Compute the maxiumum for id
-    """
-    id: ID!
-    """
-    Compute the maxiumum for name
-    """
-    name: String!
+	"""
+	Group by id
+	"""
+	ID
+	"""
+	Group by name
+	"""
+	NAME
 }
 """
 Aggregate ObjectWithRecursive
 """
 type ObjectWithRecursivesAggregate {
-    """
-    Group
-    """
-    group: Map
-    """
-    Count results
-    """
-    count: Int!
-    """
-    Computes the maximum of the non-null input values.
-    """
-    max: ObjectWithRecursiveMin
-    """
-    Computes the minimum of the non-null input values.
-    """
-    min: ObjectWithRecursiveMin
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _ObjectWithRecursiveMax!
+	"""
+	Min Aggregate
+	"""
+	min: _ObjectWithRecursiveMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _ObjectWithRecursiveAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _ObjectWithRecursiveSum!
+}
+"""
+avg Aggregate
+"""
+type _ObjectWithRecursiveAvg {
+	"""
+	Compute the avg for id
+	"""
+	id: ID!
+	"""
+	Compute the avg for name
+	"""
+	name: String!
+}
+"""
+max Aggregate
+"""
+type _ObjectWithRecursiveMax {
+	"""
+	Compute the max for id
+	"""
+	id: ID!
+	"""
+	Compute the max for name
+	"""
+	name: String!
+}
+"""
+min Aggregate
+"""
+type _ObjectWithRecursiveMin {
+	"""
+	Compute the min for id
+	"""
+	id: ID!
+	"""
+	Compute the min for name
+	"""
+	name: String!
+}
+"""
+sum Aggregate
+"""
+type _ObjectWithRecursiveSum {
+	"""
+	Compute the sum for id
+	"""
+	id: ID!
+	"""
+	Compute the sum for name
+	"""
+	name: String!
 }

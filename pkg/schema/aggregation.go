@@ -2,14 +2,37 @@ package schema
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/iancoleman/strcase"
+	"log"
 
 	"github.com/jinzhu/inflection"
 	"github.com/spf13/cast"
 	"github.com/vektah/gqlparser/v2/ast"
 )
+
+type aggregate struct {
+	name               string
+	allowedScalarTypes []string
+}
+
+var aggregateTypes = []aggregate{
+	{
+		name:               "max",
+		allowedScalarTypes: []string{"Int", "Float", "String", "DateTime"},
+	},
+	{
+		name:               "min",
+		allowedScalarTypes: []string{"Int", "Float", "String", "DateTime"},
+	},
+	{
+		name:               "avg",
+		allowedScalarTypes: []string{"Int", "Float"},
+	},
+	{
+		name:               "sum",
+		allowedScalarTypes: []string{"Int", "Float"},
+	},
+}
 
 type Aggregation struct{}
 
@@ -188,30 +211,31 @@ func addAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
 			},
 		},
 	}
-	// Add other aggregate functions max/min
-	payloadObject.Fields = append(payloadObject.Fields, buildMinMaxField(s, obj)...)
+	// Add other aggregate functions
+	for _, a := range aggregateTypes {
+		payloadObject.Fields = append(payloadObject.Fields, addAggregationFieldToSchema(s, obj, a.name, a.allowedScalarTypes))
+	}
 	s.Types[payloadObjectName] = payloadObject
 	return payloadObject
 }
 
-func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition {
-	log.Printf("building min/max aggregates for %s\n", obj.Name)
-	minObjName := fmt.Sprintf("%sMin", obj.Name)
-	minObj := &ast.Definition{
-		Kind:        ast.Object,
-		Description: fmt.Sprintf("min aggregator for %s", obj.Name),
-		Name:        minObjName,
-		Fields:      nil,
+func addAggregationFieldToSchema(s *ast.Schema, obj *ast.Definition, aggregationType string, allowedScalarTypes []string) *ast.FieldDefinition {
+	aggregateName := fmt.Sprintf("_%s%s", obj.Name, strcase.ToCamel(aggregationType))
+	// check if field already exists, if so, skip
+	if def := obj.Fields.ForName(aggregateName); def != nil {
+		log.Printf("aggreationField for field %s@%s already exists skipping\n", aggregateName, obj.Name)
+		if def.Directives.ForName(generateDirectiveName) == nil {
+			log.Printf("adding directive to field %s@%s\n", aggregateName, obj.Name)
+			// add directive to field, so filter can be generated
+			def.Directives = append(def.Directives, addGenerateDirective(s))
+		}
+		return def
 	}
-
-	maxObjName := fmt.Sprintf("%sMin", obj.Name)
-	maxObj := &ast.Definition{
+	aggObj := &ast.Definition{
 		Kind:        ast.Object,
-		Description: fmt.Sprintf("max aggregator for %s", obj.Name),
-		Name:        maxObjName,
-		Fields:      nil,
+		Name:        aggregateName,
+		Description: fmt.Sprintf("%s Aggregate", aggregationType),
 	}
-
 	for _, f := range obj.Fields {
 		if IsListType(f.Type) {
 			continue
@@ -223,16 +247,8 @@ func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition
 			continue
 		}
 		log.Printf("adding field %s to min/max aggregates for %s\n", f.Name, obj.Name)
-		minObj.Fields = append(minObj.Fields, &ast.FieldDefinition{
-			Description: fmt.Sprintf("Compute the minimum for %s", f.Name),
-			Name:        f.Name,
-			Type: &ast.Type{
-				NamedType: t.NamedType,
-				NonNull:   true,
-			},
-		})
-		maxObj.Fields = append(maxObj.Fields, &ast.FieldDefinition{
-			Description: fmt.Sprintf("Compute the maxiumum for %s", f.Name),
+		aggObj.Fields = append(aggObj.Fields, &ast.FieldDefinition{
+			Description: fmt.Sprintf("Compute the %s for %s", aggregationType, f.Name),
 			Name:        f.Name,
 			Type: &ast.Type{
 				NamedType: t.NamedType,
@@ -241,22 +257,13 @@ func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition
 		})
 	}
 	// add object to schema
-	s.Types[minObjName] = minObj
-	s.Types[maxObjName] = maxObj
-	return []*ast.FieldDefinition{
-		{
-			Description: "Computes the maximum of the non-null input values.",
-			Name:        "max",
-			Type: &ast.Type{
-				NamedType: maxObjName,
-			},
-		},
-		{
-			Description: "Computes the minimum of the non-null input values.",
-			Name:        "min",
-			Type: &ast.Type{
-				NamedType: minObjName,
-			},
+	s.Types[aggregateName] = aggObj
+	return &ast.FieldDefinition{
+		Name:        aggregationType,
+		Description: fmt.Sprintf("%s Aggregate", strcase.ToCamel(aggregationType)),
+		Type: &ast.Type{
+			NamedType: aggregateName,
+			NonNull:   true,
 		},
 	}
 }
