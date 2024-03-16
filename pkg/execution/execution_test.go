@@ -64,8 +64,8 @@ func TestPostgresGraph(t *testing.T) {
 		},
 		{
 			name:       "FetchPostsWithAggregateSumAvg",
-			query:      &graphql.RawParams{Query: `query { posts(orderBy: {name: DESC}) { categories { name } _categoriesAggregate(filter: {name: {like: "%w%"}}) { count sum { id } avg { id } } }}`},
-			want:       "",
+			query:      &graphql.RawParams{Query: `query { posts(orderBy: {name: DESC}) { categories { name } _categoriesAggregate { count sum { id } avg { id } } }}`},
+			want:       `{"data":{"posts":[{"categories":[{"name":"Science"},{"name":"Sports"}],"_categoriesAggregate":[{"count":2,"sum":{"id":7},"avg":{"id":3.5}}]},{"categories":[{"name":"Entertainment"},{"name":"News"}],"_categoriesAggregate":[{"count":2,"sum":{"id":6},"avg":{"id":3}}]},{"categories":[{"name":"News"},{"name":"Technology"}],"_categoriesAggregate":[{"count":2,"sum":{"id":3},"avg":{"id":1.5}}]},{"categories":[{"name":"Technology"},{"name":"Science"}],"_categoriesAggregate":[{"count":2,"sum":{"id":5},"avg":{"id":2.5}}]},{"categories":[{"name":"Sports"},{"name":"Entertainment"}],"_categoriesAggregate":[{"count":2,"sum":{"id":9},"avg":{"id":4.5}}]}]}}`,
 			statusCode: 200,
 		},
 		{

@@ -221,7 +221,7 @@ func addAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
 		if af == nil {
 			continue
 		}
-		payloadObject.Fields = append(payloadObject.Fields)
+		payloadObject.Fields = append(payloadObject.Fields, af)
 	}
 	s.Types[payloadObjectName] = payloadObject
 	return payloadObject
