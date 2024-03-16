@@ -2,11 +2,12 @@ package sql_test
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/spf13/cast"
-	"os"
-	"testing"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/roneli/fastgql/pkg/execution/builders"

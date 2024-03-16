@@ -1,6 +1,6 @@
 extend input StringComparator  {
     # The custom operator to use for the comparison.
-    myCustomOperator: String!
+    myCustomOperator: String
 }
 
 
