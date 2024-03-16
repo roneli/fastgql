@@ -23,6 +23,14 @@ type ObjectWithRecursivesAggregate {
 	Count results
 	"""
 	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _ObjectWithRecursiveMax!
+	"""
+	Min Aggregate
+	"""
+	min: _ObjectWithRecursiveMin!
 }
 """
 max Aggregate
