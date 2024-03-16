@@ -128,7 +128,8 @@ func (b Builder) Query(field builders.Field) (string, []any, error) {
 		err   error
 	)
 	if strings.HasSuffix(field.Name, "Aggregate") && strings.HasPrefix(field.Name, "_") {
-		query, err = b.buildAggregate(getAggregateTableName(b.Schema, field.Field), field)
+		// alias in root level
+		query, err = b.buildAggregate(getAggregateTableName(b.Schema, field.Field), field, true)
 	} else {
 		query, err = b.buildQuery(getTableNameFromField(b.Schema, field.Definition), field)
 	}
@@ -291,11 +292,12 @@ func (b Builder) buildAggregateGroupBy(table exp.AliasedExpression, groupBy []st
 
 }
 
-func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {
+func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field, aliasAggregates bool) (*queryHelper, error) {
 	b.Logger.Debug("building aggregate", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
 	query := &queryHelper{goqu.Dialect("postgres").From(table), table, tableAlias, nil}
+	var fieldExp exp.Expression
 	for _, f := range field.Selections {
 		switch f.Name {
 		case "group":
@@ -308,18 +310,29 @@ func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) 
 				return nil, fmt.Errorf("expected group by map got %T", groupBy)
 			}
 			groupByCols, groupByResult := b.buildAggregateGroupBy(table, groupByMap)
-			query.selects = append(query.selects, column{table: query.alias, name: f.Name, expression: goqu.Func("json_build_object", groupByResult...).As("group")})
+			fieldExp = goqu.Func("json_build_object", groupByResult...)
+			if aliasAggregates {
+				fieldExp = fieldExp.(exp.Aliaseable).As("group")
+			}
+			query.selects = append(query.selects, column{table: query.alias, name: f.Name, expression: fieldExp})
 			query.SelectDataset = query.SelectDataset.GroupBy(groupByCols...)
 		case "count":
 			b.Logger.Debug("adding field", "tableDefinition", tableDef.name, "fieldName", f.Name)
-			query.selects = append(query.selects, column{table: query.alias, name: f.Name, alias: f.Name, expression: goqu.COUNT(goqu.L("1")).As(f.Name)})
+			fieldExp = goqu.COUNT(goqu.L("1"))
+			if aliasAggregates {
+				fieldExp = fieldExp.(exp.Aliaseable).As(f.Name)
+			}
+			query.selects = append(query.selects, column{table: query.alias, name: f.Name, alias: f.Name, expression: fieldExp})
 		default:
 			if op, ok := b.AggregatorOperators[f.Name]; ok {
 				aggExp, err := op(table, f.Selections)
 				if err != nil {
 					return nil, err
 				}
-				query.selects = append(query.selects, column{table: query.alias, name: f.Name, alias: f.Name, expression: aggExp})
+				if aliasAggregates {
+					aggExp = aggExp.(exp.Aliaseable).As(f.Name)
+				}
+				query.selects = append(query.selects, column{table: query.alias, name: f.Name, expression: aggExp})
 			} else {
 				return nil, fmt.Errorf("aggrgator %s not supported", f.Name)
 			}
@@ -510,7 +523,7 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 
 func (b Builder) buildRelationAggregate(parentQuery *queryHelper, rf builders.Field) error {
 	// Build aggregate query
-	aggQuery, err := b.buildAggregate(getAggregateTableName(b.Schema, rf.Field), rf)
+	aggQuery, err := b.buildAggregate(getAggregateTableName(b.Schema, rf.Field), rf, false)
 	if err != nil {
 		return errors.Wrap(err, "failed building relation")
 	}

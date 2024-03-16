@@ -50,9 +50,22 @@ func TestPostgresGraph(t *testing.T) {
 			statusCode: 200,
 		},
 		{
-			name:       "FetchPostsWithAggregate",
-			query:      &graphql.RawParams{Query: `query { posts { categories { name } _categoriesAggregate(filter: {name: {like: "%w%"}}) { count } }}`},
-			want:       "{\"data\":{\"posts\":[{\"categories\":[{\"name\":\"News\"},{\"name\":\"Technology\"}],\"_categoriesAggregate\":[{\"count\":1}]},{\"categories\":[{\"name\":\"Technology\"},{\"name\":\"Science\"}],\"_categoriesAggregate\":[{\"count\":0}]},{\"categories\":[{\"name\":\"Science\"},{\"name\":\"Sports\"}],\"_categoriesAggregate\":[{\"count\":0}]},{\"categories\":[{\"name\":\"Sports\"},{\"name\":\"Entertainment\"}],\"_categoriesAggregate\":[{\"count\":0}]},{\"categories\":[{\"name\":\"Entertainment\"},{\"name\":\"News\"}],\"_categoriesAggregate\":[{\"count\":1}]}]}}",
+			name:       "PostsAggregate",
+			query:      &graphql.RawParams{Query: `{ _postsAggregate { count sum { id } min { name } } }`},
+			want:       `{"data":{"_postsAggregate":[{"count":5,"sum":{"id":15},"min":{"name":"Deno is interesting"}}]}}`,
+			statusCode: 200,
+		},
+
+		{
+			name:       "FetchPostsWithRelationAggregate",
+			query:      &graphql.RawParams{Query: `query { posts(orderBy: {name: DESC}) { categories { name } _categoriesAggregate(filter: {name: {like: "%w%"}}) { count } }}`},
+			want:       `{"data":{"posts":[{"categories":[{"name":"Science"},{"name":"Sports"}],"_categoriesAggregate":[{"count":0}]},{"categories":[{"name":"Entertainment"},{"name":"News"}],"_categoriesAggregate":[{"count":1}]},{"categories":[{"name":"News"},{"name":"Technology"}],"_categoriesAggregate":[{"count":1}]},{"categories":[{"name":"Technology"},{"name":"Science"}],"_categoriesAggregate":[{"count":0}]},{"categories":[{"name":"Sports"},{"name":"Entertainment"}],"_categoriesAggregate":[{"count":0}]}]}}`,
+			statusCode: 200,
+		},
+		{
+			name:       "FetchPostsWithAggregateSumAvg",
+			query:      &graphql.RawParams{Query: `query { posts(orderBy: {name: DESC}) { categories { name } _categoriesAggregate(filter: {name: {like: "%w%"}}) { count sum { id } avg { id } } }}`},
+			want:       "",
 			statusCode: 200,
 		},
 		{

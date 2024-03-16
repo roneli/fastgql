@@ -23,35 +23,6 @@ type ObjectWithRecursivesAggregate {
 	Count results
 	"""
 	count: Int!
-	"""
-	Max Aggregate
-	"""
-	max: _ObjectWithRecursiveMax!
-	"""
-	Min Aggregate
-	"""
-	min: _ObjectWithRecursiveMin!
-	"""
-	Avg Aggregate
-	"""
-	avg: _ObjectWithRecursiveAvg!
-	"""
-	Sum Aggregate
-	"""
-	sum: _ObjectWithRecursiveSum!
-}
-"""
-avg Aggregate
-"""
-type _ObjectWithRecursiveAvg {
-	"""
-	Compute the avg for id
-	"""
-	id: ID!
-	"""
-	Compute the avg for name
-	"""
-	name: String!
 }
 """
 max Aggregate
@@ -76,19 +47,6 @@ type _ObjectWithRecursiveMin {
 	id: ID!
 	"""
 	Compute the min for name
-	"""
-	name: String!
-}
-"""
-sum Aggregate
-"""
-type _ObjectWithRecursiveSum {
-	"""
-	Compute the sum for id
-	"""
-	id: ID!
-	"""
-	Compute the sum for name
 	"""
 	name: String!
 }

@@ -2,8 +2,9 @@ package schema
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"log"
+
+	"github.com/iancoleman/strcase"
 
 	"github.com/jinzhu/inflection"
 	"github.com/spf13/cast"
@@ -13,24 +14,27 @@ import (
 type aggregate struct {
 	name               string
 	allowedScalarTypes []string
+	kind               string
 }
 
 var aggregateTypes = []aggregate{
 	{
 		name:               "max",
-		allowedScalarTypes: []string{"Int", "Float", "String", "DateTime"},
+		allowedScalarTypes: []string{"Int", "Float", "String", "DateTime", "ID"},
 	},
 	{
 		name:               "min",
-		allowedScalarTypes: []string{"Int", "Float", "String", "DateTime"},
+		allowedScalarTypes: []string{"Int", "Float", "String", "DateTime", "ID"},
 	},
 	{
 		name:               "avg",
 		allowedScalarTypes: []string{"Int", "Float"},
+		kind:               "Float",
 	},
 	{
 		name:               "sum",
 		allowedScalarTypes: []string{"Int", "Float"},
+		kind:               "Float",
 	},
 }
 
@@ -213,14 +217,18 @@ func addAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
 	}
 	// Add other aggregate functions
 	for _, a := range aggregateTypes {
-		payloadObject.Fields = append(payloadObject.Fields, addAggregationFieldToSchema(s, obj, a.name, a.allowedScalarTypes))
+		af := addAggregationFieldToSchema(s, obj, a)
+		if af == nil {
+			continue
+		}
+		payloadObject.Fields = append(payloadObject.Fields)
 	}
 	s.Types[payloadObjectName] = payloadObject
 	return payloadObject
 }
 
-func addAggregationFieldToSchema(s *ast.Schema, obj *ast.Definition, aggregationType string, allowedScalarTypes []string) *ast.FieldDefinition {
-	aggregateName := fmt.Sprintf("_%s%s", obj.Name, strcase.ToCamel(aggregationType))
+func addAggregationFieldToSchema(s *ast.Schema, obj *ast.Definition, a aggregate) *ast.FieldDefinition {
+	aggregateName := fmt.Sprintf("_%s%s", obj.Name, strcase.ToCamel(a.name))
 	// check if field already exists, if so, skip
 	if def := obj.Fields.ForName(aggregateName); def != nil {
 		log.Printf("aggreationField for field %s@%s already exists skipping\n", aggregateName, obj.Name)
@@ -234,7 +242,7 @@ func addAggregationFieldToSchema(s *ast.Schema, obj *ast.Definition, aggregation
 	aggObj := &ast.Definition{
 		Kind:        ast.Object,
 		Name:        aggregateName,
-		Description: fmt.Sprintf("%s Aggregate", aggregationType),
+		Description: fmt.Sprintf("%s Aggregate", a.name),
 	}
 	for _, f := range obj.Fields {
 		if IsListType(f.Type) {
@@ -246,24 +254,44 @@ func addAggregationFieldToSchema(s *ast.Schema, obj *ast.Definition, aggregation
 		if !fieldDef.IsLeafType() {
 			continue
 		}
-		log.Printf("adding field %s to min/max aggregates for %s\n", f.Name, obj.Name)
+		if !scalarAllowed(t.Name(), a.allowedScalarTypes) {
+			continue
+		}
+		kind := a.kind
+		if kind == "" {
+			kind = t.Name()
+		}
+		log.Printf("adding field %s[%s] to aggregates[type:%s] for %s\n", f.Name, kind, a.name, obj.Name)
 		aggObj.Fields = append(aggObj.Fields, &ast.FieldDefinition{
-			Description: fmt.Sprintf("Compute the %s for %s", aggregationType, f.Name),
+			Description: fmt.Sprintf("Compute the %s for %s", a.name, f.Name),
 			Name:        f.Name,
 			Type: &ast.Type{
-				NamedType: t.NamedType,
+				NamedType: kind,
 				NonNull:   true,
 			},
 		})
 	}
+	// if no fields are added, skip
+	if len(aggObj.Fields) == 0 {
+		return nil
+	}
 	// add object to schema
 	s.Types[aggregateName] = aggObj
 	return &ast.FieldDefinition{
-		Name:        aggregationType,
-		Description: fmt.Sprintf("%s Aggregate", strcase.ToCamel(aggregationType)),
+		Name:        a.name,
+		Description: fmt.Sprintf("%s Aggregate", strcase.ToCamel(a.name)),
 		Type: &ast.Type{
 			NamedType: aggregateName,
 			NonNull:   true,
 		},
 	}
+}
+
+func scalarAllowed(scalar string, allowed []string) bool {
+	for _, v := range allowed {
+		if scalar == v {
+			return true
+		}
+	}
+	return false
 }
