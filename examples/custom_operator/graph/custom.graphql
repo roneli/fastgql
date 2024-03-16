@@ -1,0 +1,5 @@
+# extend our input type to include a custom operator
+extend input StringComparator  {
+    # The custom operator to use for the comparison.
+    myCustomOperator: String!
+}

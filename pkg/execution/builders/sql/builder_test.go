@@ -2,6 +2,9 @@ package sql_test
 
 import (
 	"fmt"
+	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
+	"github.com/spf13/cast"
 	"os"
 	"testing"
 
@@ -26,6 +29,7 @@ type TestBuilderCase struct {
 	GraphQLQuery      string
 	ExpectedArguments []interface{}
 	ExpectedSQL       string
+	CustomOperators   map[string]builders.Operator
 }
 
 type TestTableNameGenerator struct {
@@ -213,6 +217,56 @@ func TestBuilder_Update(t *testing.T) {
 
 }
 
+func TestBuilder_CustomOperator(t *testing.T) {
+	testCases := []TestBuilderCase{
+		{
+			Name:              "base_query",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" LIMIT $1`,
+			ExpectedArguments: []interface{}{int64(100)},
+			CustomOperators: map[string]builders.Operator{
+				"myCustomOperator": func(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+					return goqu.L("1 = 1")
+				},
+			},
+		},
+		{
+			Name:              "query_with_custom_operator",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(filter: {name: {myCustomOperator: "Test"}}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" WHERE 1 = 1 LIMIT $1`,
+			ExpectedArguments: []interface{}{int64(100)},
+			CustomOperators: map[string]builders.Operator{
+				"myCustomOperator": func(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+					return goqu.L("1 = 1")
+				},
+			},
+		},
+		{
+			Name:              "query_with_custom_operator_and_other_filter",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(filter: {name: {myCustomOperator: "6"}}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" WHERE ("sq0"."name" BETWEEN $1 AND $2) LIMIT $3`,
+			ExpectedArguments: []interface{}{int64(1), int64(6), int64(100)},
+			CustomOperators: map[string]builders.Operator{
+				"myCustomOperator": func(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+					return table.Col(key).Between(exp.NewRangeVal(1, cast.ToInt(value)))
+				},
+			},
+		},
+	}
+	_ = os.Chdir("/testdata")
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
+				return b.Query(f)
+			})
+		})
+
+	}
+}
+
 func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders.Field) (string, []interface{}, error)) {
 	fs := afero.NewOsFs()
 	data, err := afero.ReadFile(fs, testCase.SchemaFile)
@@ -233,6 +287,7 @@ func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Bui
 		Schema:             augmentedSchema,
 		Logger:             nil,
 		TableNameGenerator: &TestTableNameGenerator{},
+		CustomOperators:    testCase.CustomOperators,
 	})
 	doc, err := parser.ParseQuery(&ast.Source{Input: testCase.GraphQLQuery})
 	require.Nil(t, err)

@@ -1,3 +1,9 @@
+extend input StringComparator  {
+    # The custom operator to use for the comparison.
+    myCustomOperator: String!
+}
+
+
 type User @generateFilterInput @table(name: "users", schema: "app"){
     id: Int!
     name: String!

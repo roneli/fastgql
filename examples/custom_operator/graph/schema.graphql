@@ -1,0 +1,53 @@
+type Person {
+	name: String
+}
+type Query {
+	person: Person!
+	user(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter user
+		"""
+		filter: UserFilterInput): [User] @generate
+	"""
+	user Aggregate
+	"""
+	_userAggregate(
+		"""
+		Filter _userAggregate
+		"""
+		filter: UserFilterInput): UsersAggregate! @generate(filter: true)
+}
+type User @generateFilterInput {
+	name: String
+	age: Int
+	someInnerValue: User
+	someInnerValueList(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter someInnerValueList
+		"""
+		filter: UserFilterInput): [User]
+}
