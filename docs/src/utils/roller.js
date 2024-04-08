@@ -1,13 +1,18 @@
 document.addEventListener('DOMContentLoaded', (event) => {
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const word = document.querySelector("#changing_text");
-    const texts = ["Generate Mutations", "Queries with filters & pagination", "Aggregations", "Support interfaces"];
+    const texts = [
+        "Auto-generate CRUD operations",
+        "Supports with Interface Types",
+        "Custom filter operators",
+        "Easily extend with custom code"
+    ];
     let textIndex = 0;
 
     let isAnimating = false;
     let rafID;
     let then = Date.now();
-    const interval = 10;
+    const interval = 15;
 
     const animate = () => {
         isAnimating = true;

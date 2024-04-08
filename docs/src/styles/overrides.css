@@ -1,10 +1,10 @@
 @font-face {
     font-family: GreekCesarFont;
-    src: url("docs/src/assets/fonts/Interfearence.ttf");
+    src: url("/public/fonts/Interfearence.ttf");
 }
 
 .roller {
-    max-width:90vw;  /* Set a width that can accommodate the longest text string */
+    max-width:600vw;  /* Set a width that can accommodate the longest text string */
     white-space: nowrap;  /* Prevent the text from wrapping */
     overflow: hidden;  /* Hide the overflowed text */
 }
@@ -12,7 +12,9 @@
 #changing_text {
     text-transform: uppercase;
     font-family: GreekCesarFont, serif;
-    color: lightskyblue;
+    background: linear-gradient(45deg, #ff4500, #ff8c00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;;
     font-size: 0.9em;
 }
 

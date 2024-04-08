@@ -1,0 +1,45 @@
+:root {
+    --red-hsl: 10, 80%, 40%;
+    --overlay-blured: hsla(var(--red-hsl), 0.2);
+}
+
+:root[data-theme='light'] {
+    --red-hsl: 5, 85%, 65%;
+}
+
+[data-has-hero] .page {
+    background:
+            linear-gradient(215deg, var(--overlay-blured), transparent 40%),
+            radial-gradient(var(--overlay-blured), transparent 40%) no-repeat -60vw -40vh / 105vw 200vh,
+            radial-gradient(var(--overlay-blured), transparent 65%) no-repeat 50% calc(100% + 20rem) /
+			60rem 30rem;
+}
+
+[data-has-hero] header {
+    border-bottom: 1px solid transparent;
+    background-color: transparent;
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+}
+
+[data-has-hero] .hero > img {
+    filter: drop-shadow(0 0 3rem var(--overlay-blured));
+}
+
+
+/* Default style for light logo */
+.logo {
+    width: 400px; /* Set your desired width */
+    height: auto; /* Maintain aspect ratio */
+    overflow: hidden; /* Hide overflowing parts */
+}
+
+/* Conditional style for dark logo */
+[data-theme='dark'] .logo {
+    content: url('/src/assets/logo_dark.svg');
+}
+
+/* Hide the default image when the dark theme is active */
+[data-theme='light'] .logo {
+    content: url('/src/assets/logo_light.svg');
+}

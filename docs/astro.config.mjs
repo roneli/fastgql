@@ -1,7 +1,6 @@
 import {defineConfig} from 'astro/config';
 import starlight from '@astrojs/starlight';
 import vercel from '@astrojs/vercel/static';
-import image from '@astrojs/image'
 import icon from "astro-icon";
 
 import tailwind from "@astrojs/tailwind";
@@ -18,7 +17,7 @@ export default defineConfig({
     site: 'https://fastgql.com',
     base: "/",
     integrations: [starlight({
-        title: '',
+        title: 'FastGQL',
         social: {
             github: 'https://github.com/roneli/fastgql'
         },
@@ -27,13 +26,14 @@ export default defineConfig({
             ThemeSelect: './src/components/ThemeSelect.astro',
         },
         logo: {
-            dark: './src/assets/logo_light.svg',
-            light: './src/assets/logo_dark.svg',
-            replacesTitle: false
+            dark: './src/assets/logo_dark.svg',
+            light: './src/assets/logo_light.svg',
+            replacesTitle: true
         },
         editLink: {
             baseUrl: 'https://github.com/roneli/fastgql/tree/master/docs',
         },
+        customCss: ['./src/styles/global.css', './src/styles/landing.css'],
         lastUpdated: true,
         sidebar: [{
             label: 'Getting Started',
@@ -42,7 +42,8 @@ export default defineConfig({
                 link: '/start/intro'
             }, {
                 label: 'Setup',
-                link: '/start/setup'
+                link: '/start/setup',
+                badge: "New",
             }]
         }, {
             label: 'Queries',
@@ -76,7 +77,12 @@ export default defineConfig({
             }]
         }, {
             label: 'Schema',
-            items: [{
+            items: [
+                {
+                    label: 'Interfaces',
+                    link: '/schema/interfaces',
+                    badge: {text: 'Experimental', variant: 'caution'},
+                }, {
                 label: 'Directives',
                 link: '/schema/directives'
             }, {
