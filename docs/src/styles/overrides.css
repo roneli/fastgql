@@ -1,6 +1,6 @@
 @font-face {
     font-family: GreekCesarFont;
-    src: url("/public/fonts/Interfearence.ttf");
+    src: url("/src/assets/fonts/Interfearence.ttf");
 }
 
 .roller {
