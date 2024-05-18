@@ -88,7 +88,7 @@ export default defineConfig({
                 link: '/schema/directives'
             }, {
                 label: 'Schema',
-                link: '/schema_schema_fragment'
+                link: '/schema/schema'
             }]
         }, {
             label: 'Reference',
