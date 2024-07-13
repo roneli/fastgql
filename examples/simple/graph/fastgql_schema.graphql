@@ -17,6 +17,19 @@ input UserFilterInput {
 	NOT: UserFilterInput
 }
 """
+Group by User
+"""
+enum UserGroupBy {
+	"""
+	Group by name
+	"""
+	NAME
+	"""
+	Group by age
+	"""
+	AGE
+}
+"""
 max aggregator for User
 """
 type UserMin {

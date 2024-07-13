@@ -3,7 +3,7 @@ type Person {
 }
 type Query {
 	person: Person!
-	user(
+	users(
 		"""
 		Limit
 		"""
@@ -17,13 +17,17 @@ type Query {
 		"""
 		orderBy: [UserOrdering],
 		"""
-		Filter user
+		Filter users
 		"""
 		filter: UserFilterInput): [User] @generate
 	"""
-	user Aggregate
+	users Aggregate
 	"""
-	_userAggregate: UsersAggregate!
+	_usersAggregate(groupBy: [UserGroupBy!],
+		"""
+		Filter _usersAggregate
+		"""
+		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
 }
 type User @generateFilterInput {
 	name: String

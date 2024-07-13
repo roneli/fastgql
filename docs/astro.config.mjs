@@ -44,7 +44,6 @@ export default defineConfig({
             }, {
                 label: 'Setup',
                 link: '/start/setup',
-                badge: "New",
             }]
         }, {
             label: 'Queries',
@@ -83,13 +82,20 @@ export default defineConfig({
                     label: 'Interfaces',
                     link: '/schema/interfaces',
                     badge: {text: 'Experimental', variant: 'caution'},
-                }, {
-                label: 'Directives',
-                link: '/schema/directives'
-            }, {
-                label: 'Schema',
-                link: '/schema/schema'
-            }]
+                },
+                {
+                    label: 'Custom Operators',
+                    link: '/schema/operators',
+                    badge: 'New',
+                },
+                {
+                    label: 'Directives',
+                    link: '/schema/directives'
+                },
+                {
+                    label: 'Schema',
+                    link: '/schema/schema'
+                }]
         }, {
             label: 'Reference',
             autogenerate: {

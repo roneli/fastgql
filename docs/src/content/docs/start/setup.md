@@ -3,11 +3,10 @@ title: Setup FastGQL
 description: How to setup fastGQL
 ---
 
-This tutorial will take you through the process of building a GraphQL server with fastgql that can:
+This tutorial will take you through the process of building a GraphQL server with fastgql that can: 
+automatically query, filter, order and pagination users, posts & categories from a postgres database.
 
-* automatically query, filter, order and pagination users, posts & categories from a postgres database.
-
-You can find the finished code for this tutorial [here](https://github.com/roneli/fastgql/tree/master/example).
+You can find the finished code for this tutorial [here](https://github.com/roneli/fastgql/tree/master/example/tutorial).
 
 If you are familiar with [gqlgen](https://gqlgen.com), the setup is nearly identical, with a little work in your Schema you won't need to define any resolvers!
 
