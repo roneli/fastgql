@@ -3,6 +3,7 @@ interface Animal @table(name: "animals") @typename(name: "type") @generateFilter
 	name: String!
 	type: String!
 }
+
 type Cat implements Animal {
 	id: Int!
 	name: String!

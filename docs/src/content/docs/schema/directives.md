@@ -3,7 +3,7 @@ title: Directives
 description: fastGQL supported directives
 ---
 
-In this section we will go over all of the custom _fastGQL_ directives, what they do and how to use them. These directives are added automatically when we augment and generate the server code. You can also use the following command `go run github.com/roneli/fastgql init` or copy the [fastgql\_schema\_fragment.md](fastgql\_schema\_fragment.md "mention").
+In this section we will go over all the custom _fastGQL_ directives, what they do and how to use them. These directives are added automatically when we augment and generate the server code. You can also use the following command `go run github.com/roneli/fastgql init` or copy the [fastgql\_schema\_fragment.md](fastgql\_schema\_fragment.md "mention").
 
 ## Augmentation directives
 
@@ -11,10 +11,9 @@ These directives extend the original schema functionality adding filters, pagina
 
 We currently have four augmentation directives:
 
-* [#generatefilterinput](directives.md#generatefilterinput "mention")
-* [#generate](directives.md#generate "mention")
-* [#skipgenerate](directives.md#skipgenerate "mention")
-* [#generatemutations](directives.md#generatemutations "mention")
+* [#generatefilterinput](directives#generatefilterinput "mention")
+* [#generate](directives#generate "mention")
+* [#generateMutations](directives#generatemutations "mention")
 
 
 
@@ -53,37 +52,16 @@ The `@generate` tells the augmenter on which `OBJECT` to generate arguments i.e.
 # Generate arguments for a given field or all object fields
 directive @generate(filter: Boolean = True, 
   pagination: Boolean = True, ordering: Boolean = True, 
-  aggregate: Boolean = True, recursive: Boolean = True) on OBJECT
+  aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION 
 ```
 
-**Example**: The following example adds arguments to all fields in Query and does the same for each field type.
+**Example**: The following example generates resolvers for posts and users, but doesn't add aggregation to users.
 
 ```graphql
-type Query @generate {
-  posts: [Post]
-  users: [User]
-  categories: [Category] @skipGenerate
-}
-```
-
-### @skipGenerate
-
-The `@skipGenerate` tells the codegen whether we want to skip creating the resolver code or not.
-
-```graphql
-# Tells fastgql to skip resolver generation on field
-directive @skipGenerate(resolver:Boolean = True) on FIELD_DEFINITION
-```
-
-**Example:**
-
-```graphql
-
-# Generate augmentation on posts and users, but skip categories
-type Query @generate {
-    posts: [Post]
-    users: [User]
-    categories: [Category] @skipGenerate
+type Query {
+  posts: [Post] @generate
+  users: [User] @generate(aggregate: false)
+  categories: [Category]
 }
 ```
 
@@ -103,8 +81,9 @@ Builder directives are used by builders to build queries based on the given Grap
 
 We have two builder directives:
 
-* [#table](directives.md#table "mention")
-* [#relation](directives.md#relation "mention")
+* [#table](directives#table "mention")
+* [#relation](directives#relation "mention")
+* [#typename](directives#typename "mention")
 
 ### @table
 
@@ -145,3 +124,16 @@ There are three major types of database relationships:
 * <mark style="color:purple;">`ONE_TO_ONE`</mark>
 * <mark style="color:purple;">`ONE_TO_MANY`</mark>
 * <mark style="color:purple;">`MANY_TO_MANY`</mark>
+
+### @typename 
+
+The `@typename` directive is used for interface support (experimental), the typename tell fastgql builder what field in the table we should use
+to use when scanning into the original type of the interface
+
+```graphql
+interface Animal @table(name: "animals") @typename(name: "type") @generateFilterInput {
+	id: Int!
+	name: String!
+	type: String!
+}
+```

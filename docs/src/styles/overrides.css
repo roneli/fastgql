@@ -1,0 +1,39 @@
+@font-face {
+    font-family: GreekCesarFont;
+    src: url("/src/assets/fonts/Interfearence.ttf");
+}
+
+.roller {
+    max-width:600vw;  /* Set a width that can accommodate the longest text string */
+    white-space: nowrap;  /* Prevent the text from wrapping */
+    overflow: hidden;  /* Hide the overflowed text */
+}
+
+#changing_text {
+    text-transform: uppercase;
+    font-family: GreekCesarFont, serif;
+    background: linear-gradient(45deg, #ff4500, #ff8c00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;;
+    font-size: 0.9em;
+}
+
+
+@keyframes animate {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+
+.hero {
+    padding-bottom: 3.5rem !important;
+}

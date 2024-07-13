@@ -3,7 +3,8 @@ title: Filtering
 description: Filter queries with FastGQL
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+import {TabItem, Tabs} from '@astrojs/starlight/components';
 
 # Filtering
 
@@ -31,34 +32,23 @@ By default, a logical `AND` operation is preformed on all the conditions mention
     <TabItem label="Single">
         ```graphql
         query {
-        # expected filter: name = "article 1" AND id = 1
-        posts(filter: {name: {eq: "article 1"}, id: {eq: 1}}) {
-        id
-        name
-    }
-    }
+            # expected filter: name = "article 1" AND id = 1
+            posts(filter: {name: {eq: "article 1"}, id: {eq: 1}}) {
+                id
+                name
+            }
+        }
         ```
     </TabItem>
-</Tabs>
-
-<Tabs>
     <TabItem label="Multiple">
         ```graphql
         query {
-        posts(
-        # expected filter: name = "article 1" AND name like "%article%" AND id = 1
-        filter: {
-        AND: [
-    {name: {eq: "article 1"}}
-    {name: {like: "%article%"}}
-    {id: {eq: 1}}
-        ]
-    }
-        ) {
-        id
-        name
-    }
-    }
+            # expected filter: name = "article 1" AND name like "%article%" AND id = 1
+            posts(filter: { AND: [ {name: {eq: "article 1"}}, {name: {like: "%article%"}}, {id: {eq: 1}}]}) {
+                id
+                name
+            }
+        }
         ```
     </TabItem>
 </Tabs>
