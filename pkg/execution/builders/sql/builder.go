@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/roneli/fastgql/pkg/schema"
+
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/iancoleman/strcase"
@@ -126,7 +128,8 @@ func (b Builder) Query(field builders.Field) (string, []any, error) {
 		err   error
 	)
 	if strings.HasSuffix(field.Name, "Aggregate") && strings.HasPrefix(field.Name, "_") {
-		query, err = b.buildAggregate(getAggregateTableName(b.Schema, field.Field), field)
+		// alias in root level
+		query, err = b.buildAggregate(getAggregateTableName(b.Schema, field.Field), field, true)
 	} else {
 		query, err = b.buildQuery(getTableNameFromField(b.Schema, field.Definition), field)
 	}
@@ -289,11 +292,12 @@ func (b Builder) buildAggregateGroupBy(table exp.AliasedExpression, groupBy []st
 
 }
 
-func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) (*queryHelper, error) {
+func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field, aliasAggregates bool) (*queryHelper, error) {
 	b.Logger.Debug("building aggregate", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
 	query := &queryHelper{goqu.Dialect("postgres").From(table), table, tableAlias, nil}
+	var fieldExp exp.Expression
 	for _, f := range field.Selections {
 		switch f.Name {
 		case "group":
@@ -306,18 +310,29 @@ func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field) 
 				return nil, fmt.Errorf("expected group by map got %T", groupBy)
 			}
 			groupByCols, groupByResult := b.buildAggregateGroupBy(table, groupByMap)
-			query.selects = append(query.selects, column{table: query.alias, name: f.Name, expression: goqu.Func("json_build_object", groupByResult...).As("group")})
+			fieldExp = goqu.Func("json_build_object", groupByResult...)
+			if aliasAggregates {
+				fieldExp = fieldExp.(exp.Aliaseable).As("group")
+			}
+			query.selects = append(query.selects, column{table: query.alias, name: f.Name, expression: fieldExp})
 			query.SelectDataset = query.SelectDataset.GroupBy(groupByCols...)
 		case "count":
 			b.Logger.Debug("adding field", "tableDefinition", tableDef.name, "fieldName", f.Name)
-			query.selects = append(query.selects, column{table: query.alias, name: f.Name, alias: f.Name, expression: goqu.COUNT(goqu.L("1")).As(f.Name)})
+			fieldExp = goqu.COUNT(goqu.L("1"))
+			if aliasAggregates {
+				fieldExp = fieldExp.(exp.Aliaseable).As(f.Name)
+			}
+			query.selects = append(query.selects, column{table: query.alias, name: f.Name, alias: f.Name, expression: fieldExp})
 		default:
 			if op, ok := b.AggregatorOperators[f.Name]; ok {
 				aggExp, err := op(table, f.Selections)
 				if err != nil {
 					return nil, err
 				}
-				query.selects = append(query.selects, column{table: query.alias, name: f.Name, alias: f.Name, expression: aggExp})
+				if aliasAggregates {
+					aggExp = aggExp.(exp.Aliaseable).As(f.Name)
+				}
+				query.selects = append(query.selects, column{table: query.alias, name: f.Name, expression: aggExp})
 			} else {
 				return nil, fmt.Errorf("aggrgator %s not supported", f.Name)
 			}
@@ -432,11 +447,11 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 
 			ffd := astDefinition.Fields.ForName(k)
 			// Create a Builder
-			d := ffd.Directives.ForName("relation")
-			if d == nil {
-				return nil, fmt.Errorf("missing directive sqlRelation")
+			rel := schema.GetRelationDirective(ffd)
+			if rel == nil {
+				return nil, fmt.Errorf("missing directive relation")
 			}
-			fq, err := b.buildFilterQuery(table, b.Schema.Types[ffd.Type.Name()], parseRelationDirective(d), kv)
+			fq, err := b.buildFilterQuery(table, b.Schema.Types[ffd.Type.Name()], *rel, kv)
 			if err != nil {
 				return nil, err
 			}
@@ -464,24 +479,24 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 	if err != nil {
 		return errors.Wrap(err, "failed building relation")
 	}
-	rel := parseRelationDirective(rf.Definition.Directives.ForName("relation"))
-	switch rel.relType {
-	case OneToOne:
+	rel := schema.GetRelationDirective(rf.Definition)
+	switch rel.RelType {
+	case schema.OneToOne:
 		parentQuery.SelectDataset = parentQuery.SelectDataset.LeftJoin(goqu.Lateral(relationQuery.SelectJson(rf.Name).As(relationQuery.alias).
-			Where(buildCrossCondition(parentQuery.alias, rel.fields, relationQuery.alias, rel.references))),
+			Where(buildCrossCondition(parentQuery.alias, rel.Fields, relationQuery.alias, rel.References))),
 			goqu.On(goqu.L("true")),
 		)
 		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: relationQuery.alias})
-	case OneToMany:
+	case schema.OneToMany:
 		parentQuery.SelectDataset = parentQuery.SelectDataset.LeftJoin(
 			goqu.Lateral(relationQuery.SelectJsonAgg(rf.Name).As(relationQuery.alias).
-				Where(buildCrossCondition(parentQuery.alias, rel.fields, relationQuery.alias, rel.references))),
+				Where(buildCrossCondition(parentQuery.alias, rel.Fields, relationQuery.alias, rel.References))),
 			goqu.On(goqu.L("true")),
 		)
 		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: relationQuery.alias})
-	case ManyToMany:
+	case schema.ManyToMany:
 		m2mTableAlias := b.TableNameGenerator.Generate(6)
-		m2mTable := goqu.T(rel.manyToManyTable).Schema(tableDef.schema).As(m2mTableAlias)
+		m2mTable := goqu.T(rel.ManyToManyTable).Schema(tableDef.schema).As(m2mTableAlias)
 		m2mQuery := queryHelper{
 			SelectDataset: goqu.From(m2mTable),
 			table:         m2mTable,
@@ -490,11 +505,11 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 		}
 		// Join m2mBuilder with the relBuilder
 		m2mQuery.SelectDataset = m2mQuery.LeftJoin(
-			goqu.Lateral(relationQuery.SelectRow(false).Where(buildCrossCondition(relationQuery.alias, rel.references, m2mTableAlias, rel.manyToManyReferences))).As(relationQuery.alias),
+			goqu.Lateral(relationQuery.SelectRow(false).Where(buildCrossCondition(relationQuery.alias, rel.References, m2mTableAlias, rel.ManyToManyReferences))).As(relationQuery.alias),
 			goqu.On(goqu.L("true")))
 
 		// Add cross condition from parent Builder (current Builder instance)
-		m2mQuery.SelectDataset = m2mQuery.Where(buildCrossCondition(parentQuery.alias, rel.fields, m2mTableAlias, rel.manyToManyFields)).As(relationQuery.alias)
+		m2mQuery.SelectDataset = m2mQuery.Where(buildCrossCondition(parentQuery.alias, rel.Fields, m2mTableAlias, rel.ManyToManyFields)).As(relationQuery.alias)
 
 		// Finally, aggregate relation query and join the m2m tableDefinition with the main query
 		aggTableName := b.TableNameGenerator.Generate(6)
@@ -508,56 +523,56 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 
 func (b Builder) buildRelationAggregate(parentQuery *queryHelper, rf builders.Field) error {
 	// Build aggregate query
-	aggQuery, err := b.buildAggregate(getAggregateTableName(b.Schema, rf.Field), rf)
+	aggQuery, err := b.buildAggregate(getAggregateTableName(b.Schema, rf.Field), rf, false)
 	if err != nil {
 		return errors.Wrap(err, "failed building relation")
 	}
 	originalDef := rf.ObjectDefinition.Fields.ForName(strings.Split(rf.Name, "Aggregate")[0][1:])
-	rel := parseRelationDirective(originalDef.Directives.ForName("relation"))
+	rel := schema.GetRelationDirective(originalDef)
 	name := b.CaseConverter(rf.Name)
 	// TODO: finish this
-	switch rel.relType {
-	case OneToMany, OneToOne:
+	switch rel.RelType {
+	case schema.OneToMany, schema.OneToOne:
 		parentQuery.SelectDataset = parentQuery.SelectDataset.LeftJoin(
 			goqu.Lateral(goqu.Select(goqu.Func("jsonb_agg", aggQuery.table.Col(name)).As(name)).From(aggQuery.SelectJson(name).As(aggQuery.alias).
-				Where(buildCrossCondition(parentQuery.alias, rel.fields, aggQuery.alias, rel.references)))).As(aggQuery.alias),
+				Where(buildCrossCondition(parentQuery.alias, rel.Fields, aggQuery.alias, rel.References)))).As(aggQuery.alias),
 			goqu.On(goqu.L("true")),
 		)
 		parentQuery.selects = append(parentQuery.selects, column{name: name, alias: "", table: aggQuery.alias})
-	case ManyToMany:
+	case schema.ManyToMany:
 		m2mTableName := b.TableNameGenerator.Generate(6)
-		jExps := buildJoinCondition(parentQuery.alias, rel.fields, m2mTableName, rel.manyToManyFields)
-		jExps = append(jExps, buildJoinCondition(m2mTableName, rel.manyToManyReferences, aggQuery.alias, rel.references)...)
-		aggQuery.SelectDataset = aggQuery.InnerJoin(goqu.T(rel.manyToManyTable).As(m2mTableName), goqu.On(jExps...))
+		jExps := buildJoinCondition(parentQuery.alias, rel.Fields, m2mTableName, rel.ManyToManyFields)
+		jExps = append(jExps, buildJoinCondition(m2mTableName, rel.ManyToManyReferences, aggQuery.alias, rel.References)...)
+		aggQuery.SelectDataset = aggQuery.InnerJoin(goqu.T(rel.ManyToManyTable).As(m2mTableName), goqu.On(jExps...))
 		parentQuery.SelectDataset = parentQuery.CrossJoin(goqu.Lateral(goqu.Select(goqu.Func("jsonb_agg", aggQuery.table.Col(name)).As(name)).From(aggQuery.SelectJson(name).As(aggQuery.alias))).As(aggQuery.alias))
 		parentQuery.selects = append(parentQuery.selects, column{name: b.CaseConverter(name), alias: "", table: aggQuery.alias})
 	}
 	return nil
 }
 
-func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, rel relation, filters map[string]any) (*queryHelper, error) {
+func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, rel schema.RelationDirective, filters map[string]any) (*queryHelper, error) {
 	tableAlias := b.TableNameGenerator.Generate(6)
-	td, err := builders.GetTableDirective(rf)
+	td, err := schema.GetTableDirective(rf)
 	if err != nil {
 		return nil, fmt.Errorf("missing @table directive to create filter query for %s: %w", rf.Name, err)
 	}
 	table := goqu.T(td.Name).Schema(td.Schema).As(tableAlias)
 	fq := &queryHelper{goqu.From(table), table, tableAlias, nil}
 
-	switch rel.relType {
-	case ManyToMany:
+	switch rel.RelType {
+	case schema.ManyToMany:
 		m2mTableName := b.TableNameGenerator.Generate(6)
-		jExps := buildJoinCondition(parentTable.alias, rel.fields, m2mTableName, rel.manyToManyFields)
-		jExps = append(jExps, buildJoinCondition(m2mTableName, rel.manyToManyReferences, fq.alias, rel.references)...)
-		fq.SelectDataset = fq.InnerJoin(goqu.T(rel.manyToManyTable).Schema(td.Schema).As(m2mTableName), goqu.On(jExps...))
-	case OneToOne:
+		jExps := buildJoinCondition(parentTable.alias, rel.Fields, m2mTableName, rel.ManyToManyFields)
+		jExps = append(jExps, buildJoinCondition(m2mTableName, rel.ManyToManyReferences, fq.alias, rel.References)...)
+		fq.SelectDataset = fq.InnerJoin(goqu.T(rel.ManyToManyTable).Schema(td.Schema).As(m2mTableName), goqu.On(jExps...))
+	case schema.OneToOne:
 		relationTableName := b.TableNameGenerator.Generate(6)
-		jExps := buildJoinCondition(parentTable.alias, rel.fields, fq.alias, rel.references)
-		jExps = append(jExps, buildJoinCondition(parentTable.alias, rel.fields, relationTableName, rel.references)...)
+		jExps := buildJoinCondition(parentTable.alias, rel.Fields, fq.alias, rel.References)
+		jExps = append(jExps, buildJoinCondition(parentTable.alias, rel.Fields, relationTableName, rel.References)...)
 		fq.SelectDataset = fq.InnerJoin(goqu.T(td.Name).Schema(td.Schema).As(relationTableName), goqu.On(jExps...))
-	case OneToMany:
+	case schema.OneToMany:
 		fq.SelectDataset = fq.InnerJoin(parentTable.table.Aliased().(exp.Aliaseable).As(b.TableNameGenerator.Generate(6)),
-			goqu.On(buildJoinCondition(parentTable.alias, rel.fields, fq.alias, rel.references)...))
+			goqu.On(buildJoinCondition(parentTable.alias, rel.Fields, fq.alias, rel.References)...))
 	default:
 		panic("unknown relation type")
 	}

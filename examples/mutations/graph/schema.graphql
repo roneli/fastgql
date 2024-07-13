@@ -1,0 +1,21 @@
+type Category @generateFilterInput @table(name: "categories") {
+	id: Int!
+	name: String
+}
+type Post @generateFilterInput @table(name: "posts") @generateMutations {
+	id: Int!
+	name: String
+	categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user_id: Int
+	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
+}
+type Query {
+	posts: [Post] @generate
+	users: [User] @generate
+	categories: [Category] @generate
+}
+type User @table(name: "user") @generateFilterInput {
+	id: Int!
+	name: String!
+	posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+}

@@ -11,10 +11,37 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+type aggregate struct {
+	name               string
+	allowedScalarTypes []string
+	kind               string
+}
+
+var aggregateTypes = []aggregate{
+	{
+		name:               "max",
+		allowedScalarTypes: []string{"Int", "Float", "String", "DateTime", "ID"},
+	},
+	{
+		name:               "min",
+		allowedScalarTypes: []string{"Int", "Float", "String", "DateTime", "ID"},
+	},
+	{
+		name:               "avg",
+		allowedScalarTypes: []string{"Int", "Float"},
+		kind:               "Float",
+	},
+	{
+		name:               "sum",
+		allowedScalarTypes: []string{"Int", "Float"},
+		kind:               "Float",
+	},
+}
+
 type Aggregation struct{}
 
 func (a Aggregation) DirectiveName() string {
-	return "generate"
+	return generateDirectiveName
 }
 
 func (a Aggregation) Name() string {
@@ -23,7 +50,7 @@ func (a Aggregation) Name() string {
 
 func AggregationAugmenter(s *ast.Schema) error {
 	for _, v := range s.Query.Fields {
-		d := v.Directives.ForName("generate")
+		d := v.Directives.ForName(generateDirectiveName)
 		if d == nil {
 			continue
 		}
@@ -55,7 +82,7 @@ func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDef
 	// check if field already exists, if so, skip
 	if def := obj.Fields.ForName(aggregateName); def != nil {
 		log.Printf("aggreationField for field %s@%s already exists skipping\n", field.Name, obj.Name)
-		if def.Directives.ForName("generate") == nil {
+		if def.Directives.ForName(generateDirectiveName) == nil {
 			// add directive to field, so filter can be generated
 			def.Directives = append(def.Directives, addGenerateDirective(s))
 		}
@@ -96,7 +123,7 @@ func addAggregateField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDefin
 
 func addGenerateDirective(s *ast.Schema) *ast.Directive {
 	return &ast.Directive{
-		Name: "generate",
+		Name: generateDirectiveName,
 		Arguments: []*ast.Argument{
 			{
 				Name: "filter",
@@ -106,7 +133,7 @@ func addGenerateDirective(s *ast.Schema) *ast.Directive {
 				},
 			},
 		},
-		Definition: s.Directives["generate"],
+		Definition: s.Directives[generateDirectiveName],
 	}
 }
 
@@ -188,30 +215,35 @@ func addAggregateObject(s *ast.Schema, obj *ast.Definition) *ast.Definition {
 			},
 		},
 	}
-	// Add other aggregate functions max/min
-	payloadObject.Fields = append(payloadObject.Fields, buildMinMaxField(s, obj)...)
+	// Add other aggregate functions
+	for _, a := range aggregateTypes {
+		af := addAggregationFieldToSchema(s, obj, a)
+		if af == nil {
+			continue
+		}
+		payloadObject.Fields = append(payloadObject.Fields, af)
+	}
 	s.Types[payloadObjectName] = payloadObject
 	return payloadObject
 }
 
-func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition {
-	log.Printf("building min/max aggregates for %s\n", obj.Name)
-	minObjName := fmt.Sprintf("%sMin", obj.Name)
-	minObj := &ast.Definition{
-		Kind:        ast.Object,
-		Description: fmt.Sprintf("min aggregator for %s", obj.Name),
-		Name:        minObjName,
-		Fields:      nil,
+func addAggregationFieldToSchema(s *ast.Schema, obj *ast.Definition, a aggregate) *ast.FieldDefinition {
+	aggregateName := fmt.Sprintf("_%s%s", obj.Name, strcase.ToCamel(a.name))
+	// check if field already exists, if so, skip
+	if def := obj.Fields.ForName(aggregateName); def != nil {
+		log.Printf("aggreationField for field %s@%s already exists skipping\n", aggregateName, obj.Name)
+		if def.Directives.ForName(generateDirectiveName) == nil {
+			log.Printf("adding directive to field %s@%s\n", aggregateName, obj.Name)
+			// add directive to field, so filter can be generated
+			def.Directives = append(def.Directives, addGenerateDirective(s))
+		}
+		return def
 	}
-
-	maxObjName := fmt.Sprintf("%sMin", obj.Name)
-	maxObj := &ast.Definition{
+	aggObj := &ast.Definition{
 		Kind:        ast.Object,
-		Description: fmt.Sprintf("max aggregator for %s", obj.Name),
-		Name:        maxObjName,
-		Fields:      nil,
+		Name:        aggregateName,
+		Description: fmt.Sprintf("%s Aggregate", a.name),
 	}
-
 	for _, f := range obj.Fields {
 		if IsListType(f.Type) {
 			continue
@@ -222,41 +254,44 @@ func buildMinMaxField(s *ast.Schema, obj *ast.Definition) []*ast.FieldDefinition
 		if !fieldDef.IsLeafType() {
 			continue
 		}
-		log.Printf("adding field %s to min/max aggregates for %s\n", f.Name, obj.Name)
-		minObj.Fields = append(minObj.Fields, &ast.FieldDefinition{
-			Description: fmt.Sprintf("Compute the minimum for %s", f.Name),
+		if !scalarAllowed(t.Name(), a.allowedScalarTypes) {
+			continue
+		}
+		kind := a.kind
+		if kind == "" {
+			kind = t.Name()
+		}
+		log.Printf("adding field %s[%s] to aggregates[type:%s] for %s\n", f.Name, kind, a.name, obj.Name)
+		aggObj.Fields = append(aggObj.Fields, &ast.FieldDefinition{
+			Description: fmt.Sprintf("Compute the %s for %s", a.name, f.Name),
 			Name:        f.Name,
 			Type: &ast.Type{
-				NamedType: t.NamedType,
+				NamedType: kind,
 				NonNull:   true,
 			},
 		})
-		maxObj.Fields = append(maxObj.Fields, &ast.FieldDefinition{
-			Description: fmt.Sprintf("Compute the maxiumum for %s", f.Name),
-			Name:        f.Name,
-			Type: &ast.Type{
-				NamedType: t.NamedType,
-				NonNull:   true,
-			},
-		})
+	}
+	// if no fields are added, skip
+	if len(aggObj.Fields) == 0 {
+		return nil
 	}
 	// add object to schema
-	s.Types[minObjName] = minObj
-	s.Types[maxObjName] = maxObj
-	return []*ast.FieldDefinition{
-		{
-			Description: "Computes the maximum of the non-null input values.",
-			Name:        "max",
-			Type: &ast.Type{
-				NamedType: maxObjName,
-			},
-		},
-		{
-			Description: "Computes the minimum of the non-null input values.",
-			Name:        "min",
-			Type: &ast.Type{
-				NamedType: minObjName,
-			},
+	s.Types[aggregateName] = aggObj
+	return &ast.FieldDefinition{
+		Name:        a.name,
+		Description: fmt.Sprintf("%s Aggregate", strcase.ToCamel(a.name)),
+		Type: &ast.Type{
+			NamedType: aggregateName,
+			NonNull:   true,
 		},
 	}
+}
+
+func scalarAllowed(scalar string, allowed []string) bool {
+	for _, v := range allowed {
+		if scalar == v {
+			return true
+		}
+	}
+	return false
 }

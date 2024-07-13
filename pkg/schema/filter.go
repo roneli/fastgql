@@ -20,7 +20,7 @@ type createdInputDef struct {
 
 func FilterArgAugmenter(s *ast.Schema) error {
 	for _, v := range s.Query.Fields {
-		d := v.Directives.ForName("generate")
+		d := v.Directives.ForName(generateDirectiveName)
 		if d == nil {
 			continue
 		}
@@ -42,7 +42,7 @@ func FilterArgAugmenter(s *ast.Schema) error {
 	}
 	// add filter to mutation fields
 	for _, v := range s.Mutation.Fields {
-		d := v.Directives.ForName("generate")
+		d := v.Directives.ForName(generateDirectiveName)
 		if d == nil {
 			continue
 		}

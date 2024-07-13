@@ -8,12 +8,16 @@ import (
 )
 
 type (
-	Augmenter      func(s *ast.Schema) error
+	// Augmenter is a function that modifies the schema, it can be used to add fields, types, etc.
+	Augmenter func(s *ast.Schema) error
+	// FieldAugmenter is a function that modifies a field in a schema, it can be used to add arguments, directives, etc.
 	FieldAugmenter func(s *ast.Schema, obj *ast.Definition, field *ast.FieldDefinition) error
 )
 
+// skipAugment checks if the field should be skipped for augmentation, based on the directive skipGenerate
+// or if the field name starts with __
 func skipAugment(f *ast.FieldDefinition, args ...string) bool {
-	if f.Directives.ForName("skipGenerate") != nil || strings.HasPrefix(f.Name, "__") {
+	if f.Directives.ForName(skipGenerateDirectiveName) != nil || strings.HasPrefix(f.Name, "__") {
 		return true
 	}
 	for _, arg := range args {
@@ -24,6 +28,7 @@ func skipAugment(f *ast.FieldDefinition, args ...string) bool {
 	return false
 }
 
+// addRecursive adds the augmenter to all fields of the object and its children
 func addRecursive(s *ast.Schema, obj *ast.Definition, fieldStopCase string, augmenter FieldAugmenter, visited ...*ast.Definition) error {
 	if hasVisited(obj, visited) {
 		return nil
@@ -50,6 +55,7 @@ func addRecursive(s *ast.Schema, obj *ast.Definition, fieldStopCase string, augm
 	return nil
 }
 
+// hasVisited checks if the *ast.Definition has been visited already
 func hasVisited(obj *ast.Definition, visited []*ast.Definition) bool {
 	for _, v := range visited {
 		if v == obj {
