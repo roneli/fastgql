@@ -1,0 +1,43 @@
+---
+title: Ordering
+description: Sort query results
+---
+
+:::note[Experimental API]
+Ordering API is experimental and may change in the future.
+:::
+
+We can sort query results using the `orderBy` argument that is added when extending the schema with fastGQL. The value of the sort argument should be an array containing the name of fields to sort the result by.
+
+## Simple Sort
+
+```graphql
+query {
+    posts(orderBy: {name: ASC}) {
+        name
+    }
+}
+```
+
+## Multiple fields
+
+```graphql
+query {
+    posts(orderBy: [{name: ASC}, {id: DESC}]) {
+        name
+    }
+}
+```
+
+## Sorting Nested Queries
+
+```graphql
+query {
+    posts(orderBy: {name: DESC}) {
+        name
+        categories(orderBy: {name: ASC_NULL_FIRST}) {
+            name
+        }
+    }
+}
+```
