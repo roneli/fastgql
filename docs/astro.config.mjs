@@ -18,7 +18,7 @@ export default defineConfig({
     base: "/",
     integrations: [starlight({
         title: 'FastGQL',
-        favicon: './src/assets/favicon.svg',
+        favicon: '/images/favicon.svg',
         social: {
             github: 'https://github.com/roneli/fastgql'
         },
