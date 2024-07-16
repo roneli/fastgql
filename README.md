@@ -1,4 +1,6 @@
-![fastgql](docs/src/assets/logo_light.svg)
+
+![FastGQL logo](docs/src/assets/logo_light.svg#gh-dark-mode-only)
+![FastGQL logo](docs/src/assets/logo_dark.svg#gh-light-mode-only)
 
 
 <div style="align-content: center ">
