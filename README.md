@@ -1,6 +1,7 @@
-
-![FastGQL logo](docs/src/assets/logo_light.svg#gh-dark-mode-only)
-![FastGQL logo](docs/src/assets/logo_dark.svg#gh-light-mode-only)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/roneli/fastgql/master/docs/src/assets/logo_light.svg">
+  <img alt="" src="https://raw.githubusercontent.com/roneli/fastgql/master/docs/src/assets/logo_dark.svg">
+</picture>
 
 
 <div style="align-content: center ">
