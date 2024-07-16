@@ -1,53 +1,25 @@
-type Person {
+type User @generateFilterInput @table(name: "user"){
+	id: Int!
+	name: String!
+	posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+}
+
+type Post @generateFilterInput @table(name: "posts") {
+	id: Int!
+	name: String
+	categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"]
+		manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
+}
+
+
+type Category @generateFilterInput @table(name: "categories") {
+	id: Int!
 	name: String
 }
+
 type Query {
-	person: Person!
-	users(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter users
-		"""
-		filter: UserFilterInput): [User] @generate
-	"""
-	users Aggregate
-	"""
-	_usersAggregate(groupBy: [UserGroupBy!],
-		"""
-		Filter _usersAggregate
-		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
-}
-type User @generateFilterInput {
-	name: String
-	age: Int
-	someInnerValue: User
-	someInnerValueList(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter someInnerValueList
-		"""
-		filter: UserFilterInput): [User]
+	posts: [Post] @generate
+	users: [User] @generate
+	categories: [Category] @generate
 }

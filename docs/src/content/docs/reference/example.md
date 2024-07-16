@@ -1,11 +1,13 @@
 ---
 title: Example Reference
-description: A reference page in my new Starlight docs site.
+description: List of examples of FastGQL
 ---
 
-Reference pages are ideal for outlining how things work in terse and clear terms.
-Less concerned with telling a story or addressing a specific use case, they should give a comprehensive outline of what you're documenting.
+## Further examples
 
-## Further reading
-
-- Read [about reference](https://diataxis.fr/reference/) in the Diátaxis framework
+- [simple](https://github.com/roneli/fastgql/tree/master/example/simple) base example of FastGQL.
+- [mutations](https://github.com/roneli/fastgql/tree/master/example/mutations) example of FastGQL with mutations.
+- [custom_operator](https://github.com/roneli/fastgql/tree/master/example/custom_operator) example of FastGQL with custom operators.
+- [interface](https://github.com/roneli/fastgql/tree/master/example/interface) example of FastGQL with interfaces.
+- [tutorial](https://github.com/roneli/fastgql/tree/master/example/init) example of FastGQL using a tutorial.
+- 

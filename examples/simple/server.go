@@ -1,4 +1,4 @@
-//go:generate go run github.com/roneli/fastgql generate -c gqlgen.yml -f
+//go:generate go run github.com/roneli/fastgql generate -c gqlgen.yml
 package main
 
 import (

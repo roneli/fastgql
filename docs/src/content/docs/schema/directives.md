@@ -23,7 +23,7 @@ The `@generateFilterInput` tells the augmenter on which `OBJECT | INTERFACE` to 
 
 ```graphql
 # Generate filter input on an object
-directive @generateFilterInput(name: String!, description: String) 
+directive @generateFilterInput(description: String) 
     on OBJECT | INTERFACE
 ```
 
@@ -32,13 +32,13 @@ directive @generateFilterInput(name: String!, description: String)
 In this example, we can are creating a filter input for the category type, when arguments will be generated for categories in `Query` the CategoryFilterInput will be used for the `filter` argument.
 
 ```graphql
-type Category @generateFilterInput(name: "CategoryFilterInput"){
+type Category @generateFilterInput {
   id: Int!
   name: String
 }
 
-type Query @generate {
-    categories: [Category]
+type Query {
+    categories: [Category] @generate
 }
 ```
 
@@ -46,13 +46,11 @@ This also works for objects that contain fields of objects, see [Object filters]
 
 ### @generate
 
-The `@generate` tells the augmenter on which `OBJECT` to generate arguments i.e. filter, pagination and ordering, aggregation. By default, all arguments are created, and are recursive, this means that arguments are generated from the top level `OBJECT` until exhausted meaning no new OBJECT fields are found in a certain level.
+The `@generate` tells the augmenter on which `FIELD_DEFINTION` to generate arguments i.e. filter, pagination and ordering, aggregation. By default, all arguments are created, and are recursive, this means that arguments are generated from the top level `OBJECT` until exhausted meaning no new OBJECT fields are found in a certain level.
 
 ```graphql
 # Generate arguments for a given field or all object fields
-directive @generate(filter: Boolean = True, 
-  pagination: Boolean = True, ordering: Boolean = True, 
-  aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION 
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
 ```
 
 **Example**: The following example generates resolvers for posts and users, but doesn't add aggregation to users.

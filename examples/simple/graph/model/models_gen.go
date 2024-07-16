@@ -23,6 +23,46 @@ type BooleanListComparator struct {
 	IsNull    *bool   `json:"isNull,omitempty" db:"is_null"`
 }
 
+// Aggregate Category
+type CategoriesAggregate struct {
+	// Group
+	Group map[string]interface{} `json:"group,omitempty" db:"group"`
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *CategoryMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *CategoryMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *CategoryAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *CategorySum `json:"sum" db:"sum"`
+}
+
+type Category struct {
+	ID   int     `json:"id" db:"id"`
+	Name *string `json:"name,omitempty" db:"name"`
+}
+
+type CategoryFilterInput struct {
+	ID   *IntComparator    `json:"id,omitempty" db:"id"`
+	Name *StringComparator `json:"name,omitempty" db:"name"`
+	// Logical AND of FilterInput
+	And []*CategoryFilterInput `json:"AND,omitempty" db:"and"`
+	// Logical OR of FilterInput
+	Or []*CategoryFilterInput `json:"OR,omitempty" db:"or"`
+	// Logical NOT of FilterInput
+	Not *CategoryFilterInput `json:"NOT,omitempty" db:"not"`
+}
+
+// Ordering for Category
+type CategoryOrdering struct {
+	// Order Category by id
+	ID *OrderingTypes `json:"id,omitempty" db:"id"`
+	// Order Category by name
+	Name *OrderingTypes `json:"name,omitempty" db:"name"`
+}
+
 type FloatComparator struct {
 	Eq     *float64 `json:"eq,omitempty" db:"eq"`
 	Neq    *float64 `json:"neq,omitempty" db:"neq"`
@@ -61,8 +101,52 @@ type IntListComparator struct {
 	IsNull    *bool  `json:"isNull,omitempty" db:"is_null"`
 }
 
-type Person struct {
-	Name *string `json:"name,omitempty" db:"name"`
+type Post struct {
+	ID         int         `json:"id" db:"id"`
+	Name       *string     `json:"name,omitempty" db:"name"`
+	Categories []*Category `json:"categories,omitempty" db:"categories"`
+	User       *User       `json:"user,omitempty" db:"user"`
+	// categories Aggregate
+	CategoriesAggregate []CategoriesAggregate `json:"_categoriesAggregate" db:"_categories_aggregate"`
+	// user Aggregate
+	UserAggregate []UsersAggregate `json:"_userAggregate" db:"_user_aggregate"`
+}
+
+type PostFilterInput struct {
+	ID         *IntComparator       `json:"id,omitempty" db:"id"`
+	Name       *StringComparator    `json:"name,omitempty" db:"name"`
+	Categories *CategoryFilterInput `json:"categories,omitempty" db:"categories"`
+	User       *UserFilterInput     `json:"user,omitempty" db:"user"`
+	// Logical AND of FilterInput
+	And []*PostFilterInput `json:"AND,omitempty" db:"and"`
+	// Logical OR of FilterInput
+	Or []*PostFilterInput `json:"OR,omitempty" db:"or"`
+	// Logical NOT of FilterInput
+	Not *PostFilterInput `json:"NOT,omitempty" db:"not"`
+}
+
+// Ordering for Post
+type PostOrdering struct {
+	// Order Post by id
+	ID *OrderingTypes `json:"id,omitempty" db:"id"`
+	// Order Post by name
+	Name *OrderingTypes `json:"name,omitempty" db:"name"`
+}
+
+// Aggregate Post
+type PostsAggregate struct {
+	// Group
+	Group map[string]interface{} `json:"group,omitempty" db:"group"`
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *PostMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *PostMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *PostAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *PostSum `json:"sum" db:"sum"`
 }
 
 type StringComparator struct {
@@ -87,17 +171,15 @@ type StringListComparator struct {
 }
 
 type User struct {
-	Name               *string `json:"name,omitempty" db:"name"`
-	Age                *int    `json:"age,omitempty" db:"age"`
-	SomeInnerValue     *User   `json:"someInnerValue,omitempty" db:"some_inner_value"`
-	SomeInnerValueList []*User `json:"someInnerValueList,omitempty" db:"some_inner_value_list"`
+	ID    int     `json:"id" db:"id"`
+	Name  string  `json:"name" db:"name"`
+	Posts []*Post `json:"posts,omitempty" db:"posts"`
 }
 
 type UserFilterInput struct {
-	Name               *StringComparator `json:"name,omitempty" db:"name"`
-	Age                *IntComparator    `json:"age,omitempty" db:"age"`
-	SomeInnerValue     *UserFilterInput  `json:"someInnerValue,omitempty" db:"some_inner_value"`
-	SomeInnerValueList *UserFilterInput  `json:"someInnerValueList,omitempty" db:"some_inner_value_list"`
+	ID    *IntComparator    `json:"id,omitempty" db:"id"`
+	Name  *StringComparator `json:"name,omitempty" db:"name"`
+	Posts *PostFilterInput  `json:"posts,omitempty" db:"posts"`
 	// Logical AND of FilterInput
 	And []*UserFilterInput `json:"AND,omitempty" db:"and"`
 	// Logical OR of FilterInput
@@ -116,10 +198,10 @@ type UserMin struct {
 
 // Ordering for User
 type UserOrdering struct {
+	// Order User by id
+	ID *OrderingTypes `json:"id,omitempty" db:"id"`
 	// Order User by name
 	Name *OrderingTypes `json:"name,omitempty" db:"name"`
-	// Order User by age
-	Age *OrderingTypes `json:"age,omitempty" db:"age"`
 }
 
 // Aggregate User
@@ -134,6 +216,150 @@ type UsersAggregate struct {
 
 type AggregateResult struct {
 	Count int `json:"count" db:"count"`
+}
+
+// avg Aggregate
+type CategoryAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// max Aggregate
+type CategoryMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+}
+
+// min Aggregate
+type CategoryMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+}
+
+// sum Aggregate
+type CategorySum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// avg Aggregate
+type PostAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// max Aggregate
+type PostMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+}
+
+// min Aggregate
+type PostMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+}
+
+// sum Aggregate
+type PostSum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// Group by Category
+type CategoryGroupBy string
+
+const (
+	// Group by id
+	CategoryGroupByID CategoryGroupBy = "ID"
+	// Group by name
+	CategoryGroupByName CategoryGroupBy = "NAME"
+)
+
+var AllCategoryGroupBy = []CategoryGroupBy{
+	CategoryGroupByID,
+	CategoryGroupByName,
+}
+
+func (e CategoryGroupBy) IsValid() bool {
+	switch e {
+	case CategoryGroupByID, CategoryGroupByName:
+		return true
+	}
+	return false
+}
+
+func (e CategoryGroupBy) String() string {
+	return string(e)
+}
+
+func (e *CategoryGroupBy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CategoryGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CategoryGroupBy", str)
+	}
+	return nil
+}
+
+func (e CategoryGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Group by Post
+type PostGroupBy string
+
+const (
+	// Group by id
+	PostGroupByID PostGroupBy = "ID"
+	// Group by name
+	PostGroupByName PostGroupBy = "NAME"
+)
+
+var AllPostGroupBy = []PostGroupBy{
+	PostGroupByID,
+	PostGroupByName,
+}
+
+func (e PostGroupBy) IsValid() bool {
+	switch e {
+	case PostGroupByID, PostGroupByName:
+		return true
+	}
+	return false
+}
+
+func (e PostGroupBy) String() string {
+	return string(e)
+}
+
+func (e *PostGroupBy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PostGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PostGroupBy", str)
+	}
+	return nil
+}
+
+func (e PostGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 // Group by User

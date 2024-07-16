@@ -1,6 +1,6 @@
 ---
 title: fastGQL
-description: Get started building your docs site with Starlight.
+description: Schema-First GraphQL API Library powered by gqlgen.
 template: splash
 hero:
   title: <div class="logo"/>
@@ -22,7 +22,9 @@ hero:
 
 import "/src/styles/overrides.css";
 import { Card, CardGrid } from '@astrojs/starlight/components';
-import ScriptWorkaround from "/src/components/ScriptComponent.astro";
+import { TwitterShareButton, SocialShare } from "astro-social-share";
+import ScriptWorkaround from "/src/components/ScriptComponent.astro"
+
 
 <CardGrid stagger>
 	<Card title="Auto Generate" icon="rocket" class="">
