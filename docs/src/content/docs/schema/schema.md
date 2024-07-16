@@ -15,13 +15,15 @@ this available.
 
 # ================== schema generation fastgql directives  ==================
 
+# ================== schema generation fastgql directives  ==================
+
 # Generate Resolver directive tells fastgql to generate an automatic resolver for a given field
 # @generateResolver can only be defined on Query and Mutation fields.
 # adding pagination, ordering, aggregate, filter to false will disable the generation of the corresponding arguments
 # for filter to work @generateFilterInput must be defined on the object, if its missing you will get an error
 # recursive will generate pagination, filtering, ordering and aggregate for all the relations of the object,
 # this will modify the object itself and add arguments to the object fields.
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, F: String) on FIELD_DEFINITION
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
 
 # Generate mutations for an object
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
@@ -64,6 +66,10 @@ enum _OrderingTypes {
     DESC_NULL_FIRST
     ASC_NULL_LAST
     DESC_NULL_LAST
+}
+
+type _AggregateResult {
+    count: Int!
 }
 
 input StringComparator {

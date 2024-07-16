@@ -7,7 +7,7 @@ description: Executing queries on a generated FastGQL Server
 
 FastGQL allows to easily execute queries against a remote data source, i.e. postgres and convert the GraphQL AST into a valid SQL query and return queried data.
 
-FastGQL auto-generates query filters, aggregation, pagination and ordering from your schema definition using the [#generate](../schema/directives.md#generate "mention") and [#generatefilterinput](../schema/directives.md#generatefilterinput "mention") directives.
+FastGQL auto-generates query filters, aggregation, pagination and ordering from your schema definition using the [#generate](../schema/directives#generate "mention") and [#generatefilterinput](../schema/directives#generatefilterinput "mention") directives.
 
 ## Queries
 
@@ -57,4 +57,4 @@ query {
 }
 ```
 
-fetch all users and thier posts, for each post we fetch it's categories and the user who posted it.
+fetch all users and their posts, for each post we fetch it's categories and the user who posted it.

@@ -5,7 +5,7 @@ description: Delete mutations
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-FastGQL auto generates `delete<OBJECT_NAME>` delete mutations if the [#generatemutations](../schema/directives.md#generatemutations "mention") is set.
+FastGQL auto generates `delete<OBJECT_NAME>` delete mutations if the [#generatemutations](../schema/directives#generatemutations "mention") is set.
 The following code will be added to the GraphQL schema.
 
 ```graphql
@@ -50,7 +50,7 @@ type PostsPayload {
 }
 ```
 
-The [#generatemutations](../schema/directives.md#generatemutations "mention") directive adds the above into our schema.
+The [#generatemutations](../schema/directives#generatemutations "mention") directive adds the above into our schema.
 
 * **filter** argument passed to `deletePosts`mutation allows to filter what posts we want to delete.
 * The **cascade** argument defines if we want to cascade our objects on deletion (postgres only)

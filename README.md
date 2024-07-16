@@ -1,4 +1,7 @@
-![fastgql](docs/src/assets/logo_light.svg)
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/roneli/fastgql/master/docs/src/assets/logo_light.svg">
+  <img alt="" src="https://raw.githubusercontent.com/roneli/fastgql/master/docs/src/assets/logo_dark.svg">
+</picture>
 
 
 <div style="align-content: center ">

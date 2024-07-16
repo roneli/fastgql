@@ -6,7 +6,7 @@ description: How to setup fastGQL
 This tutorial will take you through the process of building a GraphQL server with fastgql that can: 
 automatically query, filter, order and pagination users, posts & categories from a postgres database.
 
-You can find the finished code for this tutorial [here](https://github.com/roneli/fastgql/tree/master/example/tutorial).
+You can find the finished code for this tutorial [here](https://github.com/roneli/fastgql/tree/master/example/init).
 
 If you are familiar with [gqlgen](https://gqlgen.com), the setup is nearly identical, with a little work in your Schema you won't need to define any resolvers!
 
@@ -63,30 +63,30 @@ The schema that was generated for us was:
 
 {% code overflow="wrap" %}
 ```graphql
-type User @generateFilterInput(name: "UserFilterInput") @tableName(name: "user"){
-  id: Int!
-  name: String!
-  posts: [Post] @relation(relationType: ONE_TO_MANY, baseTable: "user", refTable: "posts", fields: ["id"], references: ["user_id"])
+type User @generateFilterInput @table(name: "user"){
+    id: Int!
+    name: String!
+    posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 }
 
-type Post @generateFilterInput(name: "PostFilterInput") {
-  id: Int!
-  name: String
-  categories: [Category] @relation(relationType: MANY_TO_MANY, baseTable: "posts", refTable: "categories", fields: ["id"], references: ["id"]
-    manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-  user: User @relation(relationType: ONE_TO_ONE, baseTable: "posts", refTable: "user", fields: ["user_id"], references: ["id"])
+type Post @generateFilterInput @table(name: "posts") {
+    id: Int!
+    name: String
+    categories: [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"]
+        manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+    user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
 }
 
 
-type Category @generateFilterInput(name: "CategoryFilterInput"){
-  id: Int!
-  name: String
+type Category @generateFilterInput @table(name: "categories") {
+    id: Int!
+    name: String
 }
 
-type Query @generate {
-  posts: [Post]
-  users: [User]
-  categories: [Category] @skipGenerate
+type Query {
+    posts: [Post] @generate
+    users: [User] @generate
+    categories: [Category] @generate
 }
 ```
 {% endcode %}

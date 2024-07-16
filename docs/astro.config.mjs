@@ -14,11 +14,11 @@ export default defineConfig({
         },
         maxDuration: 8
     }),
-    site: 'https://fastgql.com',
+    site: 'https://fastgql.io',
     base: "/",
     integrations: [starlight({
         title: 'FastGQL',
-        favicon: './favicon.svg',
+        favicon: '/images/favicon.svg',
         social: {
             github: 'https://github.com/roneli/fastgql'
         },

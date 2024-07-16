@@ -165,7 +165,7 @@ func TestBuilder_Delete(t *testing.T) {
 		{
 			Name:              "simple_delete",
 			SchemaFile:        "testdata/schema_simple.graphql",
-			GraphQLQuery:      `mutation { deletePosts() { rows_affected posts { name id } } }`,
+			GraphQLQuery:      `mutation { deletePosts	 { rows_affected posts { name id } } }`,
 			ExpectedSQL:       `WITH delete_posts AS (DELETE FROM "posts" RETURNING *) SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('name', "sq0"."name", 'id', "sq0"."id")), '[]'::jsonb) AS "posts" FROM "delete_posts" AS "sq0") AS "posts", (SELECT COUNT(*) AS "rows_affected" FROM "delete_posts")`,
 			ExpectedArguments: []interface{}{},
 		},
