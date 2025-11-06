@@ -116,7 +116,7 @@ func (f *FastGqlPlugin) GenerateCode(data *codegen.Data) error {
 	return nil
 }
 
-func (f *FastGqlPlugin) Implement(field *codegen.Field) string {
+func (f *FastGqlPlugin) Implement(_ string, field *codegen.Field) string {
 	buf := &bytes.Buffer{}
 	if field.TypeReference.Definition.Directives.ForName(generateDirectiveName) != nil {
 		return `panic(fmt.Errorf("not implemented"))`
@@ -164,7 +164,7 @@ func (f *FastGqlPlugin) CreateAugmented(schema *ast.Schema, augmenters ...Augmen
 		}
 	}
 	// Format augmented schema to *.graphql files
-	return formatSchema(f.rootDirectory, schema), nil
+	return Format(f.rootDirectory, schema), nil
 }
 
 type fastGQLResolver struct {

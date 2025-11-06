@@ -10,6 +10,7 @@ type Cat implements Animal {
 	type: String!
 	color: String!
 }
+
 type Category @generateFilterInput @table(name: "categories") {
 	id: Int!
 	name: String

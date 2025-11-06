@@ -13,10 +13,10 @@ import (
 // Save all fastgql augmented schema into fastgql_schema.graphql file.
 const defaultFastGqlSchema = "fastgql_schema.graphql"
 
-// formatSchema into multiple sources, the original format schema from gqlparser lib saves all in one file,
+// Format into multiple source, the original format schema from gqlparser lib saves all in one file,
 // in this case after augmentation we want to keep all original files and structure and all added definitions to put in
 // fastgql_schema.graphql file.
-func formatSchema(resolverPackageDir string, schema *ast.Schema) []*ast.Source {
+func Format(resolverPackageDir string, schema *ast.Schema) []*ast.Source {
 	if schema == nil {
 		return nil
 	}

@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/roneli/fastgql/pkg/execution/builders"
@@ -19,6 +20,8 @@ var defaultOperators = map[string]builders.Operator{
 	"gte":    Gte,
 	"lte":    Lte,
 	"lt":     Lt,
+	"prefix": Prefix,
+	"suffix": Suffix,
 }
 
 func Eq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
@@ -67,4 +70,12 @@ func IsNull(table exp.AliasedExpression, key string, value interface{}) goqu.Exp
 	} else {
 		return table.Col(key).IsNotNull()
 	}
+}
+
+func Prefix(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).Like(fmt.Sprintf("%s%%", value))
+}
+
+func Suffix(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+	return table.Col(key).Like(fmt.Sprintf("%%%s", value))
 }
