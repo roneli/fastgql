@@ -62,7 +62,6 @@ input StringComparator {
 	suffix: String
 	prefix: String
 	isNull: Boolean
-	myCustomOperator: String!
 }
 input StringListComparator {
 	eq: [String]

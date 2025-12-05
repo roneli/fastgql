@@ -3,212 +3,483 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
 )
 
 type BooleanComparator struct {
-	Eq     *bool `json:"eq,omitempty"`
-	Neq    *bool `json:"neq,omitempty"`
-	IsNull *bool `json:"isNull,omitempty"`
+	Eq     *bool `json:"eq,omitempty" db:"eq"`
+	Neq    *bool `json:"neq,omitempty" db:"neq"`
+	IsNull *bool `json:"isNull,omitempty" db:"is_null"`
 }
 
 type BooleanListComparator struct {
-	Eq        []*bool `json:"eq,omitempty"`
-	Neq       []*bool `json:"neq,omitempty"`
-	Contains  []*bool `json:"contains,omitempty"`
-	Contained []*bool `json:"contained,omitempty"`
-	Overlap   []*bool `json:"overlap,omitempty"`
-	IsNull    *bool   `json:"isNull,omitempty"`
+	Eq        []*bool `json:"eq,omitempty" db:"eq"`
+	Neq       []*bool `json:"neq,omitempty" db:"neq"`
+	Contains  []*bool `json:"contains,omitempty" db:"contains"`
+	Contained []*bool `json:"contained,omitempty" db:"contained"`
+	Overlap   []*bool `json:"overlap,omitempty" db:"overlap"`
+	IsNull    *bool   `json:"isNull,omitempty" db:"is_null"`
 }
 
 // Aggregate Category
 type CategoriesAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
-	Count int `json:"count"`
-	// Computes the maximum of the non-null input values.
-	Max *CategoryMin `json:"max,omitempty"`
-	// Computes the minimum of the non-null input values.
-	Min *CategoryMin `json:"min,omitempty"`
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *CategoryMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *CategoryMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *CategoryAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *CategorySum `json:"sum" db:"sum"`
 }
 
 type Category struct {
-	ID   int     `json:"id"`
-	Name *string `json:"name,omitempty"`
+	ID   int     `json:"id" db:"id"`
+	Name *string `json:"name,omitempty" db:"name"`
 }
 
 type CategoryFilterInput struct {
-	ID   *IntComparator    `json:"id,omitempty"`
-	Name *StringComparator `json:"name,omitempty"`
+	ID   *IntComparator    `json:"id,omitempty" db:"id"`
+	Name *StringComparator `json:"name,omitempty" db:"name"`
 	// Logical AND of FilterInput
-	And []*CategoryFilterInput `json:"AND,omitempty"`
+	And []*CategoryFilterInput `json:"AND,omitempty" db:"and"`
 	// Logical OR of FilterInput
-	Or []*CategoryFilterInput `json:"OR,omitempty"`
+	Or []*CategoryFilterInput `json:"OR,omitempty" db:"or"`
 	// Logical NOT of FilterInput
-	Not *CategoryFilterInput `json:"NOT,omitempty"`
-}
-
-// max aggregator for Category
-type CategoryMin struct {
-	// Compute the maxiumum for id
-	ID int `json:"id"`
-	// Compute the maxiumum for name
-	Name string `json:"name"`
+	Not *CategoryFilterInput `json:"NOT,omitempty" db:"not"`
 }
 
 // Ordering for Category
 type CategoryOrdering struct {
 	// Order Category by id
-	ID *OrderingTypes `json:"id,omitempty"`
+	ID *OrderingTypes `json:"id,omitempty" db:"id"`
 	// Order Category by name
-	Name *OrderingTypes `json:"name,omitempty"`
+	Name *OrderingTypes `json:"name,omitempty" db:"name"`
 }
 
 type FloatComparator struct {
-	Eq     *float64 `json:"eq,omitempty"`
-	Neq    *float64 `json:"neq,omitempty"`
-	Gt     *float64 `json:"gt,omitempty"`
-	Gte    *float64 `json:"gte,omitempty"`
-	Lt     *float64 `json:"lt,omitempty"`
-	Lte    *float64 `json:"lte,omitempty"`
-	IsNull *bool    `json:"isNull,omitempty"`
+	Eq     *float64 `json:"eq,omitempty" db:"eq"`
+	Neq    *float64 `json:"neq,omitempty" db:"neq"`
+	Gt     *float64 `json:"gt,omitempty" db:"gt"`
+	Gte    *float64 `json:"gte,omitempty" db:"gte"`
+	Lt     *float64 `json:"lt,omitempty" db:"lt"`
+	Lte    *float64 `json:"lte,omitempty" db:"lte"`
+	IsNull *bool    `json:"isNull,omitempty" db:"is_null"`
 }
 
 type FloatListComparator struct {
-	Eq        []*float64 `json:"eq,omitempty"`
-	Neq       []*float64 `json:"neq,omitempty"`
-	Contains  []*float64 `json:"contains,omitempty"`
-	Contained []*float64 `json:"contained,omitempty"`
-	Overlap   []*float64 `json:"overlap,omitempty"`
-	IsNull    *bool      `json:"isNull,omitempty"`
+	Eq        []*float64 `json:"eq,omitempty" db:"eq"`
+	Neq       []*float64 `json:"neq,omitempty" db:"neq"`
+	Contains  []*float64 `json:"contains,omitempty" db:"contains"`
+	Contained []*float64 `json:"contained,omitempty" db:"contained"`
+	Overlap   []*float64 `json:"overlap,omitempty" db:"overlap"`
+	IsNull    *bool      `json:"isNull,omitempty" db:"is_null"`
 }
 
 type IntComparator struct {
-	Eq     *int  `json:"eq,omitempty"`
-	Neq    *int  `json:"neq,omitempty"`
-	Gt     *int  `json:"gt,omitempty"`
-	Gte    *int  `json:"gte,omitempty"`
-	Lt     *int  `json:"lt,omitempty"`
-	Lte    *int  `json:"lte,omitempty"`
-	IsNull *bool `json:"isNull,omitempty"`
+	Eq     *int  `json:"eq,omitempty" db:"eq"`
+	Neq    *int  `json:"neq,omitempty" db:"neq"`
+	Gt     *int  `json:"gt,omitempty" db:"gt"`
+	Gte    *int  `json:"gte,omitempty" db:"gte"`
+	Lt     *int  `json:"lt,omitempty" db:"lt"`
+	Lte    *int  `json:"lte,omitempty" db:"lte"`
+	IsNull *bool `json:"isNull,omitempty" db:"is_null"`
 }
 
 type IntListComparator struct {
-	Eq        []*int `json:"eq,omitempty"`
-	Neq       []*int `json:"neq,omitempty"`
-	Contains  []*int `json:"contains,omitempty"`
-	Contained []*int `json:"contained,omitempty"`
-	Overlap   []*int `json:"overlap,omitempty"`
-	IsNull    *bool  `json:"isNull,omitempty"`
+	Eq        []*int `json:"eq,omitempty" db:"eq"`
+	Neq       []*int `json:"neq,omitempty" db:"neq"`
+	Contains  []*int `json:"contains,omitempty" db:"contains"`
+	Contained []*int `json:"contained,omitempty" db:"contained"`
+	Overlap   []*int `json:"overlap,omitempty" db:"overlap"`
+	IsNull    *bool  `json:"isNull,omitempty" db:"is_null"`
 }
 
 type Post struct {
-	ID         int         `json:"id"`
-	Name       *string     `json:"name,omitempty"`
-	Categories []*Category `json:"categories,omitempty"`
-	UserID     *int        `json:"user_id,omitempty"`
-	User       *User       `json:"user,omitempty"`
+	ID         int         `json:"id" db:"id"`
+	Name       *string     `json:"name,omitempty" db:"name"`
+	Categories []*Category `json:"categories,omitempty" db:"categories"`
+	UserID     *int        `json:"user_id,omitempty" db:"user_id"`
+	User       *User       `json:"user,omitempty" db:"user"`
+	// categories Aggregate
+	CategoriesAggregate []*CategoriesAggregate `json:"_categoriesAggregate" db:"_categories_aggregate"`
+	// user Aggregate
+	UserAggregate []*UsersAggregate `json:"_userAggregate" db:"_user_aggregate"`
 }
 
 type PostFilterInput struct {
-	ID         *IntComparator       `json:"id,omitempty"`
-	Name       *StringComparator    `json:"name,omitempty"`
-	Categories *CategoryFilterInput `json:"categories,omitempty"`
-	UserID     *IntComparator       `json:"user_id,omitempty"`
+	ID         *IntComparator       `json:"id,omitempty" db:"id"`
+	Name       *StringComparator    `json:"name,omitempty" db:"name"`
+	Categories *CategoryFilterInput `json:"categories,omitempty" db:"categories"`
+	UserID     *IntComparator       `json:"user_id,omitempty" db:"user_id"`
 	// Logical AND of FilterInput
-	And []*PostFilterInput `json:"AND,omitempty"`
+	And []*PostFilterInput `json:"AND,omitempty" db:"and"`
 	// Logical OR of FilterInput
-	Or []*PostFilterInput `json:"OR,omitempty"`
+	Or []*PostFilterInput `json:"OR,omitempty" db:"or"`
 	// Logical NOT of FilterInput
-	Not *PostFilterInput `json:"NOT,omitempty"`
-}
-
-// max aggregator for Post
-type PostMin struct {
-	// Compute the maxiumum for id
-	ID int `json:"id"`
-	// Compute the maxiumum for name
-	Name string `json:"name"`
-	// Compute the maxiumum for user_id
-	UserID int `json:"user_id"`
+	Not *PostFilterInput `json:"NOT,omitempty" db:"not"`
 }
 
 // Ordering for Post
 type PostOrdering struct {
 	// Order Post by id
-	ID *OrderingTypes `json:"id,omitempty"`
+	ID *OrderingTypes `json:"id,omitempty" db:"id"`
 	// Order Post by name
-	Name *OrderingTypes `json:"name,omitempty"`
+	Name *OrderingTypes `json:"name,omitempty" db:"name"`
 	// Order Post by user_id
-	UserID *OrderingTypes `json:"user_id,omitempty"`
+	UserID *OrderingTypes `json:"user_id,omitempty" db:"user_id"`
 }
 
 // Aggregate Post
 type PostsAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
-	Count int `json:"count"`
-	// Computes the maximum of the non-null input values.
-	Max *PostMin `json:"max,omitempty"`
-	// Computes the minimum of the non-null input values.
-	Min *PostMin `json:"min,omitempty"`
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *PostMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *PostMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *PostAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *PostSum `json:"sum" db:"sum"`
+}
+
+type Query struct {
 }
 
 type StringComparator struct {
-	Eq          *string   `json:"eq,omitempty"`
-	Neq         *string   `json:"neq,omitempty"`
-	Contains    []*string `json:"contains,omitempty"`
-	NotContains []*string `json:"notContains,omitempty"`
-	Like        *string   `json:"like,omitempty"`
-	Ilike       *string   `json:"ilike,omitempty"`
-	Suffix      *string   `json:"suffix,omitempty"`
-	Prefix      *string   `json:"prefix,omitempty"`
-	IsNull      *bool     `json:"isNull,omitempty"`
+	Eq          *string   `json:"eq,omitempty" db:"eq"`
+	Neq         *string   `json:"neq,omitempty" db:"neq"`
+	Contains    []*string `json:"contains,omitempty" db:"contains"`
+	NotContains []*string `json:"notContains,omitempty" db:"not_contains"`
+	Like        *string   `json:"like,omitempty" db:"like"`
+	Ilike       *string   `json:"ilike,omitempty" db:"ilike"`
+	Suffix      *string   `json:"suffix,omitempty" db:"suffix"`
+	Prefix      *string   `json:"prefix,omitempty" db:"prefix"`
+	IsNull      *bool     `json:"isNull,omitempty" db:"is_null"`
 }
 
 type StringListComparator struct {
-	Eq          []*string `json:"eq,omitempty"`
-	Neq         []*string `json:"neq,omitempty"`
-	Contains    []*string `json:"contains,omitempty"`
-	ContainedBy []*string `json:"containedBy,omitempty"`
-	Overlap     []*string `json:"overlap,omitempty"`
-	IsNull      *bool     `json:"isNull,omitempty"`
+	Eq          []*string `json:"eq,omitempty" db:"eq"`
+	Neq         []*string `json:"neq,omitempty" db:"neq"`
+	Contains    []*string `json:"contains,omitempty" db:"contains"`
+	ContainedBy []*string `json:"containedBy,omitempty" db:"contained_by"`
+	Overlap     []*string `json:"overlap,omitempty" db:"overlap"`
+	IsNull      *bool     `json:"isNull,omitempty" db:"is_null"`
 }
 
 type User struct {
-	ID    int     `json:"id"`
-	Name  string  `json:"name"`
-	Posts []*Post `json:"posts,omitempty"`
-}
-
-// max aggregator for User
-type UserMin struct {
-	// Compute the maxiumum for id
-	ID int `json:"id"`
-	// Compute the maxiumum for name
-	Name string `json:"name"`
+	ID    int     `json:"id" db:"id"`
+	Name  string  `json:"name" db:"name"`
+	Posts []*Post `json:"posts,omitempty" db:"posts"`
+	// posts Aggregate
+	PostsAggregate []*PostsAggregate `json:"_postsAggregate" db:"_posts_aggregate"`
 }
 
 // Ordering for User
 type UserOrdering struct {
 	// Order User by id
-	ID *OrderingTypes `json:"id,omitempty"`
+	ID *OrderingTypes `json:"id,omitempty" db:"id"`
 	// Order User by name
-	Name *OrderingTypes `json:"name,omitempty"`
+	Name *OrderingTypes `json:"name,omitempty" db:"name"`
 }
 
 // Aggregate User
 type UsersAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
-	Count int `json:"count"`
-	// Computes the maximum of the non-null input values.
-	Max *UserMin `json:"max,omitempty"`
-	// Computes the minimum of the non-null input values.
-	Min *UserMin `json:"min,omitempty"`
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *UserMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *UserMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *UserAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *UserSum `json:"sum" db:"sum"`
 }
 
 type AggregateResult struct {
-	Count int `json:"count"`
+	Count int `json:"count" db:"count"`
+}
+
+// avg Aggregate
+type CategoryAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// max Aggregate
+type CategoryMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+}
+
+// min Aggregate
+type CategoryMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+}
+
+// sum Aggregate
+type CategorySum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// avg Aggregate
+type PostAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+	// Compute the avg for user_id
+	UserID float64 `json:"user_id" db:"user_id"`
+}
+
+// max Aggregate
+type PostMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+	// Compute the max for user_id
+	UserID int `json:"user_id" db:"user_id"`
+}
+
+// min Aggregate
+type PostMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+	// Compute the min for user_id
+	UserID int `json:"user_id" db:"user_id"`
+}
+
+// sum Aggregate
+type PostSum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
+	// Compute the sum for user_id
+	UserID float64 `json:"user_id" db:"user_id"`
+}
+
+// avg Aggregate
+type UserAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// max Aggregate
+type UserMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+}
+
+// min Aggregate
+type UserMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+}
+
+// sum Aggregate
+type UserSum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// Group by Category
+type CategoryGroupBy string
+
+const (
+	// Group by id
+	CategoryGroupByID CategoryGroupBy = "ID"
+	// Group by name
+	CategoryGroupByName CategoryGroupBy = "NAME"
+)
+
+var AllCategoryGroupBy = []CategoryGroupBy{
+	CategoryGroupByID,
+	CategoryGroupByName,
+}
+
+func (e CategoryGroupBy) IsValid() bool {
+	switch e {
+	case CategoryGroupByID, CategoryGroupByName:
+		return true
+	}
+	return false
+}
+
+func (e CategoryGroupBy) String() string {
+	return string(e)
+}
+
+func (e *CategoryGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CategoryGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CategoryGroupBy", str)
+	}
+	return nil
+}
+
+func (e CategoryGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *CategoryGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e CategoryGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Group by Post
+type PostGroupBy string
+
+const (
+	// Group by id
+	PostGroupByID PostGroupBy = "ID"
+	// Group by name
+	PostGroupByName PostGroupBy = "NAME"
+	// Group by user_id
+	PostGroupByUserID PostGroupBy = "USER_ID"
+)
+
+var AllPostGroupBy = []PostGroupBy{
+	PostGroupByID,
+	PostGroupByName,
+	PostGroupByUserID,
+}
+
+func (e PostGroupBy) IsValid() bool {
+	switch e {
+	case PostGroupByID, PostGroupByName, PostGroupByUserID:
+		return true
+	}
+	return false
+}
+
+func (e PostGroupBy) String() string {
+	return string(e)
+}
+
+func (e *PostGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PostGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PostGroupBy", str)
+	}
+	return nil
+}
+
+func (e PostGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *PostGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e PostGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Group by User
+type UserGroupBy string
+
+const (
+	// Group by id
+	UserGroupByID UserGroupBy = "ID"
+	// Group by name
+	UserGroupByName UserGroupBy = "NAME"
+)
+
+var AllUserGroupBy = []UserGroupBy{
+	UserGroupByID,
+	UserGroupByName,
+}
+
+func (e UserGroupBy) IsValid() bool {
+	switch e {
+	case UserGroupByID, UserGroupByName:
+		return true
+	}
+	return false
+}
+
+func (e UserGroupBy) String() string {
+	return string(e)
+}
+
+func (e *UserGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UserGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UserGroupBy", str)
+	}
+	return nil
+}
+
+func (e UserGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *UserGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e UserGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type OrderingTypes string
@@ -243,7 +514,7 @@ func (e OrderingTypes) String() string {
 	return string(e)
 }
 
-func (e *OrderingTypes) UnmarshalGQL(v interface{}) error {
+func (e *OrderingTypes) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -258,6 +529,20 @@ func (e *OrderingTypes) UnmarshalGQL(v interface{}) error {
 
 func (e OrderingTypes) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *OrderingTypes) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e OrderingTypes) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type RelationType string
@@ -286,7 +571,7 @@ func (e RelationType) String() string {
 	return string(e)
 }
 
-func (e *RelationType) UnmarshalGQL(v interface{}) error {
+func (e *RelationType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -301,4 +586,18 @@ func (e *RelationType) UnmarshalGQL(v interface{}) error {
 
 func (e RelationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *RelationType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e RelationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

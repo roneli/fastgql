@@ -3,6 +3,7 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -65,6 +66,9 @@ type Person struct {
 	Name *string `json:"name,omitempty" db:"name"`
 }
 
+type Query struct {
+}
+
 type StringComparator struct {
 	Eq               *string   `json:"eq,omitempty" db:"eq"`
 	Neq              *string   `json:"neq,omitempty" db:"neq"`
@@ -107,14 +111,6 @@ type UserFilterInput struct {
 	Not *UserFilterInput `json:"NOT,omitempty" db:"not"`
 }
 
-// max aggregator for User
-type UserMin struct {
-	// Compute the maxiumum for name
-	Name string `json:"name" db:"name"`
-	// Compute the maxiumum for age
-	Age int `json:"age" db:"age"`
-}
-
 // Ordering for User
 type UserOrdering struct {
 	// Order User by name
@@ -125,16 +121,50 @@ type UserOrdering struct {
 
 // Aggregate User
 type UsersAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
 	Count int `json:"count" db:"count"`
-	// Computes the maximum of the non-null input values.
-	Max *UserMin `json:"max,omitempty" db:"max"`
-	// Computes the minimum of the non-null input values.
-	Min *UserMin `json:"min,omitempty" db:"min"`
+	// Max Aggregate
+	Max *UserMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *UserMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *UserAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *UserSum `json:"sum" db:"sum"`
 }
 
 type AggregateResult struct {
 	Count int `json:"count" db:"count"`
+}
+
+// avg Aggregate
+type UserAvg struct {
+	// Compute the avg for age
+	Age float64 `json:"age" db:"age"`
+}
+
+// max Aggregate
+type UserMax struct {
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+	// Compute the max for age
+	Age int `json:"age" db:"age"`
+}
+
+// min Aggregate
+type UserMin struct {
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+	// Compute the min for age
+	Age int `json:"age" db:"age"`
+}
+
+// sum Aggregate
+type UserSum struct {
+	// Compute the sum for age
+	Age float64 `json:"age" db:"age"`
 }
 
 // Group by User
@@ -164,7 +194,7 @@ func (e UserGroupBy) String() string {
 	return string(e)
 }
 
-func (e *UserGroupBy) UnmarshalGQL(v interface{}) error {
+func (e *UserGroupBy) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -179,6 +209,20 @@ func (e *UserGroupBy) UnmarshalGQL(v interface{}) error {
 
 func (e UserGroupBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *UserGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e UserGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type OrderingTypes string
@@ -213,7 +257,7 @@ func (e OrderingTypes) String() string {
 	return string(e)
 }
 
-func (e *OrderingTypes) UnmarshalGQL(v interface{}) error {
+func (e *OrderingTypes) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -228,6 +272,20 @@ func (e *OrderingTypes) UnmarshalGQL(v interface{}) error {
 
 func (e OrderingTypes) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *OrderingTypes) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e OrderingTypes) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type RelationType string
@@ -256,7 +314,7 @@ func (e RelationType) String() string {
 	return string(e)
 }
 
-func (e *RelationType) UnmarshalGQL(v interface{}) error {
+func (e *RelationType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -271,4 +329,18 @@ func (e *RelationType) UnmarshalGQL(v interface{}) error {
 
 func (e RelationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *RelationType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e RelationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
