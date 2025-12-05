@@ -6,12 +6,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/roneli/fastgql/pkg/log/adapters"
 
@@ -22,11 +29,50 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const defaultPGConnection = "postgresql://localhost/postgres?user=postgres&password="
-
 // Test Postgres Graph Sanity checks, this assumes that the postgresql exists
 // NOTE: run init.sql on the postgres so data will be seeded
 func TestPostgresGraph(t *testing.T) {
+	ctx := context.Background()
+	connStr := os.Getenv("TEST_DATABASE_URL")
+
+	if connStr == "" {
+		// No connection string provided, spin up a test container
+		_, b, _, _ := runtime.Caller(0)
+		basepath := filepath.Dir(b)
+		rootDir := filepath.Join(basepath, "..", "..")
+		initScriptPath := filepath.Join(rootDir, ".github", "workflows", "data", "init.sql")
+
+		// Check for Ryuk disabled env var or try to auto-detect if we should disable it
+		// This is often needed in environments with SELinux or restricted Docker socket access
+		if os.Getenv("TESTCONTAINERS_RYUK_DISABLED") == "" {
+			// Optional: you could attempt to detect the environment here
+			// For now, we rely on the user/environment to set the flag if needed.
+			// However, explicitly disabling it in code for local dev iteration where it's known to fail
+			// is also an option, but environment variable is cleaner.
+		}
+
+		pgContainer, err := postgres.Run(ctx,
+			"postgres:latest",
+			postgres.WithInitScripts(initScriptPath),
+			postgres.WithDatabase("postgres"),
+			postgres.WithUsername("postgres"),
+			postgres.WithPassword("password"),
+			testcontainers.WithWaitStrategy(
+				wait.ForLog("database system is ready to accept connections").
+					WithOccurrence(2).
+					WithStartupTimeout(5*time.Second)),
+		)
+		require.NoError(t, err)
+		defer func() {
+			if err := pgContainer.Terminate(ctx); err != nil {
+				t.Logf("failed to terminate container: %s", err)
+			}
+		}()
+
+		connStr, err = pgContainer.ConnectionString(ctx, "sslmode=disable")
+		require.NoError(t, err)
+	}
+
 	tt := []struct {
 		name         string
 		query        *graphql.RawParams
@@ -88,7 +134,7 @@ func TestPostgresGraph(t *testing.T) {
 		},
 	}
 
-	pool, err := pgxpool.New(context.Background(), defaultPGConnection)
+	pool, err := pgxpool.New(context.Background(), connStr)
 	if err != nil {
 		fmt.Printf("failed to create pool: %s", err)
 		return
