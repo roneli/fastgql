@@ -1,18 +1,5 @@
 version: "2"
 
-run:
-  tests: true
-
-issues:
-  exclude-dirs:
-    - bin
-    - docs
-    - example
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - dupl
-
 linters:
   default: none
   enable:
@@ -28,7 +15,18 @@ linters:
     - staticcheck
     - unconvert
     - unused
-  # linters-settings is deprecated/removed in v2 schema or handled differently.
-  # For now, we rely on default settings or user can migrate properly if needed.
-  # errcheck:
-  #   ignore: fmt:.*,[rR]ead|[wW]rite|[cC]lose,io:Copy
+
+  settings:
+    errcheck:
+      ignore: fmt:.*,[rR]ead|[wW]rite|[cC]lose,io:Copy
+
+  exclusions:
+    # exclude-dirs (from v1) seem to not have a direct equivalent in the snippet,
+    # but maybe they go under 'exclusions' or 'run'?
+    # Some results said 'run.skip-dirs' is gone.
+    # We will try to rely on default ignores or .gitignore for directories for now.
+    
+    rules:
+      - path: _test\.go
+        linters:
+          - dupl
