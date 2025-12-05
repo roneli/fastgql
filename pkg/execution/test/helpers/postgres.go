@@ -34,6 +34,7 @@ func GetTestPostgresPool(ctx context.Context) (*pgxpool.Pool, func(), error) {
 		if os.Getenv("TESTCONTAINERS_RYUK_DISABLED") == "" {
 			// In many CI/local setups (like Fedora), Ryuk might fail due to socket permissions.
 			// Users can set TESTCONTAINERS_RYUK_DISABLED=true to skip it.
+			// Alternatively, setting TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true often fixes it by running Ryuk as privileged.
 		}
 
 		pgContainer, err := postgres.Run(ctx,
