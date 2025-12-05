@@ -1,0 +1,117 @@
+input UserFilterInput {
+	name: StringComparator
+	age: IntComparator
+	someInnerValue: UserFilterInput
+	someInnerValueList: UserFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [UserFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [UserFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: UserFilterInput
+}
+"""
+Group by User
+"""
+enum UserGroupBy {
+	"""
+	Group by name
+	"""
+	NAME
+	"""
+	Group by age
+	"""
+	AGE
+}
+"""
+Ordering for User
+"""
+input UserOrdering {
+	"""
+	Order User by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order User by age
+	"""
+	age: _OrderingTypes
+}
+"""
+Aggregate User
+"""
+type UsersAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _UserMax!
+	"""
+	Min Aggregate
+	"""
+	min: _UserMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _UserAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _UserSum!
+}
+"""
+avg Aggregate
+"""
+type _UserAvg {
+	"""
+	Compute the avg for age
+	"""
+	age: Float!
+}
+"""
+max Aggregate
+"""
+type _UserMax {
+	"""
+	Compute the max for name
+	"""
+	name: String!
+	"""
+	Compute the max for age
+	"""
+	age: Int!
+}
+"""
+min Aggregate
+"""
+type _UserMin {
+	"""
+	Compute the min for name
+	"""
+	name: String!
+	"""
+	Compute the min for age
+	"""
+	age: Int!
+}
+"""
+sum Aggregate
+"""
+type _UserSum {
+	"""
+	Compute the sum for age
+	"""
+	age: Float!
+}

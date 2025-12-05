@@ -210,7 +210,7 @@ func collectFields(parent *Field, selectionSet ast.SelectionSet, schema *ast.Sch
 				// No need to add the original selection as it exists in a different source
 				continue
 			}
-			if selField.Field.SelectionSet != nil {
+			if selField.SelectionSet != nil {
 				// Add any sub selections of this field
 				selField.Selections = append(selField.Selections, collectFields(selField, selField.SelectionSet, schema, opCtx, map[string]bool{})...)
 			}

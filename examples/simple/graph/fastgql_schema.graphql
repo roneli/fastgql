@@ -1,8 +1,151 @@
-input UserFilterInput {
+"""
+Aggregate Category
+"""
+type CategoriesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _CategoryMax!
+	"""
+	Min Aggregate
+	"""
+	min: _CategoryMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _CategoryAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _CategorySum!
+}
+input CategoryFilterInput {
+	id: IntComparator
 	name: StringComparator
-	age: IntComparator
-	someInnerValue: UserFilterInput
-	someInnerValueList: UserFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [CategoryFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [CategoryFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: CategoryFilterInput
+}
+"""
+Group by Category
+"""
+enum CategoryGroupBy {
+	"""
+	Group by id
+	"""
+	ID
+	"""
+	Group by name
+	"""
+	NAME
+}
+"""
+Ordering for Category
+"""
+input CategoryOrdering {
+	"""
+	Order Category by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Category by name
+	"""
+	name: _OrderingTypes
+}
+input PostFilterInput {
+	id: IntComparator
+	name: StringComparator
+	categories: CategoryFilterInput
+	user: UserFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [PostFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [PostFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: PostFilterInput
+}
+"""
+Group by Post
+"""
+enum PostGroupBy {
+	"""
+	Group by id
+	"""
+	ID
+	"""
+	Group by name
+	"""
+	NAME
+}
+"""
+Ordering for Post
+"""
+input PostOrdering {
+	"""
+	Order Post by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Post by name
+	"""
+	name: _OrderingTypes
+}
+"""
+Aggregate Post
+"""
+type PostsAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _PostMax!
+	"""
+	Min Aggregate
+	"""
+	min: _PostMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _PostAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _PostSum!
+}
+input UserFilterInput {
+	id: IntComparator
+	name: StringComparator
+	posts: PostFilterInput
 	"""
 	Logical AND of FilterInput
 	"""
@@ -47,13 +190,13 @@ Ordering for User
 """
 input UserOrdering {
 	"""
+	Order User by id
+	"""
+	id: _OrderingTypes
+	"""
 	Order User by name
 	"""
 	name: _OrderingTypes
-	"""
-	Order User by age
-	"""
-	age: _OrderingTypes
 }
 """
 Aggregate User
@@ -71,4 +214,92 @@ type UsersAggregate {
 	Computes the minimum of the non-null input values.
 	"""
 	min: UserMin
+}
+"""
+avg Aggregate
+"""
+type _CategoryAvg {
+	"""
+	Compute the avg for id
+	"""
+	id: Float!
+}
+"""
+max Aggregate
+"""
+type _CategoryMax {
+	"""
+	Compute the max for id
+	"""
+	id: Int!
+	"""
+	Compute the max for name
+	"""
+	name: String!
+}
+"""
+min Aggregate
+"""
+type _CategoryMin {
+	"""
+	Compute the min for id
+	"""
+	id: Int!
+	"""
+	Compute the min for name
+	"""
+	name: String!
+}
+"""
+sum Aggregate
+"""
+type _CategorySum {
+	"""
+	Compute the sum for id
+	"""
+	id: Float!
+}
+"""
+avg Aggregate
+"""
+type _PostAvg {
+	"""
+	Compute the avg for id
+	"""
+	id: Float!
+}
+"""
+max Aggregate
+"""
+type _PostMax {
+	"""
+	Compute the max for id
+	"""
+	id: Int!
+	"""
+	Compute the max for name
+	"""
+	name: String!
+}
+"""
+min Aggregate
+"""
+type _PostMin {
+	"""
+	Compute the min for id
+	"""
+	id: Int!
+	"""
+	Compute the min for name
+	"""
+	name: String!
+}
+"""
+sum Aggregate
+"""
+type _PostSum {
+	"""
+	Compute the sum for id
+	"""
+	id: Float!
 }

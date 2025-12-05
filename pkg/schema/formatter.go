@@ -70,10 +70,30 @@ func Format(resolverPackageDir string, schema *ast.Schema) []*ast.Source {
 		typeNames = append(typeNames, name)
 	}
 	sort.Strings(typeNames)
+
+	// Collect extension fields grouped by source file
+	// Map: source file -> type name -> fields
+	extensionFields := make(map[string]map[string]*extensionInfo)
+
 	for _, name := range typeNames {
 		t := schema.Types[name]
-		f := getOrCreateFormatter(getSourceName(t.Position, defaultSource), formatters)
+		sourceName := getSourceName(t.Position, defaultSource)
+		f := getOrCreateFormatter(sourceName, formatters)
+		// Set the expected source so extended fields are filtered out
+		f.expectedSource = t.Position
 		f.FormatDefinition(t, false)
+		f.expectedSource = nil
+
+		// Collect extension fields for this type
+		collectExtensionFields(t, sourceName, extensionFields)
+	}
+
+	// Write extension statements to their source files
+	for extSourceName, typeExtensions := range extensionFields {
+		f := getOrCreateFormatter(extSourceName, formatters)
+		for _, extInfo := range typeExtensions {
+			f.FormatExtendDefinition(extInfo)
+		}
 	}
 
 	sources := make([]*ast.Source, 0, len(formatters))
@@ -85,6 +105,41 @@ func Format(resolverPackageDir string, schema *ast.Schema) []*ast.Source {
 		sources = append(sources, &ast.Source{Name: name, Input: f.writer.String()})
 	}
 	return sources
+}
+
+// extensionInfo holds information about fields extending a type from a different source
+type extensionInfo struct {
+	TypeName string
+	Kind     ast.DefinitionKind
+	Fields   ast.FieldList
+}
+
+// collectExtensionFields finds fields that came from a different source than the type definition
+func collectExtensionFields(t *ast.Definition, typeSourceName string, extensions map[string]map[string]*extensionInfo) {
+	if t.Position == nil || t.Position.Src == nil {
+		return
+	}
+
+	for _, field := range t.Fields {
+		if field.Position == nil || field.Position.Src == nil {
+			continue
+		}
+		// If field's source differs from type's source, it's from an extension
+		fieldSourceName := field.Position.Src.Name
+		if fieldSourceName != t.Position.Src.Name {
+			if extensions[fieldSourceName] == nil {
+				extensions[fieldSourceName] = make(map[string]*extensionInfo)
+			}
+			if extensions[fieldSourceName][t.Name] == nil {
+				extensions[fieldSourceName][t.Name] = &extensionInfo{
+					TypeName: t.Name,
+					Kind:     t.Kind,
+					Fields:   ast.FieldList{},
+				}
+			}
+			extensions[fieldSourceName][t.Name].Fields = append(extensions[fieldSourceName][t.Name].Fields, field)
+		}
+	}
 }
 
 func newFormatter(w *bytes.Buffer) *formatter {
@@ -100,6 +155,11 @@ type formatter struct {
 
 	padNext  bool
 	lineHead bool
+
+	// expectedSource is used to filter out fields that came from a different source
+	// when formatting a definition. This is set to the position of the type definition
+	// and reset to nil after formatting.
+	expectedSource *ast.Position
 }
 
 func (f *formatter) writeString(s string) {
@@ -198,15 +258,42 @@ func (f *formatter) FormatFieldList(fieldList ast.FieldList) {
 		return
 	}
 
+	// Filter fields based on expected source (to exclude extension fields)
+	var filteredFields ast.FieldList
+	for _, field := range fieldList {
+		if f.shouldIncludeField(field) {
+			filteredFields = append(filteredFields, field)
+		}
+	}
+
+	if len(filteredFields) == 0 {
+		return
+	}
+
 	f.WriteString("{").WriteNewline()
 	f.IncrementIndent()
 
-	for _, field := range fieldList {
+	for _, field := range filteredFields {
 		f.FormatFieldDefinition(field)
 	}
 
 	f.DecrementIndent()
 	f.WriteString("}")
+}
+
+// shouldIncludeField returns true if the field should be included in the current output.
+// Fields from extensions (different source file) are excluded when expectedSource is set.
+func (f *formatter) shouldIncludeField(field *ast.FieldDefinition) bool {
+	// If no expected source is set, include all fields
+	if f.expectedSource == nil || f.expectedSource.Src == nil {
+		return true
+	}
+	// If field has no position info, include it (augmented fields)
+	if field.Position == nil || field.Position.Src == nil {
+		return true
+	}
+	// Include field only if it's from the same source as the type definition
+	return field.Position.Src.Name == f.expectedSource.Src.Name
 }
 
 func (f *formatter) FormatFieldDefinition(field *ast.FieldDefinition) {
@@ -568,6 +655,29 @@ func (f *formatter) FormatType(t *ast.Type) {
 
 func (f *formatter) FormatValue(value *ast.Value) {
 	f.WriteString(value.String())
+}
+
+func (f *formatter) FormatExtendDefinition(extInfo *extensionInfo) {
+	f.WriteWord("extend")
+
+	switch extInfo.Kind {
+	case ast.Scalar:
+		f.WriteWord("scalar").WriteWord(extInfo.TypeName)
+	case ast.Object:
+		f.WriteWord("type").WriteWord(extInfo.TypeName)
+	case ast.Interface:
+		f.WriteWord("interface").WriteWord(extInfo.TypeName)
+	case ast.Union:
+		f.WriteWord("union").WriteWord(extInfo.TypeName)
+	case ast.Enum:
+		f.WriteWord("enum").WriteWord(extInfo.TypeName)
+	case ast.InputObject:
+		f.WriteWord("input").WriteWord(extInfo.TypeName)
+	}
+
+	f.FormatFieldList(extInfo.Fields)
+
+	f.WriteNewline()
 }
 
 func getSourceName(pos *ast.Position, defaultSource string) string {

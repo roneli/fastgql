@@ -6,8 +6,6 @@ directive @isInterfaceFilter on INPUT_FIELD_DEFINITION
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
 directive @typename(name: String!) on INTERFACE
-scalar Map
-
 input BooleanComparator {
 	eq: Boolean
 	neq: Boolean
@@ -55,6 +53,7 @@ input IntListComparator {
 	overlap: [Int]
 	isNull: Boolean
 }
+scalar Map
 input StringComparator {
 	eq: String
 	neq: String

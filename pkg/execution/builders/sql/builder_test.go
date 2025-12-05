@@ -292,7 +292,7 @@ func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Bui
 	})
 	doc, err := parser.ParseQuery(&ast.Source{Input: testCase.GraphQLQuery})
 	require.Nil(t, err)
-	errs := validator.Validate(augmentedSchema, doc)
+	errs := validator.ValidateWithRules(augmentedSchema, doc, nil)
 	require.Nil(t, errs)
 	def := doc.Operations.ForName("")
 	sel := def.SelectionSet[0].(*ast.Field)

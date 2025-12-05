@@ -370,6 +370,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	{Name: "../custom.graphql", Input: `extend input StringComparator {
+	myCustomOperator: String!
+}
+`, BuiltIn: false},
 	{Name: "../fastgql_schema.graphql", Input: `input UserFilterInput {
 	name: StringComparator
 	age: IntComparator
@@ -552,7 +556,6 @@ input StringComparator {
 	suffix: String
 	prefix: String
 	isNull: Boolean
-	myCustomOperator: String!
 }
 input StringListComparator {
 	eq: [String]

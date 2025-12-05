@@ -627,6 +627,147 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	{Name: "../schema.graphql", Input: `type Category @generateFilterInput @table(name: "categories") {
+	id: Int!
+	name: String
+}
+type Post @generateFilterInput @table(name: "posts") {
+	id: Int!
+	name: String
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate(groupBy: [CategoryGroupBy!],
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+	"""
+	user Aggregate
+	"""
+	_userAggregate(groupBy: [UserGroupBy!],
+		"""
+		Filter _userAggregate
+		"""
+		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+}
+type Query {
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @generate
+	users(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter users
+		"""
+		filter: UserFilterInput): [User] @generate
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @generate
+	"""
+	posts Aggregate
+	"""
+	_postsAggregate(groupBy: [PostGroupBy!],
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+	"""
+	users Aggregate
+	"""
+	_usersAggregate(groupBy: [UserGroupBy!],
+		"""
+		Filter _usersAggregate
+		"""
+		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate(groupBy: [CategoryGroupBy!],
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+}
+type User @generateFilterInput @table(name: "user") {
+	id: Int!
+	name: String!
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+}
+`, BuiltIn: false},
 	{Name: "../fastgql_schema.graphql", Input: `"""
 Aggregate Category
 """
@@ -1023,147 +1164,6 @@ enum _relationType {
 	ONE_TO_ONE
 	ONE_TO_MANY
 	MANY_TO_MANY
-}
-`, BuiltIn: false},
-	{Name: "../schema.graphql", Input: `type Category @generateFilterInput @table(name: "categories") {
-	id: Int!
-	name: String
-}
-type Post @generateFilterInput @table(name: "posts") {
-	id: Int!
-	name: String
-	categories(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Category
-		"""
-		orderBy: [CategoryOrdering],
-		"""
-		Filter categories
-		"""
-		filter: CategoryFilterInput): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
-	"""
-	categories Aggregate
-	"""
-	_categoriesAggregate(groupBy: [CategoryGroupBy!],
-		"""
-		Filter _categoriesAggregate
-		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
-	"""
-	user Aggregate
-	"""
-	_userAggregate(groupBy: [UserGroupBy!],
-		"""
-		Filter _userAggregate
-		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
-}
-type Query {
-	posts(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Post
-		"""
-		orderBy: [PostOrdering],
-		"""
-		Filter posts
-		"""
-		filter: PostFilterInput): [Post] @generate
-	users(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter users
-		"""
-		filter: UserFilterInput): [User] @generate
-	categories(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Category
-		"""
-		orderBy: [CategoryOrdering],
-		"""
-		Filter categories
-		"""
-		filter: CategoryFilterInput): [Category] @generate
-	"""
-	posts Aggregate
-	"""
-	_postsAggregate(groupBy: [PostGroupBy!],
-		"""
-		Filter _postsAggregate
-		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
-	"""
-	users Aggregate
-	"""
-	_usersAggregate(groupBy: [UserGroupBy!],
-		"""
-		Filter _usersAggregate
-		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
-	"""
-	categories Aggregate
-	"""
-	_categoriesAggregate(groupBy: [CategoryGroupBy!],
-		"""
-		Filter _categoriesAggregate
-		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
-}
-type User @generateFilterInput @table(name: "user") {
-	id: Int!
-	name: String!
-	posts(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Post
-		"""
-		orderBy: [PostOrdering],
-		"""
-		Filter posts
-		"""
-		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
 }
 `, BuiltIn: false},
 }

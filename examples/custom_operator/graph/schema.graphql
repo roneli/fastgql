@@ -3,12 +3,51 @@ type Person {
 }
 type Query {
 	person: Person!
-	user: [User] @generate
-
+	user(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter user
+		"""
+		filter: UserFilterInput): [User] @generate
+	"""
+	user Aggregate
+	"""
+	_userAggregate(groupBy: [UserGroupBy!],
+		"""
+		Filter _userAggregate
+		"""
+		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
 }
 type User @generateFilterInput {
 	name: String
 	age: Int
 	someInnerValue: User
-	someInnerValueList: [User]
+	someInnerValueList(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter someInnerValueList
+		"""
+		filter: UserFilterInput): [User]
 }
