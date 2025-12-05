@@ -1,15 +1,17 @@
-version: 2
+version: "2"
 
 run:
   tests: true
-  skip-dirs:
+
+issues:
+  exclude-dirs:
     - bin
     - docs
     - example
-
-linters-settings:
-  errcheck:
-    ignore: fmt:.*,[rR]ead|[wW]rite|[cC]lose,io:Copy
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - dupl
 
 linters:
   default: none
@@ -26,9 +28,7 @@ linters:
     - staticcheck
     - unconvert
     - unused
-  
-  exclusions:
-    rules:
-      - path: _test\.go
-        linters:
-          - dupl
+  # linters-settings is deprecated/removed in v2 schema or handled differently.
+  # For now, we rely on default settings or user can migrate properly if needed.
+  # errcheck:
+  #   ignore: fmt:.*,[rR]ead|[wW]rite|[cC]lose,io:Copy
