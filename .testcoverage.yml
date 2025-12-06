@@ -1,0 +1,43 @@
+# go-test-coverage configuration
+# See: https://github.com/marketplace/actions/go-test-coverage
+
+# Path to coverage profile file (output of `go test -coverprofile` command)
+profile: cover.out
+
+# Coverage thresholds - set to 0 to not fail builds, just report
+threshold:
+  # Minimum coverage percentage for individual files (0 = no requirement)
+  file: 0
+  
+  # Minimum coverage percentage for packages (0 = no requirement)  
+  package: 0
+  
+  # Minimum overall coverage percentage (0 = no requirement)
+  total: 0
+
+# Exclude paths from coverage statistics
+exclude:
+  paths:
+    - \.pb\.go$              # Exclude protobuf generated files
+    - _gen\.go$              # Exclude other generated files
+    - /generated/            # Exclude generated directories
+    - /testdata/             # Exclude test data
+    - /examples/             # Exclude examples
+    - _test\.go$             # Exclude test files themselves
+
+# Optional: require comments for coverage-ignore annotations
+force-annotation-comment: false
+
+# Save current coverage breakdown for comparison
+# This file will be stored as an artifact and used for diff comparison
+breakdown-file-name: 'coverage-breakdown.json'
+
+# Coverage diff configuration
+diff:
+  # Path to base branch coverage breakdown
+  base-breakdown-file-name: 'base-coverage-breakdown.json'
+  
+  # Allowed coverage difference threshold (null = report but don't fail)
+  # Set to null to show coverage changes without failing the build
+  threshold: null
+
