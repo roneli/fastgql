@@ -59,32 +59,22 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: base-coverage-breakdown
-          path: .
+          path: ./base-coverage
         continue-on-error: true  # Don't fail if base coverage doesn't exist yet
 
       - name: Prepare base coverage for comparison
-        id: check_base_coverage
         if: github.event_name == 'pull_request'
         run: |
-          if [ -f "coverage-breakdown.json" ]; then
-            mv coverage-breakdown.json base-coverage-breakdown.json
-            echo "exists=true" >> $GITHUB_OUTPUT
+          if [ -f "./base-coverage/coverage-breakdown.json" ]; then
+            echo "Base coverage found, will use for comparison"
+            mv ./base-coverage/coverage-breakdown.json ./base-coverage-breakdown.json
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Base coverage not found, removing diff config to skip comparison"
+            # Remove the diff section from config to prevent the action from looking for base file
+            sed -i '/^diff:/,/^$/d' .testcoverage.yml
           fi
 
-      - name: Check test coverage (with base comparison)
-        if: github.event_name == 'pull_request' && steps.check_base_coverage.outputs.exists == 'true'
-        uses: vladopajic/go-test-coverage@v2
-        with:
-          config: ./.testcoverage.yml
-          profile: cover.out
-          local-prefix: github.com/roneli/fastgql
-          git-token: ''
-          git-branch: ${{ github.head_ref }}
-
-      - name: Check test coverage (without base comparison)
-        if: github.event_name == 'push' || (github.event_name == 'pull_request' && steps.check_base_coverage.outputs.exists == 'false')
+      - name: Check test coverage
         uses: vladopajic/go-test-coverage@v2
         with:
           config: ./.testcoverage.yml
