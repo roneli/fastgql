@@ -62,7 +62,28 @@ jobs:
           path: .
         continue-on-error: true  # Don't fail if base coverage doesn't exist yet
 
-      - name: Check test coverage
+      - name: Check if base coverage exists
+        id: check_base_coverage
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -f "coverage-breakdown.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check test coverage (with base comparison)
+        if: github.event_name == 'pull_request' && steps.check_base_coverage.outputs.exists == 'true'
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          config: ./.testcoverage.yml
+          profile: cover.out
+          local-prefix: github.com/roneli/fastgql
+          git-token: ''
+          git-branch: ${{ github.head_ref }}
+
+      - name: Check test coverage (without base comparison)
+        if: github.event_name == 'push' || (github.event_name == 'pull_request' && steps.check_base_coverage.outputs.exists == 'false')
         uses: vladopajic/go-test-coverage@v2
         with:
           config: ./.testcoverage.yml

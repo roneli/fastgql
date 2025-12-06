@@ -273,11 +273,9 @@ func Test_addOrderByArgsToField(t *testing.T) {
 			if tt.shouldAdd {
 				assert.NotNil(t, orderByArg, "orderBy argument should be added")
 				assert.Greater(t, len(field.Arguments), initialArgCount, "Argument count should increase")
-			} else {
+			} else if orderByArg == nil {
 				// For non-composite types, it might not add
-				if orderByArg == nil {
-					assert.Equal(t, initialArgCount, len(field.Arguments), "Argument count should not change")
-				}
+				assert.Equal(t, initialArgCount, len(field.Arguments), "Argument count should not change")
 			}
 		})
 	}

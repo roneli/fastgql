@@ -124,11 +124,9 @@ func Test_MutationsAugmenter_Unit(t *testing.T) {
 					field := schema.Mutation.Fields.ForName(tt.deleteMutation)
 					assert.NotNil(t, field, "Delete mutation should exist")
 				}
-			} else {
+			} else if schema.Mutation != nil {
 				// If no mutations expected and no Mutation type existed, it shouldn't be created
-				if schema.Mutation != nil {
-					assert.Empty(t, schema.Mutation.Fields, "No mutation fields should be added")
-				}
+				assert.Empty(t, schema.Mutation.Fields, "No mutation fields should be added")
 			}
 		})
 	}
@@ -295,11 +293,11 @@ func Test_addUpdateMutation(t *testing.T) {
 // Test_addDeleteMutation tests delete mutation generation
 func Test_addDeleteMutation(t *testing.T) {
 	tests := []struct {
-		name              string
-		schemaDefinition  string
-		typeName          string
-		expectCascade     bool
-		expectFilterArg   bool
+		name             string
+		schemaDefinition string
+		typeName         string
+		expectCascade    bool
+		expectFilterArg  bool
 	}{
 		{
 			name: "creates_delete_with_cascade",
@@ -329,7 +327,7 @@ func Test_addDeleteMutation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			schema := buildTestSchema(t, tt.schemaDefinition)
-			
+
 			// Create filter inputs if needed
 			if tt.expectFilterArg {
 				_ = FilterInputAugmenter(schema)
@@ -362,11 +360,11 @@ func Test_addDeleteMutation(t *testing.T) {
 // Test_getPayloadObject tests payload object creation
 func Test_getPayloadObject(t *testing.T) {
 	tests := []struct {
-		name              string
-		schemaDefinition  string
-		typeName          string
-		expectedPayload   string
-		alreadyExists     bool
+		name             string
+		schemaDefinition string
+		typeName         string
+		expectedPayload  string
+		alreadyExists    bool
 	}{
 		{
 			name: "creates_new_payload_object",
@@ -470,4 +468,3 @@ func Test_schemaHasMutationDirective(t *testing.T) {
 		})
 	}
 }
-

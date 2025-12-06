@@ -110,14 +110,12 @@ func Test_AggregationAugmenter_Unit(t *testing.T) {
 					assert.NotNil(t, aggField.Directives.ForName(generateDirectiveName))
 					// Check groupBy argument exists
 					groupByArg := aggField.Arguments.ForName("groupBy")
-					assert.NotNil(t, groupByArg, "groupBy argument should exist")
-				}
-			} else {
-				if tt.aggregateFieldName != "" {
-					aggField := schema.Query.Fields.ForName(tt.aggregateFieldName)
-					assert.Nil(t, aggField, "Aggregate field should not be created")
-				}
+				assert.NotNil(t, groupByArg, "groupBy argument should exist")
 			}
+		} else if tt.aggregateFieldName != "" {
+			aggField := schema.Query.Fields.ForName(tt.aggregateFieldName)
+			assert.Nil(t, aggField, "Aggregate field should not be created")
+		}
 		})
 	}
 }
