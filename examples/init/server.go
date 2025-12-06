@@ -12,7 +12,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/roneli/fastgql/examples/init/graph"
 	"github.com/roneli/fastgql/examples/init/graph/generated"
+	"github.com/roneli/fastgql/pkg/execution"
 	"github.com/roneli/fastgql/pkg/execution/builders"
+	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 )
 
 const defaultPort = "8080"
@@ -34,12 +36,15 @@ func main() {
 		panic(err)
 	}
 	defer pool.Close()
-	resolver := &graph.Resolver{Executor: pool}
+
+	resolver := &graph.Resolver{}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
-	// Add logger to config for building trace logging
-	cfg := &builders.Config{Schema: executableSchema.Schema(), Logger: nil}
-	resolver.Cfg = cfg
-	resolver.Executor = pool
+
+	// Create config and executor
+	cfg := &builders.Config{Schema: executableSchema.Schema()}
+	multiExec := execution.NewMultiExecutor(executableSchema.Schema(), "postgres")
+	multiExec.Register("postgres", sql.NewExecutor(pool, cfg))
+	resolver.Executor = multiExec
 
 	srv := handler.NewDefaultServer(executableSchema)
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))

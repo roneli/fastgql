@@ -39,11 +39,8 @@ type Config struct {
 }
 
 type ResolverRoot interface {
-	CategoriesAggregate() CategoriesAggregateResolver
 	Mutation() MutationResolver
-	PostsAggregate() PostsAggregateResolver
 	Query() QueryResolver
-	UsersAggregate() UsersAggregateResolver
 }
 
 type DirectiveRoot struct {
@@ -184,22 +181,10 @@ type ComplexityRoot struct {
 	}
 }
 
-type CategoriesAggregateResolver interface {
-	Max(ctx context.Context, obj *model1.CategoriesAggregate) (*model.CategoryMax, error)
-
-	Avg(ctx context.Context, obj *model1.CategoriesAggregate) (*model.CategoryAvg, error)
-	Sum(ctx context.Context, obj *model1.CategoriesAggregate) (*model.CategorySum, error)
-}
 type MutationResolver interface {
 	CreatePosts(ctx context.Context, inputs []*model.CreatePostInput) (*model.PostsPayload, error)
 	DeletePosts(ctx context.Context, cascade *bool, filter *model1.PostFilterInput) (*model.PostsPayload, error)
 	UpdatePosts(ctx context.Context, input model.UpdatePostInput, filter *model1.PostFilterInput) (*model.PostsPayload, error)
-}
-type PostsAggregateResolver interface {
-	Max(ctx context.Context, obj *model1.PostsAggregate) (*model.PostMax, error)
-
-	Avg(ctx context.Context, obj *model1.PostsAggregate) (*model.PostAvg, error)
-	Sum(ctx context.Context, obj *model1.PostsAggregate) (*model.PostSum, error)
 }
 type QueryResolver interface {
 	Posts(ctx context.Context, limit *int, offset *int, orderBy []*model1.PostOrdering, filter *model1.PostFilterInput) ([]*model1.Post, error)
@@ -208,12 +193,6 @@ type QueryResolver interface {
 	PostsAggregate(ctx context.Context, groupBy []model1.PostGroupBy, filter *model1.PostFilterInput) ([]*model1.PostsAggregate, error)
 	UsersAggregate(ctx context.Context, groupBy []model1.UserGroupBy, filter *model1.UserFilterInput) ([]*model1.UsersAggregate, error)
 	CategoriesAggregate(ctx context.Context, groupBy []model1.CategoryGroupBy, filter *model1.CategoryFilterInput) ([]*model1.CategoriesAggregate, error)
-}
-type UsersAggregateResolver interface {
-	Max(ctx context.Context, obj *model1.UsersAggregate) (*model.UserMax, error)
-
-	Avg(ctx context.Context, obj *model1.UsersAggregate) (*model.UserAvg, error)
-	Sum(ctx context.Context, obj *model1.UsersAggregate) (*model.UserSum, error)
 }
 
 type executableSchema struct {
@@ -1935,10 +1914,10 @@ func (ec *executionContext) _CategoriesAggregate_max(ctx context.Context, field 
 		field,
 		ec.fieldContext_CategoriesAggregate_max,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.CategoriesAggregate().Max(ctx, obj)
+			return obj.Max, nil
 		},
 		nil,
-		ec.marshalN_CategoryMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐCategoryMax,
+		ec.marshalN_CategoryMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoryMax,
 		true,
 		true,
 	)
@@ -1948,8 +1927,8 @@ func (ec *executionContext) fieldContext_CategoriesAggregate_max(_ context.Conte
 	fc = &graphql.FieldContext{
 		Object:     "CategoriesAggregate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2005,10 +1984,10 @@ func (ec *executionContext) _CategoriesAggregate_avg(ctx context.Context, field 
 		field,
 		ec.fieldContext_CategoriesAggregate_avg,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.CategoriesAggregate().Avg(ctx, obj)
+			return obj.Avg, nil
 		},
 		nil,
-		ec.marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐCategoryAvg,
+		ec.marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoryAvg,
 		true,
 		true,
 	)
@@ -2018,8 +1997,8 @@ func (ec *executionContext) fieldContext_CategoriesAggregate_avg(_ context.Conte
 	fc = &graphql.FieldContext{
 		Object:     "CategoriesAggregate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2038,10 +2017,10 @@ func (ec *executionContext) _CategoriesAggregate_sum(ctx context.Context, field 
 		field,
 		ec.fieldContext_CategoriesAggregate_sum,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.CategoriesAggregate().Sum(ctx, obj)
+			return obj.Sum, nil
 		},
 		nil,
-		ec.marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐCategorySum,
+		ec.marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategorySum,
 		true,
 		true,
 	)
@@ -2051,8 +2030,8 @@ func (ec *executionContext) fieldContext_CategoriesAggregate_sum(_ context.Conte
 	fc = &graphql.FieldContext{
 		Object:     "CategoriesAggregate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2608,10 +2587,10 @@ func (ec *executionContext) _PostsAggregate_max(ctx context.Context, field graph
 		field,
 		ec.fieldContext_PostsAggregate_max,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.PostsAggregate().Max(ctx, obj)
+			return obj.Max, nil
 		},
 		nil,
-		ec.marshalN_PostMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐPostMax,
+		ec.marshalN_PostMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostMax,
 		true,
 		true,
 	)
@@ -2621,8 +2600,8 @@ func (ec *executionContext) fieldContext_PostsAggregate_max(_ context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "PostsAggregate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2682,10 +2661,10 @@ func (ec *executionContext) _PostsAggregate_avg(ctx context.Context, field graph
 		field,
 		ec.fieldContext_PostsAggregate_avg,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.PostsAggregate().Avg(ctx, obj)
+			return obj.Avg, nil
 		},
 		nil,
-		ec.marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐPostAvg,
+		ec.marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostAvg,
 		true,
 		true,
 	)
@@ -2695,8 +2674,8 @@ func (ec *executionContext) fieldContext_PostsAggregate_avg(_ context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "PostsAggregate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2717,10 +2696,10 @@ func (ec *executionContext) _PostsAggregate_sum(ctx context.Context, field graph
 		field,
 		ec.fieldContext_PostsAggregate_sum,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.PostsAggregate().Sum(ctx, obj)
+			return obj.Sum, nil
 		},
 		nil,
-		ec.marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐPostSum,
+		ec.marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostSum,
 		true,
 		true,
 	)
@@ -2730,8 +2709,8 @@ func (ec *executionContext) fieldContext_PostsAggregate_sum(_ context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "PostsAggregate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -3480,10 +3459,10 @@ func (ec *executionContext) _UsersAggregate_max(ctx context.Context, field graph
 		field,
 		ec.fieldContext_UsersAggregate_max,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.UsersAggregate().Max(ctx, obj)
+			return obj.Max, nil
 		},
 		nil,
-		ec.marshalN_UserMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐUserMax,
+		ec.marshalN_UserMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserMax,
 		true,
 		true,
 	)
@@ -3493,8 +3472,8 @@ func (ec *executionContext) fieldContext_UsersAggregate_max(_ context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "UsersAggregate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -3550,10 +3529,10 @@ func (ec *executionContext) _UsersAggregate_avg(ctx context.Context, field graph
 		field,
 		ec.fieldContext_UsersAggregate_avg,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.UsersAggregate().Avg(ctx, obj)
+			return obj.Avg, nil
 		},
 		nil,
-		ec.marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐUserAvg,
+		ec.marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserAvg,
 		true,
 		true,
 	)
@@ -3563,8 +3542,8 @@ func (ec *executionContext) fieldContext_UsersAggregate_avg(_ context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "UsersAggregate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -3583,10 +3562,10 @@ func (ec *executionContext) _UsersAggregate_sum(ctx context.Context, field graph
 		field,
 		ec.fieldContext_UsersAggregate_sum,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.UsersAggregate().Sum(ctx, obj)
+			return obj.Sum, nil
 		},
 		nil,
-		ec.marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐUserSum,
+		ec.marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserSum,
 		true,
 		true,
 	)
@@ -3596,8 +3575,8 @@ func (ec *executionContext) fieldContext_UsersAggregate_sum(_ context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "UsersAggregate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -3638,7 +3617,7 @@ func (ec *executionContext) fieldContext__AggregateResult_count(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) __CategoryAvg_id(ctx context.Context, field graphql.CollectedField, obj *model.CategoryAvg) (ret graphql.Marshaler) {
+func (ec *executionContext) __CategoryAvg_id(ctx context.Context, field graphql.CollectedField, obj *model1.CategoryAvg) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -3667,7 +3646,7 @@ func (ec *executionContext) fieldContext__CategoryAvg_id(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) __CategoryMax_id(ctx context.Context, field graphql.CollectedField, obj *model.CategoryMax) (ret graphql.Marshaler) {
+func (ec *executionContext) __CategoryMax_id(ctx context.Context, field graphql.CollectedField, obj *model1.CategoryMax) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -3696,7 +3675,7 @@ func (ec *executionContext) fieldContext__CategoryMax_id(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) __CategoryMax_name(ctx context.Context, field graphql.CollectedField, obj *model.CategoryMax) (ret graphql.Marshaler) {
+func (ec *executionContext) __CategoryMax_name(ctx context.Context, field graphql.CollectedField, obj *model1.CategoryMax) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -3783,7 +3762,7 @@ func (ec *executionContext) fieldContext__CategoryMin_name(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) __CategorySum_id(ctx context.Context, field graphql.CollectedField, obj *model.CategorySum) (ret graphql.Marshaler) {
+func (ec *executionContext) __CategorySum_id(ctx context.Context, field graphql.CollectedField, obj *model1.CategorySum) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -3812,7 +3791,7 @@ func (ec *executionContext) fieldContext__CategorySum_id(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) __PostAvg_id(ctx context.Context, field graphql.CollectedField, obj *model.PostAvg) (ret graphql.Marshaler) {
+func (ec *executionContext) __PostAvg_id(ctx context.Context, field graphql.CollectedField, obj *model1.PostAvg) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -3841,7 +3820,7 @@ func (ec *executionContext) fieldContext__PostAvg_id(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) __PostAvg_user_id(ctx context.Context, field graphql.CollectedField, obj *model.PostAvg) (ret graphql.Marshaler) {
+func (ec *executionContext) __PostAvg_user_id(ctx context.Context, field graphql.CollectedField, obj *model1.PostAvg) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -3870,7 +3849,7 @@ func (ec *executionContext) fieldContext__PostAvg_user_id(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) __PostMax_id(ctx context.Context, field graphql.CollectedField, obj *model.PostMax) (ret graphql.Marshaler) {
+func (ec *executionContext) __PostMax_id(ctx context.Context, field graphql.CollectedField, obj *model1.PostMax) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -3899,7 +3878,7 @@ func (ec *executionContext) fieldContext__PostMax_id(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) __PostMax_name(ctx context.Context, field graphql.CollectedField, obj *model.PostMax) (ret graphql.Marshaler) {
+func (ec *executionContext) __PostMax_name(ctx context.Context, field graphql.CollectedField, obj *model1.PostMax) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -3928,7 +3907,7 @@ func (ec *executionContext) fieldContext__PostMax_name(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) __PostMax_user_id(ctx context.Context, field graphql.CollectedField, obj *model.PostMax) (ret graphql.Marshaler) {
+func (ec *executionContext) __PostMax_user_id(ctx context.Context, field graphql.CollectedField, obj *model1.PostMax) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -4044,7 +4023,7 @@ func (ec *executionContext) fieldContext__PostMin_user_id(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) __PostSum_id(ctx context.Context, field graphql.CollectedField, obj *model.PostSum) (ret graphql.Marshaler) {
+func (ec *executionContext) __PostSum_id(ctx context.Context, field graphql.CollectedField, obj *model1.PostSum) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -4073,7 +4052,7 @@ func (ec *executionContext) fieldContext__PostSum_id(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) __PostSum_user_id(ctx context.Context, field graphql.CollectedField, obj *model.PostSum) (ret graphql.Marshaler) {
+func (ec *executionContext) __PostSum_user_id(ctx context.Context, field graphql.CollectedField, obj *model1.PostSum) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -4102,7 +4081,7 @@ func (ec *executionContext) fieldContext__PostSum_user_id(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) __UserAvg_id(ctx context.Context, field graphql.CollectedField, obj *model.UserAvg) (ret graphql.Marshaler) {
+func (ec *executionContext) __UserAvg_id(ctx context.Context, field graphql.CollectedField, obj *model1.UserAvg) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -4131,7 +4110,7 @@ func (ec *executionContext) fieldContext__UserAvg_id(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) __UserMax_id(ctx context.Context, field graphql.CollectedField, obj *model.UserMax) (ret graphql.Marshaler) {
+func (ec *executionContext) __UserMax_id(ctx context.Context, field graphql.CollectedField, obj *model1.UserMax) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -4160,7 +4139,7 @@ func (ec *executionContext) fieldContext__UserMax_id(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) __UserMax_name(ctx context.Context, field graphql.CollectedField, obj *model.UserMax) (ret graphql.Marshaler) {
+func (ec *executionContext) __UserMax_name(ctx context.Context, field graphql.CollectedField, obj *model1.UserMax) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -4247,7 +4226,7 @@ func (ec *executionContext) fieldContext__UserMin_name(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) __UserSum_id(ctx context.Context, field graphql.CollectedField, obj *model.UserSum) (ret graphql.Marshaler) {
+func (ec *executionContext) __UserSum_id(ctx context.Context, field graphql.CollectedField, obj *model1.UserSum) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -6640,121 +6619,28 @@ func (ec *executionContext) _CategoriesAggregate(ctx context.Context, sel ast.Se
 		case "count":
 			out.Values[i] = ec._CategoriesAggregate_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "max":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CategoriesAggregate_max(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._CategoriesAggregate_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "min":
 			out.Values[i] = ec._CategoriesAggregate_min(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "avg":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CategoriesAggregate_avg(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._CategoriesAggregate_avg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "sum":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CategoriesAggregate_sum(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._CategoriesAggregate_sum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6946,121 +6832,28 @@ func (ec *executionContext) _PostsAggregate(ctx context.Context, sel ast.Selecti
 		case "count":
 			out.Values[i] = ec._PostsAggregate_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "max":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PostsAggregate_max(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._PostsAggregate_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "min":
 			out.Values[i] = ec._PostsAggregate_min(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "avg":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PostsAggregate_avg(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._PostsAggregate_avg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "sum":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PostsAggregate_sum(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._PostsAggregate_sum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7365,121 +7158,28 @@ func (ec *executionContext) _UsersAggregate(ctx context.Context, sel ast.Selecti
 		case "count":
 			out.Values[i] = ec._UsersAggregate_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "max":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UsersAggregate_max(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._UsersAggregate_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "min":
 			out.Values[i] = ec._UsersAggregate_min(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "avg":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UsersAggregate_avg(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._UsersAggregate_avg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "sum":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UsersAggregate_sum(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._UsersAggregate_sum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7544,7 +7244,7 @@ func (ec *executionContext) __AggregateResult(ctx context.Context, sel ast.Selec
 
 var _CategoryAvgImplementors = []string{"_CategoryAvg"}
 
-func (ec *executionContext) __CategoryAvg(ctx context.Context, sel ast.SelectionSet, obj *model.CategoryAvg) graphql.Marshaler {
+func (ec *executionContext) __CategoryAvg(ctx context.Context, sel ast.SelectionSet, obj *model1.CategoryAvg) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _CategoryAvgImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7583,7 +7283,7 @@ func (ec *executionContext) __CategoryAvg(ctx context.Context, sel ast.Selection
 
 var _CategoryMaxImplementors = []string{"_CategoryMax"}
 
-func (ec *executionContext) __CategoryMax(ctx context.Context, sel ast.SelectionSet, obj *model.CategoryMax) graphql.Marshaler {
+func (ec *executionContext) __CategoryMax(ctx context.Context, sel ast.SelectionSet, obj *model1.CategoryMax) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _CategoryMaxImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7671,7 +7371,7 @@ func (ec *executionContext) __CategoryMin(ctx context.Context, sel ast.Selection
 
 var _CategorySumImplementors = []string{"_CategorySum"}
 
-func (ec *executionContext) __CategorySum(ctx context.Context, sel ast.SelectionSet, obj *model.CategorySum) graphql.Marshaler {
+func (ec *executionContext) __CategorySum(ctx context.Context, sel ast.SelectionSet, obj *model1.CategorySum) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _CategorySumImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7710,7 +7410,7 @@ func (ec *executionContext) __CategorySum(ctx context.Context, sel ast.Selection
 
 var _PostAvgImplementors = []string{"_PostAvg"}
 
-func (ec *executionContext) __PostAvg(ctx context.Context, sel ast.SelectionSet, obj *model.PostAvg) graphql.Marshaler {
+func (ec *executionContext) __PostAvg(ctx context.Context, sel ast.SelectionSet, obj *model1.PostAvg) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _PostAvgImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7754,7 +7454,7 @@ func (ec *executionContext) __PostAvg(ctx context.Context, sel ast.SelectionSet,
 
 var _PostMaxImplementors = []string{"_PostMax"}
 
-func (ec *executionContext) __PostMax(ctx context.Context, sel ast.SelectionSet, obj *model.PostMax) graphql.Marshaler {
+func (ec *executionContext) __PostMax(ctx context.Context, sel ast.SelectionSet, obj *model1.PostMax) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _PostMaxImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7852,7 +7552,7 @@ func (ec *executionContext) __PostMin(ctx context.Context, sel ast.SelectionSet,
 
 var _PostSumImplementors = []string{"_PostSum"}
 
-func (ec *executionContext) __PostSum(ctx context.Context, sel ast.SelectionSet, obj *model.PostSum) graphql.Marshaler {
+func (ec *executionContext) __PostSum(ctx context.Context, sel ast.SelectionSet, obj *model1.PostSum) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _PostSumImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7896,7 +7596,7 @@ func (ec *executionContext) __PostSum(ctx context.Context, sel ast.SelectionSet,
 
 var _UserAvgImplementors = []string{"_UserAvg"}
 
-func (ec *executionContext) __UserAvg(ctx context.Context, sel ast.SelectionSet, obj *model.UserAvg) graphql.Marshaler {
+func (ec *executionContext) __UserAvg(ctx context.Context, sel ast.SelectionSet, obj *model1.UserAvg) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _UserAvgImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7935,7 +7635,7 @@ func (ec *executionContext) __UserAvg(ctx context.Context, sel ast.SelectionSet,
 
 var _UserMaxImplementors = []string{"_UserMax"}
 
-func (ec *executionContext) __UserMax(ctx context.Context, sel ast.SelectionSet, obj *model.UserMax) graphql.Marshaler {
+func (ec *executionContext) __UserMax(ctx context.Context, sel ast.SelectionSet, obj *model1.UserMax) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _UserMaxImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -8023,7 +7723,7 @@ func (ec *executionContext) __UserMin(ctx context.Context, sel ast.SelectionSet,
 
 var _UserSumImplementors = []string{"_UserSum"}
 
-func (ec *executionContext) __UserSum(ctx context.Context, sel ast.SelectionSet, obj *model.UserSum) graphql.Marshaler {
+func (ec *executionContext) __UserSum(ctx context.Context, sel ast.SelectionSet, obj *model1.UserSum) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, _UserSumImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -8706,11 +8406,7 @@ func (ec *executionContext) marshalNUsersAggregate2ᚖgithubᚗcomᚋroneliᚋfa
 	return ec._UsersAggregate(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_CategoryAvg2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐCategoryAvg(ctx context.Context, sel ast.SelectionSet, v model.CategoryAvg) graphql.Marshaler {
-	return ec.__CategoryAvg(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐCategoryAvg(ctx context.Context, sel ast.SelectionSet, v *model.CategoryAvg) graphql.Marshaler {
+func (ec *executionContext) marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoryAvg(ctx context.Context, sel ast.SelectionSet, v *model1.CategoryAvg) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -8720,11 +8416,7 @@ func (ec *executionContext) marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfast
 	return ec.__CategoryAvg(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_CategoryMax2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐCategoryMax(ctx context.Context, sel ast.SelectionSet, v model.CategoryMax) graphql.Marshaler {
-	return ec.__CategoryMax(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalN_CategoryMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐCategoryMax(ctx context.Context, sel ast.SelectionSet, v *model.CategoryMax) graphql.Marshaler {
+func (ec *executionContext) marshalN_CategoryMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoryMax(ctx context.Context, sel ast.SelectionSet, v *model1.CategoryMax) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -8744,11 +8436,7 @@ func (ec *executionContext) marshalN_CategoryMin2ᚖgithubᚗcomᚋroneliᚋfast
 	return ec.__CategoryMin(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_CategorySum2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐCategorySum(ctx context.Context, sel ast.SelectionSet, v model.CategorySum) graphql.Marshaler {
-	return ec.__CategorySum(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐCategorySum(ctx context.Context, sel ast.SelectionSet, v *model.CategorySum) graphql.Marshaler {
+func (ec *executionContext) marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategorySum(ctx context.Context, sel ast.SelectionSet, v *model1.CategorySum) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -8758,11 +8446,7 @@ func (ec *executionContext) marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfast
 	return ec.__CategorySum(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_PostAvg2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐPostAvg(ctx context.Context, sel ast.SelectionSet, v model.PostAvg) graphql.Marshaler {
-	return ec.__PostAvg(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐPostAvg(ctx context.Context, sel ast.SelectionSet, v *model.PostAvg) graphql.Marshaler {
+func (ec *executionContext) marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostAvg(ctx context.Context, sel ast.SelectionSet, v *model1.PostAvg) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -8772,11 +8456,7 @@ func (ec *executionContext) marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__PostAvg(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_PostMax2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐPostMax(ctx context.Context, sel ast.SelectionSet, v model.PostMax) graphql.Marshaler {
-	return ec.__PostMax(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalN_PostMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐPostMax(ctx context.Context, sel ast.SelectionSet, v *model.PostMax) graphql.Marshaler {
+func (ec *executionContext) marshalN_PostMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostMax(ctx context.Context, sel ast.SelectionSet, v *model1.PostMax) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -8796,11 +8476,7 @@ func (ec *executionContext) marshalN_PostMin2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__PostMin(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_PostSum2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐPostSum(ctx context.Context, sel ast.SelectionSet, v model.PostSum) graphql.Marshaler {
-	return ec.__PostSum(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐPostSum(ctx context.Context, sel ast.SelectionSet, v *model.PostSum) graphql.Marshaler {
+func (ec *executionContext) marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostSum(ctx context.Context, sel ast.SelectionSet, v *model1.PostSum) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -8810,11 +8486,7 @@ func (ec *executionContext) marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__PostSum(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_UserAvg2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐUserAvg(ctx context.Context, sel ast.SelectionSet, v model.UserAvg) graphql.Marshaler {
-	return ec.__UserAvg(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐUserAvg(ctx context.Context, sel ast.SelectionSet, v *model.UserAvg) graphql.Marshaler {
+func (ec *executionContext) marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserAvg(ctx context.Context, sel ast.SelectionSet, v *model1.UserAvg) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -8824,11 +8496,7 @@ func (ec *executionContext) marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__UserAvg(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_UserMax2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐUserMax(ctx context.Context, sel ast.SelectionSet, v model.UserMax) graphql.Marshaler {
-	return ec.__UserMax(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalN_UserMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐUserMax(ctx context.Context, sel ast.SelectionSet, v *model.UserMax) graphql.Marshaler {
+func (ec *executionContext) marshalN_UserMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserMax(ctx context.Context, sel ast.SelectionSet, v *model1.UserMax) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -8848,11 +8516,7 @@ func (ec *executionContext) marshalN_UserMin2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__UserMin(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_UserSum2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐUserSum(ctx context.Context, sel ast.SelectionSet, v model.UserSum) graphql.Marshaler {
-	return ec.__UserSum(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋmutationsᚋgraphᚋmodelᚐUserSum(ctx context.Context, sel ast.SelectionSet, v *model.UserSum) graphql.Marshaler {
+func (ec *executionContext) marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserSum(ctx context.Context, sel ast.SelectionSet, v *model1.UserSum) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")

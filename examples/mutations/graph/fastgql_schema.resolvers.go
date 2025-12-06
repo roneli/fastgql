@@ -8,16 +8,51 @@ package graph
 import (
 	"context"
 
-	"github.com/georgysavva/scany/v2/pgxscan"
-	pgx "github.com/jackc/pgx/v5"
 	model1 "github.com/roneli/fastgql/examples/interface/graph/model"
 	"github.com/roneli/fastgql/examples/mutations/graph/generated"
 	"github.com/roneli/fastgql/examples/mutations/graph/model"
-	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 )
 
-// Max is the resolver for the max field.
-func (r *categoriesAggregateResolver) Max(ctx context.Context, obj *model1.CategoriesAggregate) (*model.CategoryMax, error) {
+// CreatePosts is the resolver for the createPosts field.
+func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []*model.CreatePostInput) (*model.PostsPayload, error) {
+	var data model.PostsPayload
+	if err := r.Executor.Execute(ctx, &data); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+// DeletePosts is the resolver for the deletePosts field.
+func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model1.PostFilterInput) (*model.PostsPayload, error) {
+	var data model.PostsPayload
+	if err := r.Executor.Execute(ctx, &data); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+// UpdatePosts is the resolver for the updatePosts field.
+func (r *mutationResolver) UpdatePosts(ctx context.Context, input model.UpdatePostInput, filter *model1.PostFilterInput) (*model.PostsPayload, error) {
+	var data model.PostsPayload
+	if err := r.Executor.Execute(ctx, &data); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
+
+type mutationResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *categoriesAggregateResolver) Max(ctx context.Context, obj *model1.CategoriesAggregate) (*model.CategoryMax, error) {
 	var data *model.CategoryMax
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
 	if err != nil {
@@ -30,8 +65,6 @@ func (r *categoriesAggregateResolver) Max(ctx context.Context, obj *model1.Categ
 	}
 	return data, nil
 }
-
-// Avg is the resolver for the avg field.
 func (r *categoriesAggregateResolver) Avg(ctx context.Context, obj *model1.CategoriesAggregate) (*model.CategoryAvg, error) {
 	var data *model.CategoryAvg
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
@@ -45,8 +78,6 @@ func (r *categoriesAggregateResolver) Avg(ctx context.Context, obj *model1.Categ
 	}
 	return data, nil
 }
-
-// Sum is the resolver for the sum field.
 func (r *categoriesAggregateResolver) Sum(ctx context.Context, obj *model1.CategoriesAggregate) (*model.CategorySum, error) {
 	var data *model.CategorySum
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
@@ -60,53 +91,6 @@ func (r *categoriesAggregateResolver) Sum(ctx context.Context, obj *model1.Categ
 	}
 	return data, nil
 }
-
-// CreatePosts is the resolver for the createPosts field.
-func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []*model.CreatePostInput) (*model.PostsPayload, error) {
-	var data model.PostsPayload
-	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
-	if err != nil {
-		return nil, err
-	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanOne(&data, rows)
-	}, q, args...); err != nil {
-		return nil, err
-	}
-	return &data, nil
-}
-
-// DeletePosts is the resolver for the deletePosts field.
-func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model1.PostFilterInput) (*model.PostsPayload, error) {
-	var data model.PostsPayload
-	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
-	if err != nil {
-		return nil, err
-	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanOne(&data, rows)
-	}, q, args...); err != nil {
-		return nil, err
-	}
-	return &data, nil
-}
-
-// UpdatePosts is the resolver for the updatePosts field.
-func (r *mutationResolver) UpdatePosts(ctx context.Context, input model.UpdatePostInput, filter *model1.PostFilterInput) (*model.PostsPayload, error) {
-	var data model.PostsPayload
-	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
-	if err != nil {
-		return nil, err
-	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanOne(&data, rows)
-	}, q, args...); err != nil {
-		return nil, err
-	}
-	return &data, nil
-}
-
-// Max is the resolver for the max field.
 func (r *postsAggregateResolver) Max(ctx context.Context, obj *model1.PostsAggregate) (*model.PostMax, error) {
 	var data *model.PostMax
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
@@ -120,8 +104,6 @@ func (r *postsAggregateResolver) Max(ctx context.Context, obj *model1.PostsAggre
 	}
 	return data, nil
 }
-
-// Avg is the resolver for the avg field.
 func (r *postsAggregateResolver) Avg(ctx context.Context, obj *model1.PostsAggregate) (*model.PostAvg, error) {
 	var data *model.PostAvg
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
@@ -135,8 +117,6 @@ func (r *postsAggregateResolver) Avg(ctx context.Context, obj *model1.PostsAggre
 	}
 	return data, nil
 }
-
-// Sum is the resolver for the sum field.
 func (r *postsAggregateResolver) Sum(ctx context.Context, obj *model1.PostsAggregate) (*model.PostSum, error) {
 	var data *model.PostSum
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
@@ -150,8 +130,6 @@ func (r *postsAggregateResolver) Sum(ctx context.Context, obj *model1.PostsAggre
 	}
 	return data, nil
 }
-
-// Max is the resolver for the max field.
 func (r *usersAggregateResolver) Max(ctx context.Context, obj *model1.UsersAggregate) (*model.UserMax, error) {
 	var data *model.UserMax
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
@@ -165,8 +143,6 @@ func (r *usersAggregateResolver) Max(ctx context.Context, obj *model1.UsersAggre
 	}
 	return data, nil
 }
-
-// Avg is the resolver for the avg field.
 func (r *usersAggregateResolver) Avg(ctx context.Context, obj *model1.UsersAggregate) (*model.UserAvg, error) {
 	var data *model.UserAvg
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
@@ -180,8 +156,6 @@ func (r *usersAggregateResolver) Avg(ctx context.Context, obj *model1.UsersAggre
 	}
 	return data, nil
 }
-
-// Sum is the resolver for the sum field.
 func (r *usersAggregateResolver) Sum(ctx context.Context, obj *model1.UsersAggregate) (*model.UserSum, error) {
 	var data *model.UserSum
 	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
@@ -195,26 +169,16 @@ func (r *usersAggregateResolver) Sum(ctx context.Context, obj *model1.UsersAggre
 	}
 	return data, nil
 }
-
-// CategoriesAggregate returns generated.CategoriesAggregateResolver implementation.
 func (r *Resolver) CategoriesAggregate() generated.CategoriesAggregateResolver {
 	return &categoriesAggregateResolver{r}
 }
-
-// Mutation returns generated.MutationResolver implementation.
-func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
-
-// PostsAggregate returns generated.PostsAggregateResolver implementation.
 func (r *Resolver) PostsAggregate() generated.PostsAggregateResolver {
 	return &postsAggregateResolver{r}
 }
-
-// UsersAggregate returns generated.UsersAggregateResolver implementation.
 func (r *Resolver) UsersAggregate() generated.UsersAggregateResolver {
 	return &usersAggregateResolver{r}
 }
-
 type categoriesAggregateResolver struct{ *Resolver }
-type mutationResolver struct{ *Resolver }
 type postsAggregateResolver struct{ *Resolver }
 type usersAggregateResolver struct{ *Resolver }
+*/

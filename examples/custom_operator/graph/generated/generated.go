@@ -53,7 +53,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Person        func(childComplexity int) int
 		User          func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
-		UserAggregate func(childComplexity int, groupBy []model.UserGroupBy, filter *model.UserFilterInput) int
+		UserAggregate func(childComplexity int, groupBy []model.UserGroupBy, filter *model.UserFilterInput, limit *int, offset *int, orderBy []*model.UsersAggregateOrdering) int
 	}
 
 	User struct {
@@ -64,6 +64,15 @@ type ComplexityRoot struct {
 	}
 
 	UsersAggregate struct {
+		Avg   func(childComplexity int) int
+		Count func(childComplexity int) int
+		Group func(childComplexity int) int
+		Max   func(childComplexity int) int
+		Min   func(childComplexity int) int
+		Sum   func(childComplexity int) int
+	}
+
+	UsersAggregatesAggregate struct {
 		Avg   func(childComplexity int) int
 		Count func(childComplexity int) int
 		Group func(childComplexity int) int
@@ -93,12 +102,28 @@ type ComplexityRoot struct {
 	_UserSum struct {
 		Age func(childComplexity int) int
 	}
+
+	_UsersAggregateAvg struct {
+		Count func(childComplexity int) int
+	}
+
+	_UsersAggregateMax struct {
+		Count func(childComplexity int) int
+	}
+
+	_UsersAggregateMin struct {
+		Count func(childComplexity int) int
+	}
+
+	_UsersAggregateSum struct {
+		Count func(childComplexity int) int
+	}
 }
 
 type QueryResolver interface {
 	Person(ctx context.Context) (*model.Person, error)
 	User(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
-	UserAggregate(ctx context.Context, groupBy []model.UserGroupBy, filter *model.UserFilterInput) ([]model.UsersAggregate, error)
+	UserAggregate(ctx context.Context, groupBy []model.UserGroupBy, filter *model.UserFilterInput, limit *int, offset *int, orderBy []*model.UsersAggregateOrdering) ([]model.UsersAggregate, error)
 }
 
 type executableSchema struct {
@@ -154,7 +179,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.UserAggregate(childComplexity, args["groupBy"].([]model.UserGroupBy), args["filter"].(*model.UserFilterInput)), true
+		return e.complexity.Query.UserAggregate(childComplexity, args["groupBy"].([]model.UserGroupBy), args["filter"].(*model.UserFilterInput), args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UsersAggregateOrdering)), true
 
 	case "User.age":
 		if e.complexity.User.Age == nil {
@@ -223,6 +248,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.UsersAggregate.Sum(childComplexity), true
 
+	case "UsersAggregatesAggregate.avg":
+		if e.complexity.UsersAggregatesAggregate.Avg == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Avg(childComplexity), true
+	case "UsersAggregatesAggregate.count":
+		if e.complexity.UsersAggregatesAggregate.Count == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Count(childComplexity), true
+	case "UsersAggregatesAggregate.group":
+		if e.complexity.UsersAggregatesAggregate.Group == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Group(childComplexity), true
+	case "UsersAggregatesAggregate.max":
+		if e.complexity.UsersAggregatesAggregate.Max == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Max(childComplexity), true
+	case "UsersAggregatesAggregate.min":
+		if e.complexity.UsersAggregatesAggregate.Min == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Min(childComplexity), true
+	case "UsersAggregatesAggregate.sum":
+		if e.complexity.UsersAggregatesAggregate.Sum == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Sum(childComplexity), true
+
 	case "_AggregateResult.count":
 		if e.complexity._AggregateResult.Count == nil {
 			break
@@ -270,6 +332,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity._UserSum.Age(childComplexity), true
 
+	case "_UsersAggregateAvg.count":
+		if e.complexity._UsersAggregateAvg.Count == nil {
+			break
+		}
+
+		return e.complexity._UsersAggregateAvg.Count(childComplexity), true
+
+	case "_UsersAggregateMax.count":
+		if e.complexity._UsersAggregateMax.Count == nil {
+			break
+		}
+
+		return e.complexity._UsersAggregateMax.Count(childComplexity), true
+
+	case "_UsersAggregateMin.count":
+		if e.complexity._UsersAggregateMin.Count == nil {
+			break
+		}
+
+		return e.complexity._UsersAggregateMin.Count(childComplexity), true
+
+	case "_UsersAggregateSum.count":
+		if e.complexity._UsersAggregateSum.Count == nil {
+			break
+		}
+
+		return e.complexity._UsersAggregateSum.Count(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -288,6 +378,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputStringListComparator,
 		ec.unmarshalInputUserFilterInput,
 		ec.unmarshalInputUserOrdering,
+		ec.unmarshalInputUsersAggregateOrdering,
 	)
 	first := true
 
@@ -370,128 +461,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../custom.graphql", Input: `extend input StringComparator {
-	myCustomOperator: String!
-}
-`, BuiltIn: false},
-	{Name: "../fastgql_schema.graphql", Input: `input UserFilterInput {
-	name: StringComparator
-	age: IntComparator
-	someInnerValue: UserFilterInput
-	someInnerValueList: UserFilterInput
-	"""
-	Logical AND of FilterInput
-	"""
-	AND: [UserFilterInput]
-	"""
-	Logical OR of FilterInput
-	"""
-	OR: [UserFilterInput]
-	"""
-	Logical NOT of FilterInput
-	"""
-	NOT: UserFilterInput
-}
-"""
-Group by User
-"""
-enum UserGroupBy {
-	"""
-	Group by name
-	"""
-	NAME
-	"""
-	Group by age
-	"""
-	AGE
-}
-"""
-Ordering for User
-"""
-input UserOrdering {
-	"""
-	Order User by name
-	"""
-	name: _OrderingTypes
-	"""
-	Order User by age
-	"""
-	age: _OrderingTypes
-}
-"""
-Aggregate User
-"""
-type UsersAggregate {
-	"""
-	Group
-	"""
-	group: Map
-	"""
-	Count results
-	"""
-	count: Int!
-	"""
-	Max Aggregate
-	"""
-	max: _UserMax!
-	"""
-	Min Aggregate
-	"""
-	min: _UserMin!
-	"""
-	Avg Aggregate
-	"""
-	avg: _UserAvg!
-	"""
-	Sum Aggregate
-	"""
-	sum: _UserSum!
-}
-"""
-avg Aggregate
-"""
-type _UserAvg {
-	"""
-	Compute the avg for age
-	"""
-	age: Float!
-}
-"""
-max Aggregate
-"""
-type _UserMax {
-	"""
-	Compute the max for name
-	"""
-	name: String!
-	"""
-	Compute the max for age
-	"""
-	age: Int!
-}
-"""
-min Aggregate
-"""
-type _UserMin {
-	"""
-	Compute the min for name
-	"""
-	name: String!
-	"""
-	Compute the min for age
-	"""
-	age: Int!
-}
-"""
-sum Aggregate
-"""
-type _UserSum {
-	"""
-	Compute the sum for age
-	"""
-	age: Float!
-}
-`, BuiltIn: false},
 	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on FIELD_DEFINITION
 directive @generateFilterInput(description: String) on OBJECT
@@ -611,7 +580,19 @@ type Query {
 		"""
 		Filter _userAggregate
 		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+		filter: UserFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for UsersAggregate
+		"""
+		orderBy: [UsersAggregateOrdering]): [UsersAggregate!]! @generate(filter: true)
 }
 type User @generateFilterInput {
 	name: String
@@ -634,6 +615,219 @@ type User @generateFilterInput {
 		Filter someInnerValueList
 		"""
 		filter: UserFilterInput): [User]
+}
+`, BuiltIn: false},
+	{Name: "../custom.graphql", Input: `extend input StringComparator {
+	myCustomOperator: String!
+}
+`, BuiltIn: false},
+	{Name: "../fastgql_schema.graphql", Input: `input UserFilterInput {
+	name: StringComparator
+	age: IntComparator
+	someInnerValue: UserFilterInput
+	someInnerValueList: UserFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [UserFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [UserFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: UserFilterInput
+}
+"""
+Group by User
+"""
+enum UserGroupBy {
+	"""
+	Group by name
+	"""
+	NAME
+	"""
+	Group by age
+	"""
+	AGE
+}
+"""
+Ordering for User
+"""
+input UserOrdering {
+	"""
+	Order User by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order User by age
+	"""
+	age: _OrderingTypes
+}
+"""
+Aggregate User
+"""
+type UsersAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _UserMax!
+	"""
+	Min Aggregate
+	"""
+	min: _UserMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _UserAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _UserSum!
+}
+"""
+Group by UsersAggregate
+"""
+enum UsersAggregateGroupBy {
+	"""
+	Group by group
+	"""
+	GROUP
+	"""
+	Group by count
+	"""
+	COUNT
+}
+"""
+Ordering for UsersAggregate
+"""
+input UsersAggregateOrdering {
+	"""
+	Order UsersAggregate by group
+	"""
+	group: _OrderingTypes
+	"""
+	Order UsersAggregate by count
+	"""
+	count: _OrderingTypes
+}
+"""
+Aggregate UsersAggregate
+"""
+type UsersAggregatesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _UsersAggregateMax!
+	"""
+	Min Aggregate
+	"""
+	min: _UsersAggregateMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _UsersAggregateAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _UsersAggregateSum!
+}
+"""
+avg Aggregate
+"""
+type _UserAvg {
+	"""
+	Compute the avg for age
+	"""
+	age: Float!
+}
+"""
+max Aggregate
+"""
+type _UserMax {
+	"""
+	Compute the max for name
+	"""
+	name: String!
+	"""
+	Compute the max for age
+	"""
+	age: Int!
+}
+"""
+min Aggregate
+"""
+type _UserMin {
+	"""
+	Compute the min for name
+	"""
+	name: String!
+	"""
+	Compute the min for age
+	"""
+	age: Int!
+}
+"""
+sum Aggregate
+"""
+type _UserSum {
+	"""
+	Compute the sum for age
+	"""
+	age: Float!
+}
+"""
+avg Aggregate
+"""
+type _UsersAggregateAvg {
+	"""
+	Compute the avg for count
+	"""
+	count: Float!
+}
+"""
+max Aggregate
+"""
+type _UsersAggregateMax {
+	"""
+	Compute the max for count
+	"""
+	count: Int!
+}
+"""
+min Aggregate
+"""
+type _UsersAggregateMin {
+	"""
+	Compute the min for count
+	"""
+	count: Int!
+}
+"""
+sum Aggregate
+"""
+type _UsersAggregateSum {
+	"""
+	Compute the sum for count
+	"""
+	count: Float!
 }
 `, BuiltIn: false},
 }
@@ -678,6 +872,21 @@ func (ec *executionContext) field_Query__userAggregate_args(ctx context.Context,
 		return nil, err
 	}
 	args["filter"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOUsersAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateOrdering)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
 	return args, nil
 }
 
@@ -906,7 +1115,7 @@ func (ec *executionContext) _Query__userAggregate(ctx context.Context, field gra
 		ec.fieldContext_Query__userAggregate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().UserAggregate(ctx, fc.Args["groupBy"].([]model.UserGroupBy), fc.Args["filter"].(*model.UserFilterInput))
+			return ec.resolvers.Query().UserAggregate(ctx, fc.Args["groupBy"].([]model.UserGroupBy), fc.Args["filter"].(*model.UserFilterInput), fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.UsersAggregateOrdering))
 		},
 		nil,
 		ec.marshalNUsersAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateᚄ,
@@ -1402,6 +1611,196 @@ func (ec *executionContext) fieldContext_UsersAggregate_sum(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _UsersAggregatesAggregate_group(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_group,
+		func(ctx context.Context) (any, error) {
+			return obj.Group, nil
+		},
+		nil,
+		ec.marshalOMap2map,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_group(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_max(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_max,
+		func(ctx context.Context) (any, error) {
+			return obj.Max, nil
+		},
+		nil,
+		ec.marshalN_UsersAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateMax,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_max(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__UsersAggregateMax_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _UsersAggregateMax", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_min(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_min,
+		func(ctx context.Context) (any, error) {
+			return obj.Min, nil
+		},
+		nil,
+		ec.marshalN_UsersAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateMin,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_min(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__UsersAggregateMin_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _UsersAggregateMin", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_avg(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_avg,
+		func(ctx context.Context) (any, error) {
+			return obj.Avg, nil
+		},
+		nil,
+		ec.marshalN_UsersAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateAvg,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_avg(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__UsersAggregateAvg_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _UsersAggregateAvg", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_sum(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_sum,
+		func(ctx context.Context) (any, error) {
+			return obj.Sum, nil
+		},
+		nil,
+		ec.marshalN_UsersAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateSum,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_sum(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__UsersAggregateSum_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _UsersAggregateSum", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) __AggregateResult_count(ctx context.Context, field graphql.CollectedField, obj *model.AggregateResult) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1595,6 +1994,122 @@ func (ec *executionContext) __UserSum_age(ctx context.Context, field graphql.Col
 func (ec *executionContext) fieldContext__UserSum_age(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "_UserSum",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __UsersAggregateAvg_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregateAvg) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__UsersAggregateAvg_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__UsersAggregateAvg_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_UsersAggregateAvg",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __UsersAggregateMax_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregateMax) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__UsersAggregateMax_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__UsersAggregateMax_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_UsersAggregateMax",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __UsersAggregateMin_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregateMin) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__UsersAggregateMin_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__UsersAggregateMin_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_UsersAggregateMin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __UsersAggregateSum_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregateSum) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__UsersAggregateSum_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__UsersAggregateSum_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_UsersAggregateSum",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -3671,6 +4186,40 @@ func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUsersAggregateOrdering(ctx context.Context, obj any) (model.UsersAggregateOrdering, error) {
+	var it model.UsersAggregateOrdering
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"group", "count"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "group":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("group"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Group = data
+		case "count":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Count = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -3931,6 +4480,67 @@ func (ec *executionContext) _UsersAggregate(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var usersAggregatesAggregateImplementors = []string{"UsersAggregatesAggregate"}
+
+func (ec *executionContext) _UsersAggregatesAggregate(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregatesAggregate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, usersAggregatesAggregateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UsersAggregatesAggregate")
+		case "group":
+			out.Values[i] = ec._UsersAggregatesAggregate_group(ctx, field, obj)
+		case "count":
+			out.Values[i] = ec._UsersAggregatesAggregate_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "max":
+			out.Values[i] = ec._UsersAggregatesAggregate_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "min":
+			out.Values[i] = ec._UsersAggregatesAggregate_min(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "avg":
+			out.Values[i] = ec._UsersAggregatesAggregate_avg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sum":
+			out.Values[i] = ec._UsersAggregatesAggregate_sum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var _AggregateResultImplementors = []string{"_AggregateResult"}
 
 func (ec *executionContext) __AggregateResult(ctx context.Context, sel ast.SelectionSet, obj *model.AggregateResult) graphql.Marshaler {
@@ -4110,6 +4720,162 @@ func (ec *executionContext) __UserSum(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("_UserSum")
 		case "age":
 			out.Values[i] = ec.__UserSum_age(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _UsersAggregateAvgImplementors = []string{"_UsersAggregateAvg"}
+
+func (ec *executionContext) __UsersAggregateAvg(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregateAvg) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _UsersAggregateAvgImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_UsersAggregateAvg")
+		case "count":
+			out.Values[i] = ec.__UsersAggregateAvg_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _UsersAggregateMaxImplementors = []string{"_UsersAggregateMax"}
+
+func (ec *executionContext) __UsersAggregateMax(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregateMax) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _UsersAggregateMaxImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_UsersAggregateMax")
+		case "count":
+			out.Values[i] = ec.__UsersAggregateMax_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _UsersAggregateMinImplementors = []string{"_UsersAggregateMin"}
+
+func (ec *executionContext) __UsersAggregateMin(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregateMin) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _UsersAggregateMinImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_UsersAggregateMin")
+		case "count":
+			out.Values[i] = ec.__UsersAggregateMin_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _UsersAggregateSumImplementors = []string{"_UsersAggregateSum"}
+
+func (ec *executionContext) __UsersAggregateSum(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregateSum) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _UsersAggregateSumImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_UsersAggregateSum")
+		case "count":
+			out.Values[i] = ec.__UsersAggregateSum_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -4675,6 +5441,46 @@ func (ec *executionContext) marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgql�
 		return graphql.Null
 	}
 	return ec.__UserSum(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_UsersAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateAvg(ctx context.Context, sel ast.SelectionSet, v *model.UsersAggregateAvg) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__UsersAggregateAvg(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_UsersAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateMax(ctx context.Context, sel ast.SelectionSet, v *model.UsersAggregateMax) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__UsersAggregateMax(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_UsersAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateMin(ctx context.Context, sel ast.SelectionSet, v *model.UsersAggregateMin) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__UsersAggregateMin(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_UsersAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateSum(ctx context.Context, sel ast.SelectionSet, v *model.UsersAggregateSum) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__UsersAggregateSum(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -5339,6 +6145,32 @@ func (ec *executionContext) unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfa
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputUserOrdering(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUsersAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateOrdering(ctx context.Context, v any) ([]*model.UsersAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.UsersAggregateOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOUsersAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOUsersAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋcustom_operatorᚋgraphᚋmodelᚐUsersAggregateOrdering(ctx context.Context, v any) (*model.UsersAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUsersAggregateOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

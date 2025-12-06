@@ -40,6 +40,10 @@ type (
 		// ColumnCaseConverter converts columns from ast.Field Name to database field name, by default it converts to snake case
 		// but sometimes as a user you want to override this logic / define special abbreviations etc'
 		ColumnCaseConverter ColumnCaseConverter
+
+		// Dialect specifies the SQL dialect to use (e.g., "postgres", "mysql", "snowflake").
+		// Defaults to "postgres" if not specified.
+		Dialect string
 	}
 
 	OrderingTypes string

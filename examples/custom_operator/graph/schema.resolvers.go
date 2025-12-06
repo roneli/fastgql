@@ -8,23 +8,14 @@ package graph
 import (
 	"context"
 
-	"github.com/georgysavva/scany/v2/pgxscan"
-	pgx "github.com/jackc/pgx/v5"
 	"github.com/roneli/fastgql/examples/custom_operator/graph/generated"
 	"github.com/roneli/fastgql/examples/custom_operator/graph/model"
-	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 )
 
 // Person is the resolver for the person field.
 func (r *queryResolver) Person(ctx context.Context) (*model.Person, error) {
 	var data *model.Person
-	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
-	if err != nil {
-		return nil, err
-	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := r.Executor.Execute(ctx, &data); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -33,28 +24,16 @@ func (r *queryResolver) Person(ctx context.Context) (*model.Person, error) {
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
 	var data []*model.User
-	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
-	if err != nil {
-		return nil, err
-	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := r.Executor.Execute(ctx, &data); err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
 // UserAggregate is the resolver for the _userAggregate field.
-func (r *queryResolver) UserAggregate(ctx context.Context, groupBy []model.UserGroupBy, filter *model.UserFilterInput) ([]model.UsersAggregate, error) {
+func (r *queryResolver) UserAggregate(ctx context.Context, groupBy []model.UserGroupBy, filter *model.UserFilterInput, limit *int, offset *int, orderBy []*model.UsersAggregateOrdering) ([]model.UsersAggregate, error) {
 	var data []model.UsersAggregate
-	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
-	if err != nil {
-		return nil, err
-	}
-	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
-		return pgxscan.ScanAll(&data, rows)
-	}, q, args...); err != nil {
+	if err := r.Executor.Execute(ctx, &data); err != nil {
 		return nil, err
 	}
 	return data, nil

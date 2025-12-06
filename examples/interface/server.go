@@ -6,14 +6,15 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/roneli/fastgql/pkg/log/adapters"
-
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/roneli/fastgql/examples/interface/graph"
 	"github.com/roneli/fastgql/examples/interface/graph/generated"
+	"github.com/roneli/fastgql/pkg/execution"
 	"github.com/roneli/fastgql/pkg/execution/builders"
+	"github.com/roneli/fastgql/pkg/execution/builders/sql"
+	"github.com/roneli/fastgql/pkg/log/adapters"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,12 +37,17 @@ func main() {
 		panic(err)
 	}
 	defer pool.Close()
-	resolver := &graph.Resolver{Executor: pool}
+
+	resolver := &graph.Resolver{}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
-	// Add logger to config for building trace logging
+
+	// Create config with schema and logger
 	cfg := &builders.Config{Schema: executableSchema.Schema(), Logger: adapters.NewZerologAdapter(log.Logger)}
-	resolver.Cfg = cfg
-	resolver.Executor = pool
+
+	// Create multi-executor and register SQL executor
+	multiExec := execution.NewMultiExecutor(executableSchema.Schema(), "postgres")
+	multiExec.Register("postgres", sql.NewExecutor(pool, cfg))
+	resolver.Executor = multiExec
 
 	srv := handler.NewDefaultServer(executableSchema)
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))

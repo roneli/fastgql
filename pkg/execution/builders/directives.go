@@ -19,7 +19,7 @@ func GetDialectDirective(schema *ast.Schema, field Field) (*DialectDirective, er
 	}
 	parentDialect := "postgres"
 	pd := field.ObjectDefinition.Directives.ForName("dialect")
-	if pd == nil {
+	if pd != nil {
 		parentDialect = pd.Arguments.ForName("type").Value.Raw
 	}
 	d := objType.Directives.ForName("dialect")

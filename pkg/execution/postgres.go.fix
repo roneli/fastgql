@@ -1,4 +1,4 @@
-package helpers
+package execution
 
 import (
 	"context"
@@ -74,4 +74,3 @@ func GetTestPostgresPool(ctx context.Context) (*pgxpool.Pool, func(), error) {
 		cleanup()
 	}, nil
 }
-

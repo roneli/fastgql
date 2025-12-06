@@ -48,7 +48,19 @@ type Post @generateFilterInput @table(name: "posts") {
 		"""
 		Filter _categoriesAggregate
 		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+		filter: CategoryFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for CategoriesAggregate
+		"""
+		orderBy: [CategoriesAggregateOrdering]): [CategoriesAggregate!]! @generate(filter: true)
 	"""
 	user Aggregate
 	"""
@@ -56,7 +68,19 @@ type Post @generateFilterInput @table(name: "posts") {
 		"""
 		Filter _userAggregate
 		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+		filter: UserFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for UsersAggregate
+		"""
+		orderBy: [UsersAggregateOrdering]): [UsersAggregate!]! @generate(filter: true)
 }
 type Query {
 	posts(
@@ -134,7 +158,19 @@ type Query {
 		"""
 		Filter _postsAggregate
 		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+		filter: PostFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for PostsAggregate
+		"""
+		orderBy: [PostsAggregateOrdering]): [PostsAggregate!]! @generate(filter: true)
 	"""
 	users Aggregate
 	"""
@@ -142,7 +178,19 @@ type Query {
 		"""
 		Filter _usersAggregate
 		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+		filter: UserFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for UsersAggregate
+		"""
+		orderBy: [UsersAggregateOrdering]): [UsersAggregate!]! @generate(filter: true)
 	"""
 	categories Aggregate
 	"""
@@ -150,7 +198,19 @@ type Query {
 		"""
 		Filter _categoriesAggregate
 		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+		filter: CategoryFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for CategoriesAggregate
+		"""
+		orderBy: [CategoriesAggregateOrdering]): [CategoriesAggregate!]! @generate(filter: true)
 	"""
 	animals Aggregate
 	"""
@@ -158,7 +218,19 @@ type Query {
 		"""
 		Filter _animalsAggregate
 		"""
-		filter: AnimalFilterInput): [AnimalsAggregate!]! @generate(filter: true)
+		filter: AnimalFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for AnimalsAggregate
+		"""
+		orderBy: [AnimalsAggregateOrdering]): [AnimalsAggregate!]! @generate(filter: true)
 }
 type User @table(name: "user") @generateFilterInput {
 	id: Int!
@@ -187,5 +259,17 @@ type User @table(name: "user") @generateFilterInput {
 		"""
 		Filter _postsAggregate
 		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+		filter: PostFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for PostsAggregate
+		"""
+		orderBy: [PostsAggregateOrdering]): [PostsAggregate!]! @generate(filter: true)
 }

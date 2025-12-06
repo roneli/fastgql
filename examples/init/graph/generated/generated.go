@@ -733,234 +733,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
-directive @generateFilterInput(description: String) on OBJECT
-directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
-directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
-input BooleanComparator {
-	eq: Boolean
-	neq: Boolean
-	isNull: Boolean
-}
-input BooleanListComparator {
-	eq: [Boolean]
-	neq: [Boolean]
-	contains: [Boolean]
-	contained: [Boolean]
-	overlap: [Boolean]
-	isNull: Boolean
-}
-input FloatComparator {
-	eq: Float
-	neq: Float
-	gt: Float
-	gte: Float
-	lt: Float
-	lte: Float
-	isNull: Boolean
-}
-input FloatListComparator {
-	eq: [Float]
-	neq: [Float]
-	contains: [Float]
-	contained: [Float]
-	overlap: [Float]
-	isNull: Boolean
-}
-input IntComparator {
-	eq: Int
-	neq: Int
-	gt: Int
-	gte: Int
-	lt: Int
-	lte: Int
-	isNull: Boolean
-}
-input IntListComparator {
-	eq: [Int]
-	neq: [Int]
-	contains: [Int]
-	contained: [Int]
-	overlap: [Int]
-	isNull: Boolean
-}
-scalar Map
-input StringComparator {
-	eq: String
-	neq: String
-	contains: [String]
-	notContains: [String]
-	like: String
-	ilike: String
-	suffix: String
-	prefix: String
-	isNull: Boolean
-}
-input StringListComparator {
-	eq: [String]
-	neq: [String]
-	contains: [String]
-	containedBy: [String]
-	overlap: [String]
-	isNull: Boolean
-}
-type _AggregateResult {
-	count: Int!
-}
-enum _OrderingTypes {
-	ASC
-	DESC
-	ASC_NULL_FIRST
-	DESC_NULL_FIRST
-	ASC_NULL_LAST
-	DESC_NULL_LAST
-}
-enum _relationType {
-	ONE_TO_ONE
-	ONE_TO_MANY
-	MANY_TO_MANY
-}
-`, BuiltIn: false},
-	{Name: "../schema.graphql", Input: `type Category @generateFilterInput {
-	id: Int!
-	name: String
-}
-type Post @generateFilterInput {
-	id: Int!
-	name: String
-	categories(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Category
-		"""
-		orderBy: [CategoryOrdering],
-		"""
-		Filter categories
-		"""
-		filter: CategoryFilterInput): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-	user_id: Int
-	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
-	"""
-	categories Aggregate
-	"""
-	_categoriesAggregate(groupBy: [CategoryGroupBy!],
-		"""
-		Filter _categoriesAggregate
-		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
-	"""
-	user Aggregate
-	"""
-	_userAggregate(groupBy: [UserGroupBy!]): [UsersAggregate!]! @generate(filter: true)
-}
-type Query {
-	posts(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Post
-		"""
-		orderBy: [PostOrdering],
-		"""
-		Filter posts
-		"""
-		filter: PostFilterInput): [Post] @generate
-	users(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering]): [User] @generate
-	categories(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Category
-		"""
-		orderBy: [CategoryOrdering],
-		"""
-		Filter categories
-		"""
-		filter: CategoryFilterInput): [Category] @generate
-	"""
-	posts Aggregate
-	"""
-	_postsAggregate(groupBy: [PostGroupBy!],
-		"""
-		Filter _postsAggregate
-		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
-	"""
-	users Aggregate
-	"""
-	_usersAggregate(groupBy: [UserGroupBy!]): [UsersAggregate!]! @generate(filter: true)
-	"""
-	categories Aggregate
-	"""
-	_categoriesAggregate(groupBy: [CategoryGroupBy!],
-		"""
-		Filter _categoriesAggregate
-		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
-}
-type User @table(name: "user") {
-	id: Int!
-	name: String!
-	posts(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Post
-		"""
-		orderBy: [PostOrdering],
-		"""
-		Filter posts
-		"""
-		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
-	"""
-	posts Aggregate
-	"""
-	_postsAggregate(groupBy: [PostGroupBy!],
-		"""
-		Filter _postsAggregate
-		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
-}
-`, BuiltIn: false},
 	{Name: "../fastgql_schema.graphql", Input: `"""
 Aggregate Category
 """
@@ -1315,6 +1087,234 @@ type _UserSum {
 	Compute the sum for id
 	"""
 	id: Float!
+}
+`, BuiltIn: false},
+	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
+directive @generateFilterInput(description: String) on OBJECT
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+input BooleanComparator {
+	eq: Boolean
+	neq: Boolean
+	isNull: Boolean
+}
+input BooleanListComparator {
+	eq: [Boolean]
+	neq: [Boolean]
+	contains: [Boolean]
+	contained: [Boolean]
+	overlap: [Boolean]
+	isNull: Boolean
+}
+input FloatComparator {
+	eq: Float
+	neq: Float
+	gt: Float
+	gte: Float
+	lt: Float
+	lte: Float
+	isNull: Boolean
+}
+input FloatListComparator {
+	eq: [Float]
+	neq: [Float]
+	contains: [Float]
+	contained: [Float]
+	overlap: [Float]
+	isNull: Boolean
+}
+input IntComparator {
+	eq: Int
+	neq: Int
+	gt: Int
+	gte: Int
+	lt: Int
+	lte: Int
+	isNull: Boolean
+}
+input IntListComparator {
+	eq: [Int]
+	neq: [Int]
+	contains: [Int]
+	contained: [Int]
+	overlap: [Int]
+	isNull: Boolean
+}
+scalar Map
+input StringComparator {
+	eq: String
+	neq: String
+	contains: [String]
+	notContains: [String]
+	like: String
+	ilike: String
+	suffix: String
+	prefix: String
+	isNull: Boolean
+}
+input StringListComparator {
+	eq: [String]
+	neq: [String]
+	contains: [String]
+	containedBy: [String]
+	overlap: [String]
+	isNull: Boolean
+}
+type _AggregateResult {
+	count: Int!
+}
+enum _OrderingTypes {
+	ASC
+	DESC
+	ASC_NULL_FIRST
+	DESC_NULL_FIRST
+	ASC_NULL_LAST
+	DESC_NULL_LAST
+}
+enum _relationType {
+	ONE_TO_ONE
+	ONE_TO_MANY
+	MANY_TO_MANY
+}
+`, BuiltIn: false},
+	{Name: "../schema.graphql", Input: `type Category @generateFilterInput {
+	id: Int!
+	name: String
+}
+type Post @generateFilterInput {
+	id: Int!
+	name: String
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user_id: Int
+	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate(groupBy: [CategoryGroupBy!],
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+	"""
+	user Aggregate
+	"""
+	_userAggregate(groupBy: [UserGroupBy!]): [UsersAggregate!]! @generate(filter: true)
+}
+type Query {
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @generate
+	users(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering]): [User] @generate
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @generate
+	"""
+	posts Aggregate
+	"""
+	_postsAggregate(groupBy: [PostGroupBy!],
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+	"""
+	users Aggregate
+	"""
+	_usersAggregate(groupBy: [UserGroupBy!]): [UsersAggregate!]! @generate(filter: true)
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate(groupBy: [CategoryGroupBy!],
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+}
+type User @table(name: "user") {
+	id: Int!
+	name: String!
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+	"""
+	posts Aggregate
+	"""
+	_postsAggregate(groupBy: [PostGroupBy!],
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
 }
 `, BuiltIn: false},
 }

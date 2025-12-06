@@ -135,6 +135,30 @@ type UsersAggregate struct {
 	Sum *UserSum `json:"sum" db:"sum"`
 }
 
+// Ordering for UsersAggregate
+type UsersAggregateOrdering struct {
+	// Order UsersAggregate by group
+	Group *OrderingTypes `json:"group,omitempty" db:"group"`
+	// Order UsersAggregate by count
+	Count *OrderingTypes `json:"count,omitempty" db:"count"`
+}
+
+// Aggregate UsersAggregate
+type UsersAggregatesAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *UsersAggregateMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *UsersAggregateMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *UsersAggregateAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *UsersAggregateSum `json:"sum" db:"sum"`
+}
+
 type AggregateResult struct {
 	Count int `json:"count" db:"count"`
 }
@@ -165,6 +189,30 @@ type UserMin struct {
 type UserSum struct {
 	// Compute the sum for age
 	Age float64 `json:"age" db:"age"`
+}
+
+// avg Aggregate
+type UsersAggregateAvg struct {
+	// Compute the avg for count
+	Count float64 `json:"count" db:"count"`
+}
+
+// max Aggregate
+type UsersAggregateMax struct {
+	// Compute the max for count
+	Count int `json:"count" db:"count"`
+}
+
+// min Aggregate
+type UsersAggregateMin struct {
+	// Compute the min for count
+	Count int `json:"count" db:"count"`
+}
+
+// sum Aggregate
+type UsersAggregateSum struct {
+	// Compute the sum for count
+	Count float64 `json:"count" db:"count"`
 }
 
 // Group by User
@@ -220,6 +268,64 @@ func (e *UserGroupBy) UnmarshalJSON(b []byte) error {
 }
 
 func (e UserGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Group by UsersAggregate
+type UsersAggregateGroupBy string
+
+const (
+	// Group by group
+	UsersAggregateGroupByGroup UsersAggregateGroupBy = "GROUP"
+	// Group by count
+	UsersAggregateGroupByCount UsersAggregateGroupBy = "COUNT"
+)
+
+var AllUsersAggregateGroupBy = []UsersAggregateGroupBy{
+	UsersAggregateGroupByGroup,
+	UsersAggregateGroupByCount,
+}
+
+func (e UsersAggregateGroupBy) IsValid() bool {
+	switch e {
+	case UsersAggregateGroupByGroup, UsersAggregateGroupByCount:
+		return true
+	}
+	return false
+}
+
+func (e UsersAggregateGroupBy) String() string {
+	return string(e)
+}
+
+func (e *UsersAggregateGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UsersAggregateGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UsersAggregateGroupBy", str)
+	}
+	return nil
+}
+
+func (e UsersAggregateGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *UsersAggregateGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e UsersAggregateGroupBy) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

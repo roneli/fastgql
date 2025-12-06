@@ -80,6 +80,61 @@ type AnimalsAggregate {
 	"""
 	sum: _AnimalSum!
 }
+"""
+Group by AnimalsAggregate
+"""
+enum AnimalsAggregateGroupBy {
+	"""
+	Group by group
+	"""
+	GROUP
+	"""
+	Group by count
+	"""
+	COUNT
+}
+"""
+Ordering for AnimalsAggregate
+"""
+input AnimalsAggregateOrdering {
+	"""
+	Order AnimalsAggregate by group
+	"""
+	group: _OrderingTypes
+	"""
+	Order AnimalsAggregate by count
+	"""
+	count: _OrderingTypes
+}
+"""
+Aggregate AnimalsAggregate
+"""
+type AnimalsAggregatesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _AnimalsAggregateMax!
+	"""
+	Min Aggregate
+	"""
+	min: _AnimalsAggregateMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _AnimalsAggregateAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _AnimalsAggregateSum!
+}
 input CatFilterInput {
 	id: IntComparator
 	name: StringComparator
@@ -126,6 +181,61 @@ type CategoriesAggregate {
 	Sum Aggregate
 	"""
 	sum: _CategorySum!
+}
+"""
+Group by CategoriesAggregate
+"""
+enum CategoriesAggregateGroupBy {
+	"""
+	Group by group
+	"""
+	GROUP
+	"""
+	Group by count
+	"""
+	COUNT
+}
+"""
+Ordering for CategoriesAggregate
+"""
+input CategoriesAggregateOrdering {
+	"""
+	Order CategoriesAggregate by group
+	"""
+	group: _OrderingTypes
+	"""
+	Order CategoriesAggregate by count
+	"""
+	count: _OrderingTypes
+}
+"""
+Aggregate CategoriesAggregate
+"""
+type CategoriesAggregatesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _CategoriesAggregateMax!
+	"""
+	Min Aggregate
+	"""
+	min: _CategoriesAggregateMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _CategoriesAggregateAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _CategoriesAggregateSum!
 }
 input CategoryFilterInput {
 	id: IntComparator
@@ -269,6 +379,61 @@ type PostsAggregate {
 	"""
 	sum: _PostSum!
 }
+"""
+Group by PostsAggregate
+"""
+enum PostsAggregateGroupBy {
+	"""
+	Group by group
+	"""
+	GROUP
+	"""
+	Group by count
+	"""
+	COUNT
+}
+"""
+Ordering for PostsAggregate
+"""
+input PostsAggregateOrdering {
+	"""
+	Order PostsAggregate by group
+	"""
+	group: _OrderingTypes
+	"""
+	Order PostsAggregate by count
+	"""
+	count: _OrderingTypes
+}
+"""
+Aggregate PostsAggregate
+"""
+type PostsAggregatesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _PostsAggregateMax!
+	"""
+	Min Aggregate
+	"""
+	min: _PostsAggregateMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _PostsAggregateAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _PostsAggregateSum!
+}
 input UserFilterInput {
 	id: IntComparator
 	name: StringComparator
@@ -342,6 +507,61 @@ type UsersAggregate {
 	sum: _UserSum!
 }
 """
+Group by UsersAggregate
+"""
+enum UsersAggregateGroupBy {
+	"""
+	Group by group
+	"""
+	GROUP
+	"""
+	Group by count
+	"""
+	COUNT
+}
+"""
+Ordering for UsersAggregate
+"""
+input UsersAggregateOrdering {
+	"""
+	Order UsersAggregate by group
+	"""
+	group: _OrderingTypes
+	"""
+	Order UsersAggregate by count
+	"""
+	count: _OrderingTypes
+}
+"""
+Aggregate UsersAggregate
+"""
+type UsersAggregatesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _UsersAggregateMax!
+	"""
+	Min Aggregate
+	"""
+	min: _UsersAggregateMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _UsersAggregateAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _UsersAggregateSum!
+}
+"""
 avg Aggregate
 """
 type _AnimalAvg {
@@ -392,6 +612,78 @@ type _AnimalSum {
 	Compute the sum for id
 	"""
 	id: Float!
+}
+"""
+avg Aggregate
+"""
+type _AnimalsAggregateAvg {
+	"""
+	Compute the avg for count
+	"""
+	count: Float!
+}
+"""
+max Aggregate
+"""
+type _AnimalsAggregateMax {
+	"""
+	Compute the max for count
+	"""
+	count: Int!
+}
+"""
+min Aggregate
+"""
+type _AnimalsAggregateMin {
+	"""
+	Compute the min for count
+	"""
+	count: Int!
+}
+"""
+sum Aggregate
+"""
+type _AnimalsAggregateSum {
+	"""
+	Compute the sum for count
+	"""
+	count: Float!
+}
+"""
+avg Aggregate
+"""
+type _CategoriesAggregateAvg {
+	"""
+	Compute the avg for count
+	"""
+	count: Float!
+}
+"""
+max Aggregate
+"""
+type _CategoriesAggregateMax {
+	"""
+	Compute the max for count
+	"""
+	count: Int!
+}
+"""
+min Aggregate
+"""
+type _CategoriesAggregateMin {
+	"""
+	Compute the min for count
+	"""
+	count: Int!
+}
+"""
+sum Aggregate
+"""
+type _CategoriesAggregateSum {
+	"""
+	Compute the sum for count
+	"""
+	count: Float!
 }
 """
 avg Aggregate
@@ -500,6 +792,42 @@ type _PostSum {
 """
 avg Aggregate
 """
+type _PostsAggregateAvg {
+	"""
+	Compute the avg for count
+	"""
+	count: Float!
+}
+"""
+max Aggregate
+"""
+type _PostsAggregateMax {
+	"""
+	Compute the max for count
+	"""
+	count: Int!
+}
+"""
+min Aggregate
+"""
+type _PostsAggregateMin {
+	"""
+	Compute the min for count
+	"""
+	count: Int!
+}
+"""
+sum Aggregate
+"""
+type _PostsAggregateSum {
+	"""
+	Compute the sum for count
+	"""
+	count: Float!
+}
+"""
+avg Aggregate
+"""
 type _UserAvg {
 	"""
 	Compute the avg for id
@@ -540,4 +868,40 @@ type _UserSum {
 	Compute the sum for id
 	"""
 	id: Float!
+}
+"""
+avg Aggregate
+"""
+type _UsersAggregateAvg {
+	"""
+	Compute the avg for count
+	"""
+	count: Float!
+}
+"""
+max Aggregate
+"""
+type _UsersAggregateMax {
+	"""
+	Compute the max for count
+	"""
+	count: Int!
+}
+"""
+min Aggregate
+"""
+type _UsersAggregateMin {
+	"""
+	Compute the min for count
+	"""
+	count: Int!
+}
+"""
+sum Aggregate
+"""
+type _UsersAggregateSum {
+	"""
+	Compute the sum for count
+	"""
+	count: Float!
 }

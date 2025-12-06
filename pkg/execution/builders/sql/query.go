@@ -29,6 +29,7 @@ type queryHelper struct {
 	table   exp.AliasedExpression
 	alias   string
 	selects []column
+	dialect string
 }
 
 type tableHelper struct {
@@ -64,7 +65,7 @@ func (q queryHelper) SelectRow(alias bool) *goqu.SelectDataset {
 			q.SelectDataset = q.SelectAppend(c.Expression())
 		}
 	}
-	return q.SelectDataset.WithDialect("postgres").Prepared(true)
+	return q.SelectDataset.WithDialect(q.dialect).Prepared(true)
 }
 
 func (q queryHelper) SelectJson(alias string) *goqu.SelectDataset {
@@ -72,15 +73,15 @@ func (q queryHelper) SelectJson(alias string) *goqu.SelectDataset {
 	if alias != "" {
 		return q.Select(buildJsonObj.As(alias))
 	}
-	return q.Select(buildJsonObj).WithDialect("postgres").Prepared(true)
+	return q.Select(buildJsonObj).WithDialect(q.dialect).Prepared(true)
 }
 
 func (q queryHelper) SelectJsonAgg(alias string) *goqu.SelectDataset {
-	return q.Select(q.buildJsonAgg(alias).As(alias)).As(alias).WithDialect("postgres").Prepared(true)
+	return q.Select(q.buildJsonAgg(alias).As(alias)).As(alias).WithDialect(q.dialect).Prepared(true)
 }
 
 func (q queryHelper) SelectOne() *goqu.SelectDataset {
-	return q.Select(goqu.L("1")).WithDialect("postgres").Prepared(true)
+	return q.Select(goqu.L("1")).WithDialect(q.dialect).Prepared(true)
 }
 
 func (q queryHelper) buildJsonObject() exp.SQLFunctionExpression {
@@ -99,11 +100,12 @@ func (q queryHelper) buildJsonObject() exp.SQLFunctionExpression {
 		}
 
 	}
-	return goqu.Func("jsonb_build_object", args...)
+	return GetSQLDialect(q.dialect).JSONBuildObject(args...)
 }
 
 func (q queryHelper) buildJsonAgg(alias string) exp.SQLFunctionExpression {
-	return goqu.COALESCE(goqu.Func("jsonb_agg", q.buildJsonObject()), goqu.L("'[]'::jsonb"))
+	sqlDialect := GetSQLDialect(q.dialect)
+	return sqlDialect.CoalesceJSON(sqlDialect.JSONAgg(q.buildJsonObject()), "'[]'::jsonb")
 }
 
 func buildCrossCondition(leftTableName string, leftKeys []string, rightTableName string, rightKeys []string) exp.ExpressionList {

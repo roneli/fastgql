@@ -14,7 +14,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/roneli/fastgql/examples/custom_operator/graph"
 	"github.com/roneli/fastgql/examples/custom_operator/graph/generated"
+	"github.com/roneli/fastgql/pkg/execution"
 	"github.com/roneli/fastgql/pkg/execution/builders"
+	"github.com/roneli/fastgql/pkg/execution/builders/sql"
 	"github.com/roneli/fastgql/pkg/log/adapters"
 	"github.com/rs/zerolog/log"
 )
@@ -41,9 +43,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer pool.Close()
+
 	resolver := &graph.Resolver{}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
-	// Set configuration
+
+	// Set configuration with custom operator
 	cfg := &builders.Config{
 		Schema: executableSchema.Schema(),
 		Logger: adapters.NewZerologAdapter(log.Logger),
@@ -51,8 +56,10 @@ func main() {
 			"myCustomOperator": MyCustomOperator,
 		},
 	}
-	resolver.Cfg = cfg
-	resolver.Executor = pool
+	multiExec := execution.NewMultiExecutor(executableSchema.Schema(), "postgres")
+	multiExec.Register("postgres", sql.NewExecutor(pool, cfg))
+	resolver.Executor = multiExec
+
 	srv := handler.NewDefaultServer(executableSchema)
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
