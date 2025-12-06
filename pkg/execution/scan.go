@@ -11,24 +11,14 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-func getTypeName(row pgx.CollectableRow, i int, typeName string) (string, int) {
-	if i != -1 && row.FieldDescriptions()[i].Name == typeName {
-		return string(row.RawValues()[i]), i
-	}
-	for i, col := range row.FieldDescriptions() {
-		if col.Name == typeName {
-			return string(row.RawValues()[i]), i
-		}
-	}
-	return "", -1
-}
-
+// TypeNameScanner is a scanner for type name based on the type name key.
 type TypeNameScanner[T any] struct {
 	types       map[string]reflect.Type
 	typeNameKey string
 	lastIndex   int
 }
 
+// NewTypeNameScanner creates a new TypeNameScanner for the given types and type name key.
 func NewTypeNameScanner[T any](types map[string]reflect.Type, typeNameKey string) *TypeNameScanner[T] {
 	// lower case all keys
 	var t2 = make(map[string]reflect.Type)
@@ -77,4 +67,17 @@ func (t *TypeNameScanner[T]) ScanJson(data []byte) (T, error) {
 		return v.(T), err
 	}
 	return v.(T), nil
+}
+
+// getTypeName is a helper function to get the type name from a row.
+func getTypeName(row pgx.CollectableRow, i int, typeName string) (string, int) {
+	if i != -1 && row.FieldDescriptions()[i].Name == typeName {
+		return string(row.RawValues()[i]), i
+	}
+	for i, col := range row.FieldDescriptions() {
+		if col.Name == typeName {
+			return string(row.RawValues()[i]), i
+		}
+	}
+	return "", -1
 }
