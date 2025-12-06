@@ -54,6 +54,6 @@ func main() {
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal().Err(err)
+		log.Error().Err(err).Msg("failed to start server")
 	}
 }

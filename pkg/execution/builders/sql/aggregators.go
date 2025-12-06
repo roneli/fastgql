@@ -11,13 +11,13 @@ import (
 )
 
 var defaultAggregatorOperators = map[string]builders.AggregatorOperator{
-	"max": MaxAggregator,
-	"min": MinAggregator,
-	"avg": AvgAggregator,
-	"sum": SumAggregator,
+	"max": aggMax,
+	"min": aggMin,
+	"avg": aggAvg,
+	"sum": aggSum,
 }
 
-func SumAggregator(table exp.AliasedExpression, fields []builders.Field) (goqu.Expression, error) {
+func aggSum(table exp.AliasedExpression, fields []builders.Field) (goqu.Expression, error) {
 	sumFields := make([]interface{}, 0, len(fields)*2)
 	for _, f := range fields {
 		sumFields = append(sumFields, goqu.L(fmt.Sprintf("'%s'", f.Name)), goqu.SUM(table.Col(strcase.ToSnake(f.Name))))
@@ -25,7 +25,7 @@ func SumAggregator(table exp.AliasedExpression, fields []builders.Field) (goqu.E
 	return goqu.Func("json_build_object", sumFields...), nil
 }
 
-func AvgAggregator(table exp.AliasedExpression, fields []builders.Field) (goqu.Expression, error) {
+func aggAvg(table exp.AliasedExpression, fields []builders.Field) (goqu.Expression, error) {
 	avgFields := make([]interface{}, 0, len(fields)*2)
 	for _, f := range fields {
 		avgFields = append(avgFields, goqu.L(fmt.Sprintf("'%s'", f.Name)), goqu.AVG(table.Col(strcase.ToSnake(f.Name))))
@@ -33,7 +33,7 @@ func AvgAggregator(table exp.AliasedExpression, fields []builders.Field) (goqu.E
 	return goqu.Func("json_build_object", avgFields...), nil
 }
 
-func MaxAggregator(table exp.AliasedExpression, fields []builders.Field) (goqu.Expression, error) {
+func aggMax(table exp.AliasedExpression, fields []builders.Field) (goqu.Expression, error) {
 	maxFields := make([]interface{}, 0, len(fields)*2)
 	for _, f := range fields {
 		maxFields = append(maxFields, goqu.L(fmt.Sprintf("'%s'", f.Name)), goqu.MAX(table.Col(strcase.ToSnake(f.Name))))
@@ -41,7 +41,7 @@ func MaxAggregator(table exp.AliasedExpression, fields []builders.Field) (goqu.E
 	return goqu.Func("json_build_object", maxFields...), nil
 }
 
-func MinAggregator(table exp.AliasedExpression, fields []builders.Field) (goqu.Expression, error) {
+func aggMin(table exp.AliasedExpression, fields []builders.Field) (goqu.Expression, error) {
 	minFields := make([]interface{}, 0, len(fields)*2)
 	for _, f := range fields {
 		minFields = append(minFields, goqu.L(fmt.Sprintf("'%s'", f.Name)), goqu.MIN(table.Col(strcase.ToSnake(f.Name))))

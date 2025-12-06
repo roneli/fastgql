@@ -268,6 +268,139 @@ func TestBuilder_CustomOperator(t *testing.T) {
 	}
 }
 
+func TestBuilder_Query_EdgeCases(t *testing.T) {
+	testCases := []TestBuilderCase{
+		{
+			Name:              "filter_isNull_true",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(filter: {name: {isNull: true}}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" WHERE ("sq0"."name" IS NULL) LIMIT $1`,
+			ExpectedArguments: []interface{}{int64(100)},
+		},
+		{
+			Name:              "filter_isNull_false",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(filter: {name: {isNull: false}}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" WHERE ("sq0"."name" IS NOT NULL) LIMIT $1`,
+			ExpectedArguments: []interface{}{int64(100)},
+		},
+		{
+			Name:              "filter_eq_operator",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(filter: {name: {eq: "Alice"}}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" WHERE ("sq0"."name" = $1) LIMIT $2`,
+			ExpectedArguments: []interface{}{"Alice", int64(100)},
+		},
+		{
+			Name:              "filter_neq_operator",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(filter: {name: {neq: "Charlie"}}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" WHERE ("sq0"."name" != $1) LIMIT $2`,
+			ExpectedArguments: []interface{}{"Charlie", int64(100)},
+		},
+		{
+			Name:              "filter_prefix_operator",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(filter: {name: {prefix: "Dr."}}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" WHERE ("sq0"."name" LIKE $1) LIMIT $2`,
+			ExpectedArguments: []interface{}{"Dr.%", int64(100)},
+		},
+		{
+			Name:              "filter_suffix_operator",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(filter: {name: {suffix: "son"}}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" WHERE ("sq0"."name" LIKE $1) LIMIT $2`,
+			ExpectedArguments: []interface{}{"%son", int64(100)},
+		},
+		{
+			Name:              "ordering_desc",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(orderBy: {name: DESC}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" ORDER BY "name" DESC NULLS LAST LIMIT $1`,
+			ExpectedArguments: []interface{}{int64(100)},
+		},
+		{
+			Name:              "ordering_asc_null_first",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(orderBy: {name: ASC_NULL_FIRST}) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" ORDER BY "name" ASC NULLS FIRST LIMIT $1`,
+			ExpectedArguments: []interface{}{int64(100)},
+		},
+		{
+			Name:              "pagination_offset_only",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(offset: 10) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" LIMIT $1 OFFSET $2`,
+			ExpectedArguments: []interface{}{int64(100), int64(10)},
+		},
+		{
+			Name:              "pagination_limit_and_offset",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(limit: 5, offset: 10) { name } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."users" AS "sq0" LIMIT $1 OFFSET $2`,
+			ExpectedArguments: []interface{}{int64(5), int64(10)},
+		},
+		{
+			Name:              "multiple_filters_combined",
+			SchemaFile:        "testdata/schema_simple.graphql",
+			GraphQLQuery:      `query { users(filter: {name: {like: "%test%"}, id: {gt: 5}}) { name id } }`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", "sq0"."id" AS "id" FROM "app"."users" AS "sq0" WHERE (("sq0"."name" LIKE $1) AND ("sq0"."id" > $2)) LIMIT $3`,
+			ExpectedArguments: []interface{}{"%test%", int64(5), int64(100)},
+		},
+	}
+	_ = os.Chdir("/testdata")
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
+				return b.Query(f)
+			})
+		})
+	}
+}
+
+func TestNewBuilder(t *testing.T) {
+	t.Run("with_defaults", func(t *testing.T) {
+		schema := &ast.Schema{}
+		builder := sql.NewBuilder(&builders.Config{Schema: schema})
+
+		// Verify defaults
+		assert.NotNil(t, builder)
+		assert.Equal(t, "postgres", builder.Dialect)
+		assert.NotNil(t, builder.CaseConverter)
+		assert.NotNil(t, builder.Operators)
+	})
+
+	t.Run("with_custom_dialect", func(t *testing.T) {
+		builder := sql.NewBuilder(&builders.Config{
+			Schema:  &ast.Schema{},
+			Dialect: "mysql",
+		})
+		assert.Equal(t, "mysql", builder.Dialect)
+	})
+
+	t.Run("with_custom_operators", func(t *testing.T) {
+		customOp := func(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+			return goqu.L("custom")
+		}
+		builder := sql.NewBuilder(&builders.Config{
+			Schema:          &ast.Schema{},
+			CustomOperators: map[string]builders.Operator{"custom": customOp},
+		})
+		_, ok := builder.Operators["custom"]
+		assert.True(t, ok)
+	})
+}
+
+func TestBuilder_Capabilities(t *testing.T) {
+	builder := sql.NewBuilder(&builders.Config{Schema: &ast.Schema{}})
+	caps := builder.Capabilities()
+
+	assert.True(t, caps.SupportsJoins)
+	assert.True(t, caps.SupportsReturning)
+	assert.True(t, caps.SupportsTransactions)
+	assert.Equal(t, -1, caps.MaxRelationDepth)
+}
+
 func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders.Field) (string, []interface{}, error)) {
 	fs := afero.NewOsFs()
 	data, err := afero.ReadFile(fs, testCase.SchemaFile)

@@ -8,9 +8,7 @@ package graph
 import (
 	"context"
 
-	generated1 "github.com/roneli/fastgql/pkg/execution/__test__/graph/generated"
-	model1 "github.com/roneli/fastgql/pkg/execution/__test__/graph/model"
-	"github.com/roneli/fastgql/pkg/execution/test/graph/model"
+	"github.com/roneli/fastgql/pkg/execution/__test__/graph/model"
 )
 
 // CreatePosts is the resolver for the createPosts field.

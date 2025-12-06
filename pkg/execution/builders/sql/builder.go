@@ -2,7 +2,9 @@ package sql
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
+	"unsafe"
 
 	"github.com/roneli/fastgql/pkg/schema"
 
@@ -19,10 +21,33 @@ import (
 	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 )
 
+const (
+	letterBytes   = "abcdefghijklmnopqrstuvwxyz"
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
 type defaultTableNameGenerator struct{}
 
 func (tb defaultTableNameGenerator) Generate(_ int) string {
-	return builders.GenerateTableName(6)
+	return generateTableName(6)
+}
+
+func generateTableName(n int) string {
+	b := make([]byte, n)
+	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = rand.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+	return *(*string)(unsafe.Pointer(&b))
 }
 
 type Builder struct {

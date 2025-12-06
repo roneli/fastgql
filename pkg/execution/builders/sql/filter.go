@@ -2,6 +2,7 @@ package sql
 
 import (
 	"fmt"
+
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/roneli/fastgql/pkg/execution/builders"
@@ -9,62 +10,62 @@ import (
 )
 
 var defaultOperators = map[string]builders.Operator{
-	"eq":     Eq,
-	"neq":    Neq,
-	"like":   Like,
-	"ilike":  ILike,
-	"notIn":  NotIn,
-	"in":     In,
-	"isNull": IsNull,
-	"gt":     Gt,
-	"gte":    Gte,
-	"lte":    Lte,
-	"lt":     Lt,
-	"prefix": Prefix,
-	"suffix": Suffix,
+	"eq":     opEq,
+	"neq":    opNeq,
+	"like":   opLike,
+	"ilike":  opILike,
+	"notIn":  opNotIn,
+	"in":     opIn,
+	"isNull": opIsNull,
+	"gt":     opGt,
+	"gte":    opGte,
+	"lte":    opLte,
+	"lt":     opLt,
+	"prefix": opPrefix,
+	"suffix": opSuffix,
 }
 
-func Eq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opEq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Eq(value)
 }
 
-func Neq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opNeq(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Neq(value)
 }
 
-func Gt(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opGt(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Gt(value)
 }
 
-func Gte(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opGte(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Gte(value)
 }
 
-func Lte(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opLte(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Lte(value)
 }
 
-func Lt(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opLt(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Lt(value)
 }
 
-func Like(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opLike(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Like(value)
 }
 
-func ILike(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opILike(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).ILike(value)
 }
 
-func In(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opIn(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).In(value)
 }
 
-func NotIn(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opNotIn(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).NotIn(value)
 }
 
-func IsNull(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opIsNull(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	if cast.ToBool(value) {
 		return table.Col(key).IsNull()
 	} else {
@@ -72,10 +73,10 @@ func IsNull(table exp.AliasedExpression, key string, value interface{}) goqu.Exp
 	}
 }
 
-func Prefix(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opPrefix(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Like(fmt.Sprintf("%s%%", value))
 }
 
-func Suffix(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
+func opSuffix(table exp.AliasedExpression, key string, value interface{}) goqu.Expression {
 	return table.Col(key).Like(fmt.Sprintf("%%%s", value))
 }

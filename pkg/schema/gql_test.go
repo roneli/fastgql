@@ -283,7 +283,7 @@ func Test_GetDirectiveValue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			schema := buildTestSchema(t, tt.schemaDefinition)
-			
+
 			var directive *ast.Directive
 			if tt.typeName == "Query" {
 				queryType := schema.Types["Query"]
@@ -308,4 +308,3 @@ func Test_GetDirectiveValue_NilDirective(t *testing.T) {
 	result := GetDirectiveValue(nil, "anyArg")
 	assert.Nil(t, result, "Should return nil for nil directive")
 }
-
