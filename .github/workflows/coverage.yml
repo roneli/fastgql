@@ -62,11 +62,12 @@ jobs:
           path: .
         continue-on-error: true  # Don't fail if base coverage doesn't exist yet
 
-      - name: Check if base coverage exists
+      - name: Prepare base coverage for comparison
         id: check_base_coverage
         if: github.event_name == 'pull_request'
         run: |
           if [ -f "coverage-breakdown.json" ]; then
+            mv coverage-breakdown.json base-coverage-breakdown.json
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
