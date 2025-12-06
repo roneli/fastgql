@@ -13,7 +13,6 @@ type Post @generateFilterInput {
   user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
 }
 
-
 type Category @generateFilterInput{
   id: Int!
   name: String

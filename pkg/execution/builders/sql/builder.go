@@ -315,7 +315,7 @@ func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field, 
 				fieldExp = fieldExp.(exp.Aliaseable).As("group")
 			}
 			query.selects = append(query.selects, column{table: query.alias, name: f.Name, expression: fieldExp})
-			query.SelectDataset = query.SelectDataset.GroupBy(groupByCols...)
+			query.SelectDataset = query.GroupBy(groupByCols...)
 		case "count":
 			b.Logger.Debug("adding field", "tableDefinition", tableDef.name, "fieldName", f.Name)
 			fieldExp = goqu.COUNT(goqu.L("1"))
@@ -482,13 +482,13 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 	rel := schema.GetRelationDirective(rf.Definition)
 	switch rel.RelType {
 	case schema.OneToOne:
-		parentQuery.SelectDataset = parentQuery.SelectDataset.LeftJoin(goqu.Lateral(relationQuery.SelectJson(rf.Name).As(relationQuery.alias).
+		parentQuery.SelectDataset = parentQuery.LeftJoin(goqu.Lateral(relationQuery.SelectJson(rf.Name).As(relationQuery.alias).
 			Where(buildCrossCondition(parentQuery.alias, rel.Fields, relationQuery.alias, rel.References))),
 			goqu.On(goqu.L("true")),
 		)
 		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: relationQuery.alias})
 	case schema.OneToMany:
-		parentQuery.SelectDataset = parentQuery.SelectDataset.LeftJoin(
+		parentQuery.SelectDataset = parentQuery.LeftJoin(
 			goqu.Lateral(relationQuery.SelectJsonAgg(rf.Name).As(relationQuery.alias).
 				Where(buildCrossCondition(parentQuery.alias, rel.Fields, relationQuery.alias, rel.References))),
 			goqu.On(goqu.L("true")),
@@ -533,7 +533,7 @@ func (b Builder) buildRelationAggregate(parentQuery *queryHelper, rf builders.Fi
 	// TODO: finish this
 	switch rel.RelType {
 	case schema.OneToMany, schema.OneToOne:
-		parentQuery.SelectDataset = parentQuery.SelectDataset.LeftJoin(
+		parentQuery.SelectDataset = parentQuery.LeftJoin(
 			goqu.Lateral(goqu.Select(goqu.Func("jsonb_agg", aggQuery.table.Col(name)).As(name)).From(aggQuery.SelectJson(name).As(aggQuery.alias).
 				Where(buildCrossCondition(parentQuery.alias, rel.Fields, aggQuery.alias, rel.References)))).As(aggQuery.alias),
 			goqu.On(goqu.L("true")),

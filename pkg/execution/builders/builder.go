@@ -4,11 +4,26 @@ import (
 	"math/rand"
 	"unsafe"
 
-	"github.com/roneli/fastgql/pkg/log"
-
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/vektah/gqlparser/v2/ast"
+
+	"github.com/roneli/fastgql/pkg/log"
+)
+
+const (
+	InputFieldName = "inputs"
+
+	OrderingTypesAsc      OrderingTypes = "ASC"
+	OrderingTypesDesc     OrderingTypes = "DESC"
+	OrderingTypesAscNull  OrderingTypes = "ASC_NULL_FIRST"
+	OrderingTypesDescNull OrderingTypes = "DESC_NULL_FIRST"
+
+	// GenerateTableName configuration
+	letterBytes   = "abcdefghijklmnopqrstuvwxyz"
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
 type (
@@ -46,46 +61,9 @@ type (
 	// AggregatorOperator gets called on aggregation methods // TBD //
 	AggregatorOperator func(table exp.AliasedExpression, fields []Field) (goqu.Expression, error)
 
-	// AggregateBuilder allows Builders to build aggregate queries on _XYZAggregate fields
-	AggregateBuilder interface {
-		Aggregate(field Field) (string, []interface{}, error)
-	}
-
-	// QueryBuilder supports building a full query from a given GraphQL query
-	QueryBuilder interface {
-		Query(field Field) (string, []interface{}, error)
-	}
-
-	// MutationBuilder supports building DELETE/CREATE/UPDATE queries from given GraphQL
-	MutationBuilder interface {
-		Create(field Field) (string, []interface{}, error)
-		Delete(field Field) (string, []interface{}, error)
-	}
-
 	TableNameGenerator interface {
 		Generate(n int) string
 	}
-
-	Builder interface {
-		QueryBuilder
-		AggregateBuilder
-		MutationBuilder
-	}
-)
-
-const (
-	InputFieldName = "inputs"
-
-	OrderingTypesAsc      OrderingTypes = "ASC"
-	OrderingTypesDesc     OrderingTypes = "DESC"
-	OrderingTypesAscNull  OrderingTypes = "ASC_NULL_FIRST"
-	OrderingTypesDescNull OrderingTypes = "DESC_NULL_FIRST"
-
-	// GenerateTableName configuration
-	letterBytes   = "abcdefghijklmnopqrstuvwxyz"
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
 func GenerateTableName(n int) string {

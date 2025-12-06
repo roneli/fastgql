@@ -1,3 +1,4 @@
+//go:generate go run github.com/roneli/fastgql generate -c gqlgen.yml
 package main
 
 import (
@@ -44,5 +45,7 @@ func main() {
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Println(err)
+	}
 }

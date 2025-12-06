@@ -30,19 +30,6 @@ enum UserGroupBy {
 	AGE
 }
 """
-max aggregator for User
-"""
-type UserMin {
-	"""
-	Compute the maxiumum for name
-	"""
-	name: String!
-	"""
-	Compute the maxiumum for age
-	"""
-	age: Int!
-}
-"""
 Ordering for User
 """
 input UserOrdering {
@@ -60,15 +47,71 @@ Aggregate User
 """
 type UsersAggregate {
 	"""
+	Group
+	"""
+	group: Map
+	"""
 	Count results
 	"""
 	count: Int!
 	"""
-	Computes the maximum of the non-null input values.
+	Max Aggregate
 	"""
-	max: UserMin
+	max: _UserMax!
 	"""
-	Computes the minimum of the non-null input values.
+	Min Aggregate
 	"""
-	min: UserMin
+	min: _UserMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _UserAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _UserSum!
+}
+"""
+avg Aggregate
+"""
+type _UserAvg {
+	"""
+	Compute the avg for age
+	"""
+	age: Float!
+}
+"""
+max Aggregate
+"""
+type _UserMax {
+	"""
+	Compute the max for name
+	"""
+	name: String!
+	"""
+	Compute the max for age
+	"""
+	age: Int!
+}
+"""
+min Aggregate
+"""
+type _UserMin {
+	"""
+	Compute the min for name
+	"""
+	name: String!
+	"""
+	Compute the min for age
+	"""
+	age: Int!
+}
+"""
+sum Aggregate
+"""
+type _UserSum {
+	"""
+	Compute the sum for age
+	"""
+	age: Float!
 }

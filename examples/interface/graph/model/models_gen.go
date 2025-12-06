@@ -3,6 +3,7 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -28,16 +29,6 @@ type AnimalFilterInput struct {
 	Not *AnimalFilterInput `json:"NOT,omitempty" db:"not"`
 }
 
-// max aggregator for Animal
-type AnimalMin struct {
-	// Compute the maxiumum for id
-	ID int `json:"id" db:"id"`
-	// Compute the maxiumum for name
-	Name string `json:"name" db:"name"`
-	// Compute the maxiumum for type
-	Type string `json:"type" db:"type"`
-}
-
 // Ordering for Animal
 type AnimalOrdering struct {
 	// Order Animal by id
@@ -51,13 +42,17 @@ type AnimalOrdering struct {
 // Aggregate Animal
 type AnimalsAggregate struct {
 	// Group
-	Group map[string]interface{} `json:"group,omitempty" db:"group"`
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
 	Count int `json:"count" db:"count"`
-	// Computes the maximum of the non-null input values.
-	Max *AnimalMin `json:"max,omitempty" db:"max"`
-	// Computes the minimum of the non-null input values.
-	Min *AnimalMin `json:"min,omitempty" db:"min"`
+	// Max Aggregate
+	Max *AnimalMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *AnimalMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *AnimalAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *AnimalSum `json:"sum" db:"sum"`
 }
 
 type BooleanComparator struct {
@@ -103,13 +98,17 @@ type CatFilterInput struct {
 // Aggregate Category
 type CategoriesAggregate struct {
 	// Group
-	Group map[string]interface{} `json:"group,omitempty" db:"group"`
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
 	Count int `json:"count" db:"count"`
-	// Computes the maximum of the non-null input values.
-	Max *CategoryMin `json:"max,omitempty" db:"max"`
-	// Computes the minimum of the non-null input values.
-	Min *CategoryMin `json:"min,omitempty" db:"min"`
+	// Max Aggregate
+	Max *CategoryMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *CategoryMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *CategoryAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *CategorySum `json:"sum" db:"sum"`
 }
 
 type Category struct {
@@ -126,14 +125,6 @@ type CategoryFilterInput struct {
 	Or []*CategoryFilterInput `json:"OR,omitempty" db:"or"`
 	// Logical NOT of FilterInput
 	Not *CategoryFilterInput `json:"NOT,omitempty" db:"not"`
-}
-
-// max aggregator for Category
-type CategoryMin struct {
-	// Compute the maxiumum for id
-	ID int `json:"id" db:"id"`
-	// Compute the maxiumum for name
-	Name string `json:"name" db:"name"`
 }
 
 // Ordering for Category
@@ -233,16 +224,6 @@ type PostFilterInput struct {
 	Not *PostFilterInput `json:"NOT,omitempty" db:"not"`
 }
 
-// max aggregator for Post
-type PostMin struct {
-	// Compute the maxiumum for id
-	ID int `json:"id" db:"id"`
-	// Compute the maxiumum for name
-	Name string `json:"name" db:"name"`
-	// Compute the maxiumum for user_id
-	UserID int `json:"user_id" db:"user_id"`
-}
-
 // Ordering for Post
 type PostOrdering struct {
 	// Order Post by id
@@ -256,13 +237,20 @@ type PostOrdering struct {
 // Aggregate Post
 type PostsAggregate struct {
 	// Group
-	Group map[string]interface{} `json:"group,omitempty" db:"group"`
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
 	Count int `json:"count" db:"count"`
-	// Computes the maximum of the non-null input values.
-	Max *PostMin `json:"max,omitempty" db:"max"`
-	// Computes the minimum of the non-null input values.
-	Min *PostMin `json:"min,omitempty" db:"min"`
+	// Max Aggregate
+	Max *PostMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *PostMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *PostAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *PostSum `json:"sum" db:"sum"`
+}
+
+type Query struct {
 }
 
 type StringComparator struct {
@@ -306,14 +294,6 @@ type UserFilterInput struct {
 	Not *UserFilterInput `json:"NOT,omitempty" db:"not"`
 }
 
-// max aggregator for User
-type UserMin struct {
-	// Compute the maxiumum for id
-	ID int `json:"id" db:"id"`
-	// Compute the maxiumum for name
-	Name string `json:"name" db:"name"`
-}
-
 // Ordering for User
 type UserOrdering struct {
 	// Order User by id
@@ -325,17 +305,145 @@ type UserOrdering struct {
 // Aggregate User
 type UsersAggregate struct {
 	// Group
-	Group map[string]interface{} `json:"group,omitempty" db:"group"`
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
 	Count int `json:"count" db:"count"`
-	// Computes the maximum of the non-null input values.
-	Max *UserMin `json:"max,omitempty" db:"max"`
-	// Computes the minimum of the non-null input values.
-	Min *UserMin `json:"min,omitempty" db:"min"`
+	// Max Aggregate
+	Max *UserMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *UserMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *UserAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *UserSum `json:"sum" db:"sum"`
 }
 
 type AggregateResult struct {
 	Count int `json:"count" db:"count"`
+}
+
+// avg Aggregate
+type AnimalAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// max Aggregate
+type AnimalMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+	// Compute the max for type
+	Type string `json:"type" db:"type"`
+}
+
+// min Aggregate
+type AnimalMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+	// Compute the min for type
+	Type string `json:"type" db:"type"`
+}
+
+// sum Aggregate
+type AnimalSum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// avg Aggregate
+type CategoryAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// max Aggregate
+type CategoryMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+}
+
+// min Aggregate
+type CategoryMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+}
+
+// sum Aggregate
+type CategorySum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// avg Aggregate
+type PostAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+	// Compute the avg for user_id
+	UserID float64 `json:"user_id" db:"user_id"`
+}
+
+// max Aggregate
+type PostMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+	// Compute the max for user_id
+	UserID int `json:"user_id" db:"user_id"`
+}
+
+// min Aggregate
+type PostMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+	// Compute the min for user_id
+	UserID int `json:"user_id" db:"user_id"`
+}
+
+// sum Aggregate
+type PostSum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
+	// Compute the sum for user_id
+	UserID float64 `json:"user_id" db:"user_id"`
+}
+
+// avg Aggregate
+type UserAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// max Aggregate
+type UserMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+}
+
+// min Aggregate
+type UserMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+}
+
+// sum Aggregate
+type UserSum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
 }
 
 // Group by Animal
@@ -368,7 +476,7 @@ func (e AnimalGroupBy) String() string {
 	return string(e)
 }
 
-func (e *AnimalGroupBy) UnmarshalGQL(v interface{}) error {
+func (e *AnimalGroupBy) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -383,6 +491,20 @@ func (e *AnimalGroupBy) UnmarshalGQL(v interface{}) error {
 
 func (e AnimalGroupBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AnimalGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AnimalGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Group by Category
@@ -412,7 +534,7 @@ func (e CategoryGroupBy) String() string {
 	return string(e)
 }
 
-func (e *CategoryGroupBy) UnmarshalGQL(v interface{}) error {
+func (e *CategoryGroupBy) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -427,6 +549,20 @@ func (e *CategoryGroupBy) UnmarshalGQL(v interface{}) error {
 
 func (e CategoryGroupBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *CategoryGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e CategoryGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Group by Post
@@ -459,7 +595,7 @@ func (e PostGroupBy) String() string {
 	return string(e)
 }
 
-func (e *PostGroupBy) UnmarshalGQL(v interface{}) error {
+func (e *PostGroupBy) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -474,6 +610,20 @@ func (e *PostGroupBy) UnmarshalGQL(v interface{}) error {
 
 func (e PostGroupBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *PostGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e PostGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Group by User
@@ -503,7 +653,7 @@ func (e UserGroupBy) String() string {
 	return string(e)
 }
 
-func (e *UserGroupBy) UnmarshalGQL(v interface{}) error {
+func (e *UserGroupBy) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -518,6 +668,20 @@ func (e *UserGroupBy) UnmarshalGQL(v interface{}) error {
 
 func (e UserGroupBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *UserGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e UserGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type OrderingTypes string
@@ -552,7 +716,7 @@ func (e OrderingTypes) String() string {
 	return string(e)
 }
 
-func (e *OrderingTypes) UnmarshalGQL(v interface{}) error {
+func (e *OrderingTypes) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -567,6 +731,20 @@ func (e *OrderingTypes) UnmarshalGQL(v interface{}) error {
 
 func (e OrderingTypes) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *OrderingTypes) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e OrderingTypes) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type RelationType string
@@ -595,7 +773,7 @@ func (e RelationType) String() string {
 	return string(e)
 }
 
-func (e *RelationType) UnmarshalGQL(v interface{}) error {
+func (e *RelationType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -610,4 +788,18 @@ func (e *RelationType) UnmarshalGQL(v interface{}) error {
 
 func (e RelationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *RelationType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e RelationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

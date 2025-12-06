@@ -142,7 +142,7 @@ func initConfig(configFilename string, pkgName string) error {
 	}
 
 	if err := os.MkdirAll(filepath.Dir(configFilename), 0755); err != nil {
-		return fmt.Errorf("unable to create config dir: " + err.Error())
+		return fmt.Errorf("unable to create config dir: %w", err)
 	}
 
 	var buf bytes.Buffer
@@ -151,7 +151,7 @@ func initConfig(configFilename string, pkgName string) error {
 	}
 
 	if err := os.WriteFile(configFilename, buf.Bytes(), 0644); err != nil {
-		return fmt.Errorf("unable to write cfg file: " + err.Error())
+		return fmt.Errorf("unable to write cfg file: %w", err)
 	}
 
 	return nil
@@ -159,21 +159,21 @@ func initConfig(configFilename string, pkgName string) error {
 
 func initModelFile() error {
 	if err := os.MkdirAll(filepath.Dir("graph/model/models_fastgql.go"), 0755); err != nil {
-		return fmt.Errorf("unable to create model dir: " + err.Error())
+		return fmt.Errorf("unable to create model dir: %w", err)
 	}
 	if err := os.WriteFile("graph/model/models_fastgql.go", []byte("package model"), 0644); err != nil {
-		return fmt.Errorf("unable to write model file: " + err.Error())
+		return fmt.Errorf("unable to write model file: %w", err)
 	}
 	return nil
 }
 
 func initFastgqlSchema() error {
 	if err := os.MkdirAll(filepath.Dir("graph/fastgql.graphql"), 0755); err != nil {
-		return fmt.Errorf("unable to create schema dir: " + err.Error())
+		return fmt.Errorf("unable to create schema dir: %w", err)
 	}
 
 	if err := os.WriteFile("graph/fastgql.graphql", []byte(strings.TrimSpace(schema.FastGQLSchema)), 0644); err != nil {
-		return fmt.Errorf("unable to write schema file: " + err.Error())
+		return fmt.Errorf("unable to write schema file: %w", err)
 	}
 	return nil
 }
@@ -185,11 +185,11 @@ func initSchema(schemaFilename string) error {
 		return nil
 	}
 	if err := os.MkdirAll(filepath.Dir(schemaFullPath), 0755); err != nil {
-		return fmt.Errorf("unable to create schema dir: " + err.Error())
+		return fmt.Errorf("unable to create schema dir: %w", err)
 	}
 
 	if err = os.WriteFile(schemaFullPath, []byte(strings.TrimSpace(schemaDefault)), 0644); err != nil {
-		return fmt.Errorf("unable to write schema file: " + err.Error())
+		return fmt.Errorf("unable to write schema file: %w", err)
 	}
 	return nil
 }

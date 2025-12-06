@@ -3,6 +3,7 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -26,7 +27,7 @@ type BooleanListComparator struct {
 // Aggregate Category
 type CategoriesAggregate struct {
 	// Group
-	Group map[string]interface{} `json:"group,omitempty" db:"group"`
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
 	Count int `json:"count" db:"count"`
 	// Max Aggregate
@@ -136,7 +137,7 @@ type PostOrdering struct {
 // Aggregate Post
 type PostsAggregate struct {
 	// Group
-	Group map[string]interface{} `json:"group,omitempty" db:"group"`
+	Group map[string]any `json:"group,omitempty" db:"group"`
 	// Count results
 	Count int `json:"count" db:"count"`
 	// Max Aggregate
@@ -147,6 +148,9 @@ type PostsAggregate struct {
 	Avg *PostAvg `json:"avg" db:"avg"`
 	// Sum Aggregate
 	Sum *PostSum `json:"sum" db:"sum"`
+}
+
+type Query struct {
 }
 
 type StringComparator struct {
@@ -301,7 +305,7 @@ func (e CategoryGroupBy) String() string {
 	return string(e)
 }
 
-func (e *CategoryGroupBy) UnmarshalGQL(v interface{}) error {
+func (e *CategoryGroupBy) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -316,6 +320,20 @@ func (e *CategoryGroupBy) UnmarshalGQL(v interface{}) error {
 
 func (e CategoryGroupBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *CategoryGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e CategoryGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Group by Post
@@ -345,7 +363,7 @@ func (e PostGroupBy) String() string {
 	return string(e)
 }
 
-func (e *PostGroupBy) UnmarshalGQL(v interface{}) error {
+func (e *PostGroupBy) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -360,6 +378,20 @@ func (e *PostGroupBy) UnmarshalGQL(v interface{}) error {
 
 func (e PostGroupBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *PostGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e PostGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Group by User
@@ -389,7 +421,7 @@ func (e UserGroupBy) String() string {
 	return string(e)
 }
 
-func (e *UserGroupBy) UnmarshalGQL(v interface{}) error {
+func (e *UserGroupBy) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -404,6 +436,20 @@ func (e *UserGroupBy) UnmarshalGQL(v interface{}) error {
 
 func (e UserGroupBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *UserGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e UserGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type OrderingTypes string
@@ -438,7 +484,7 @@ func (e OrderingTypes) String() string {
 	return string(e)
 }
 
-func (e *OrderingTypes) UnmarshalGQL(v interface{}) error {
+func (e *OrderingTypes) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -453,6 +499,20 @@ func (e *OrderingTypes) UnmarshalGQL(v interface{}) error {
 
 func (e OrderingTypes) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *OrderingTypes) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e OrderingTypes) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type RelationType string
@@ -481,7 +541,7 @@ func (e RelationType) String() string {
 	return string(e)
 }
 
-func (e *RelationType) UnmarshalGQL(v interface{}) error {
+func (e *RelationType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -496,4 +556,18 @@ func (e *RelationType) UnmarshalGQL(v interface{}) error {
 
 func (e RelationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *RelationType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e RelationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

@@ -59,9 +59,9 @@ func (q queryHelper) SelectRow(alias bool) *goqu.SelectDataset {
 			c.alias = ""
 		}
 		if i == 0 {
-			q.SelectDataset = q.SelectDataset.Select(c.Expression())
+			q.SelectDataset = q.Select(c.Expression())
 		} else {
-			q.SelectDataset = q.SelectDataset.SelectAppend(c.Expression())
+			q.SelectDataset = q.SelectAppend(c.Expression())
 		}
 	}
 	return q.SelectDataset.WithDialect("postgres").Prepared(true)

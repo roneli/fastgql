@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http/httptest"
 	"testing"
 
@@ -15,18 +14,22 @@ import (
 
 	"github.com/roneli/fastgql/pkg/log/adapters"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/roneli/fastgql/pkg/execution/builders"
 	"github.com/roneli/fastgql/pkg/execution/test/graph"
 	"github.com/roneli/fastgql/pkg/execution/test/graph/generated"
+	"github.com/roneli/fastgql/pkg/execution/test/helpers"
 	"github.com/rs/zerolog/log"
 )
 
-const defaultPGConnection = "postgresql://localhost/postgres?user=postgres&password="
-
-// Test Postgres Graph Sanity checks, this assumes that the postgresql exists
+// TestPostgresGraph Sanity checks, this assumes that the postgresql exists
 // NOTE: run init.sql on the postgres so data will be seeded
 func TestPostgresGraph(t *testing.T) {
+	ctx := context.Background()
+
+	pool, cleanup, err := helpers.GetTestPostgresPool(ctx)
+	require.NoError(t, err)
+	defer cleanup()
+
 	tt := []struct {
 		name         string
 		query        *graphql.RawParams
@@ -88,12 +91,6 @@ func TestPostgresGraph(t *testing.T) {
 		},
 	}
 
-	pool, err := pgxpool.New(context.Background(), defaultPGConnection)
-	if err != nil {
-		fmt.Printf("failed to create pool: %s", err)
-		return
-	}
-	defer pool.Close()
 	resolver := &graph.Resolver{}
 	executableSchema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
 	// Set configuration

@@ -1,3 +1,103 @@
+input AnimalFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	cat: CatFilterInput @isInterfaceFilter
+	dog: DogFilterInput @isInterfaceFilter
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [AnimalFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [AnimalFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: AnimalFilterInput
+}
+"""
+Group by Animal
+"""
+enum AnimalGroupBy {
+	"""
+	Group by id
+	"""
+	ID
+	"""
+	Group by name
+	"""
+	NAME
+	"""
+	Group by type
+	"""
+	TYPE
+}
+"""
+Ordering for Animal
+"""
+input AnimalOrdering {
+	"""
+	Order Animal by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Animal by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order Animal by type
+	"""
+	type: _OrderingTypes
+}
+"""
+Aggregate Animal
+"""
+type AnimalsAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _AnimalMax!
+	"""
+	Min Aggregate
+	"""
+	min: _AnimalMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _AnimalAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _AnimalSum!
+}
+input CatFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	color: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [CatFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [CatFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: CatFilterInput
+}
 """
 Aggregate Category
 """
@@ -69,10 +169,29 @@ input CategoryOrdering {
 	"""
 	name: _OrderingTypes
 }
+input DogFilterInput {
+	id: IntComparator
+	name: StringComparator
+	type: StringComparator
+	breed: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [DogFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [DogFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: DogFilterInput
+}
 input PostFilterInput {
 	id: IntComparator
 	name: StringComparator
 	categories: CategoryFilterInput
+	user_id: IntComparator
 	user: UserFilterInput
 	"""
 	Logical AND of FilterInput
@@ -99,6 +218,10 @@ enum PostGroupBy {
 	Group by name
 	"""
 	NAME
+	"""
+	Group by user_id
+	"""
+	USER_ID
 }
 """
 Ordering for Post
@@ -112,6 +235,10 @@ input PostOrdering {
 	Order Post by name
 	"""
 	name: _OrderingTypes
+	"""
+	Order Post by user_id
+	"""
+	user_id: _OrderingTypes
 }
 """
 Aggregate Post
@@ -164,26 +291,13 @@ Group by User
 """
 enum UserGroupBy {
 	"""
+	Group by id
+	"""
+	ID
+	"""
 	Group by name
 	"""
 	NAME
-	"""
-	Group by age
-	"""
-	AGE
-}
-"""
-max aggregator for User
-"""
-type UserMin {
-	"""
-	Compute the maxiumum for name
-	"""
-	name: String!
-	"""
-	Compute the maxiumum for age
-	"""
-	age: Int!
 }
 """
 Ordering for User
@@ -203,17 +317,81 @@ Aggregate User
 """
 type UsersAggregate {
 	"""
+	Group
+	"""
+	group: Map
+	"""
 	Count results
 	"""
 	count: Int!
 	"""
-	Computes the maximum of the non-null input values.
+	Max Aggregate
 	"""
-	max: UserMin
+	max: _UserMax!
 	"""
-	Computes the minimum of the non-null input values.
+	Min Aggregate
 	"""
-	min: UserMin
+	min: _UserMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _UserAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _UserSum!
+}
+"""
+avg Aggregate
+"""
+type _AnimalAvg {
+	"""
+	Compute the avg for id
+	"""
+	id: Float!
+}
+"""
+max Aggregate
+"""
+type _AnimalMax {
+	"""
+	Compute the max for id
+	"""
+	id: Int!
+	"""
+	Compute the max for name
+	"""
+	name: String!
+	"""
+	Compute the max for type
+	"""
+	type: String!
+}
+"""
+min Aggregate
+"""
+type _AnimalMin {
+	"""
+	Compute the min for id
+	"""
+	id: Int!
+	"""
+	Compute the min for name
+	"""
+	name: String!
+	"""
+	Compute the min for type
+	"""
+	type: String!
+}
+"""
+sum Aggregate
+"""
+type _AnimalSum {
+	"""
+	Compute the sum for id
+	"""
+	id: Float!
 }
 """
 avg Aggregate
@@ -267,6 +445,10 @@ type _PostAvg {
 	Compute the avg for id
 	"""
 	id: Float!
+	"""
+	Compute the avg for user_id
+	"""
+	user_id: Float!
 }
 """
 max Aggregate
@@ -280,6 +462,10 @@ type _PostMax {
 	Compute the max for name
 	"""
 	name: String!
+	"""
+	Compute the max for user_id
+	"""
+	user_id: Int!
 }
 """
 min Aggregate
@@ -293,11 +479,63 @@ type _PostMin {
 	Compute the min for name
 	"""
 	name: String!
+	"""
+	Compute the min for user_id
+	"""
+	user_id: Int!
 }
 """
 sum Aggregate
 """
 type _PostSum {
+	"""
+	Compute the sum for id
+	"""
+	id: Float!
+	"""
+	Compute the sum for user_id
+	"""
+	user_id: Float!
+}
+"""
+avg Aggregate
+"""
+type _UserAvg {
+	"""
+	Compute the avg for id
+	"""
+	id: Float!
+}
+"""
+max Aggregate
+"""
+type _UserMax {
+	"""
+	Compute the max for id
+	"""
+	id: Int!
+	"""
+	Compute the max for name
+	"""
+	name: String!
+}
+"""
+min Aggregate
+"""
+type _UserMin {
+	"""
+	Compute the min for id
+	"""
+	id: Int!
+	"""
+	Compute the min for name
+	"""
+	name: String!
+}
+"""
+sum Aggregate
+"""
+type _UserSum {
 	"""
 	Compute the sum for id
 	"""

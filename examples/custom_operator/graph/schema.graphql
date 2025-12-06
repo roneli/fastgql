@@ -23,11 +23,11 @@ type Query {
 	"""
 	user Aggregate
 	"""
-	_userAggregate(
+	_userAggregate(groupBy: [UserGroupBy!],
 		"""
 		Filter _userAggregate
 		"""
-		filter: UserFilterInput): UsersAggregate! @generate(filter: true)
+		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
 }
 type User @generateFilterInput {
 	name: String

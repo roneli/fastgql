@@ -23,10 +23,6 @@ func getTypeName(row pgx.CollectableRow, i int, typeName string) (string, int) {
 	return "", -1
 }
 
-type InterfaceScanner[T any] interface {
-	Scan(data []byte) (T, error)
-}
-
 type TypeNameScanner[T any] struct {
 	types       map[string]reflect.Type
 	typeNameKey string

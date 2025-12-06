@@ -121,3 +121,5 @@ input BooleanListComparator {
     overlap: [Boolean]
     isNull: Boolean
 }
+
+scalar Map

@@ -75,6 +75,7 @@ func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDef
 	aggDef := addAggregateObject(s, fieldDef)
 	if aggDef == nil {
 		log.Printf("aggreationField for field %s@%s already exists skipping\n", field.Name, obj.Name)
+		return
 	}
 	// add the type to the schema
 	s.Types[aggDef.Name] = aggDef
