@@ -19,7 +19,7 @@ import (
 // or spins up a new Postgres container using testcontainers.
 func GetTestPostgresPool(ctx context.Context) (*pgxpool.Pool, func(), error) {
 	connStr := os.Getenv("TEST_DATABASE_URL")
-	var cleanup func() = func() {}
+	var cleanup = func() {}
 
 	if connStr == "" {
 		// No connection string provided, spin up a test container
@@ -31,11 +31,9 @@ func GetTestPostgresPool(ctx context.Context) (*pgxpool.Pool, func(), error) {
 
 		// Check for Ryuk disabled env var or try to auto-detect if we should disable it
 		// This is often needed in environments with SELinux or restricted Docker socket access
-		if os.Getenv("TESTCONTAINERS_RYUK_DISABLED") == "" {
-			// In many CI/local setups (like Fedora), Ryuk might fail due to socket permissions.
-			// Users can set TESTCONTAINERS_RYUK_DISABLED=true to skip it.
-			// Alternatively, setting TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true often fixes it by running Ryuk as privileged.
-		}
+		// In many CI/local setups (like Fedora), Ryuk might fail due to socket permissions.
+		// Users can set TESTCONTAINERS_RYUK_DISABLED=true to skip it.
+		// Alternatively, setting TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true often fixes it by running Ryuk as privileged.
 
 		pgContainer, err := postgres.Run(ctx,
 			"postgres:latest",
