@@ -10,13 +10,16 @@ import (
 	"github.com/roneli/fastgql/pkg/execution/builders"
 )
 
-// buildQuery builds a query from the GraphQL context using the provided builder.
-// This is used by generated resolver code.
-func buildQuery(ctx context.Context, builder Builder) (string, []any, error) {
+// buildReadQuery builds a read query from the GraphQL context.
+func buildReadQuery(ctx context.Context, builder Builder) (string, []any, error) {
+	field := builders.CollectFields(ctx, builder.Schema)
+	return builder.Query(field)
+}
+
+// buildMutationQuery builds a mutation query from the GraphQL context.
+func buildMutationQuery(ctx context.Context, builder Builder) (string, []any, error) {
 	field := builders.CollectFields(ctx, builder.Schema)
 	switch builders.GetOperationType(ctx) {
-	case builders.QueryOperation:
-		return builder.Query(field)
 	case builders.InsertOperation:
 		return builder.Create(field)
 	case builders.DeleteOperation:
@@ -24,7 +27,7 @@ func buildQuery(ctx context.Context, builder Builder) (string, []any, error) {
 	case builders.UpdateOperation:
 		return builder.Update(field)
 	}
-	return "", nil, fmt.Errorf("invalid operation type %s", builders.GetOperationType(ctx))
+	return "", nil, fmt.Errorf("invalid mutation operation type %s", builders.GetOperationType(ctx))
 }
 
 // collect executes a query and collects rows using the provided row function.

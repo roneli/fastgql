@@ -15,7 +15,7 @@ import (
 // Person is the resolver for the person field.
 func (r *queryResolver) Person(ctx context.Context) (*model.Person, error) {
 	var data *model.Person
-	if err := r.Executor.Execute(ctx, &data); err != nil {
+	if err := r.Executor.Query(ctx, &data); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -24,7 +24,7 @@ func (r *queryResolver) Person(ctx context.Context) (*model.Person, error) {
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error) {
 	var data []*model.User
-	if err := r.Executor.Execute(ctx, &data); err != nil {
+	if err := r.Executor.Query(ctx, &data); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -33,7 +33,7 @@ func (r *queryResolver) User(ctx context.Context, limit *int, offset *int, order
 // UserAggregate is the resolver for the _userAggregate field.
 func (r *queryResolver) UserAggregate(ctx context.Context, groupBy []model.UserGroupBy, filter *model.UserFilterInput, limit *int, offset *int, orderBy []*model.UsersAggregateOrdering) ([]model.UsersAggregate, error) {
 	var data []model.UsersAggregate
-	if err := r.Executor.Execute(ctx, &data); err != nil {
+	if err := r.Executor.Query(ctx, &data); err != nil {
 		return nil, err
 	}
 	return data, nil

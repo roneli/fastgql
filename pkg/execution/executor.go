@@ -9,17 +9,15 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-// Executor is the main interface for executing GraphQL queries against any database.
+// Executor is the main interface for executing GraphQL operations against any database.
 // Each database implementation (PostgreSQL, MongoDB, etc.) implements this interface.
 type Executor interface {
-	// Execute builds and runs a query based on GraphQL context, scanning into dest
-	Execute(ctx context.Context, dest any) error
-	// ExecuteWithTypes handles interface types that need type discrimination
-	ExecuteWithTypes(ctx context.Context, dest any, types map[string]reflect.Type, typeKey string) error
-	// Close closes the underlying connection
-	Close() error
-	// Dialect returns the database dialect name
-	Dialect() string
+	// Query executes a read query and scans results into dest
+	Query(ctx context.Context, dest any) error
+	// QueryWithTypes handles interface types that need type discrimination
+	QueryWithTypes(ctx context.Context, dest any, types map[string]reflect.Type, typeKey string) error
+	// Mutate executes a create/update/delete mutation and scans results into dest
+	Mutate(ctx context.Context, dest any) error
 }
 
 // MultiExecutor routes queries to the appropriate executor based on the type's dialect.
@@ -44,8 +42,8 @@ func (m *MultiExecutor) Register(dialect string, executor Executor) {
 	m.executors[dialect] = executor
 }
 
-// Execute routes the query to the appropriate executor based on the type's dialect.
-func (m *MultiExecutor) Execute(ctx context.Context, dest any) error {
+// Query routes the query to the appropriate executor based on the type's dialect.
+func (m *MultiExecutor) Query(ctx context.Context, dest any) error {
 	field := builders.CollectFields(ctx, m.schema)
 	dialect := m.getDialectForType(field.TypeDefinition)
 
@@ -54,11 +52,11 @@ func (m *MultiExecutor) Execute(ctx context.Context, dest any) error {
 		return fmt.Errorf("no executor registered for dialect: %s", dialect)
 	}
 
-	return executor.Execute(ctx, dest)
+	return executor.Query(ctx, dest)
 }
 
-// ExecuteWithTypes routes the query to the appropriate executor for interface types.
-func (m *MultiExecutor) ExecuteWithTypes(ctx context.Context, dest any, types map[string]reflect.Type, typeKey string) error {
+// QueryWithTypes routes the query to the appropriate executor for interface types.
+func (m *MultiExecutor) QueryWithTypes(ctx context.Context, dest any, types map[string]reflect.Type, typeKey string) error {
 	field := builders.CollectFields(ctx, m.schema)
 	dialect := m.getDialectForType(field.TypeDefinition)
 
@@ -67,23 +65,20 @@ func (m *MultiExecutor) ExecuteWithTypes(ctx context.Context, dest any, types ma
 		return fmt.Errorf("no executor registered for dialect: %s", dialect)
 	}
 
-	return executor.ExecuteWithTypes(ctx, dest, types, typeKey)
+	return executor.QueryWithTypes(ctx, dest, types, typeKey)
 }
 
-// Close closes all registered executors.
-func (m *MultiExecutor) Close() error {
-	var lastErr error
-	for _, exec := range m.executors {
-		if err := exec.Close(); err != nil {
-			lastErr = err
-		}
+// Mutate routes the mutation to the appropriate executor based on the type's dialect.
+func (m *MultiExecutor) Mutate(ctx context.Context, dest any) error {
+	field := builders.CollectFields(ctx, m.schema)
+	dialect := m.getDialectForType(field.TypeDefinition)
+
+	executor, ok := m.executors[dialect]
+	if !ok {
+		return fmt.Errorf("no executor registered for dialect: %s", dialect)
 	}
-	return lastErr
-}
 
-// Dialect returns "multi" to indicate this is a multi-executor.
-func (m *MultiExecutor) Dialect() string {
-	return "multi"
+	return executor.Mutate(ctx, dest)
 }
 
 // getDialectForType extracts the dialect from the @table directive on a type.

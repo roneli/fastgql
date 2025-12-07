@@ -461,166 +461,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on FIELD_DEFINITION
-directive @generateFilterInput(description: String) on OBJECT
-directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
-directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
-input BooleanComparator {
-	eq: Boolean
-	neq: Boolean
-	isNull: Boolean
-}
-input BooleanListComparator {
-	eq: [Boolean]
-	neq: [Boolean]
-	contains: [Boolean]
-	contained: [Boolean]
-	overlap: [Boolean]
-	isNull: Boolean
-}
-input FloatComparator {
-	eq: Float
-	neq: Float
-	gt: Float
-	gte: Float
-	lt: Float
-	lte: Float
-	isNull: Boolean
-}
-input FloatListComparator {
-	eq: [Float]
-	neq: [Float]
-	contains: [Float]
-	contained: [Float]
-	overlap: [Float]
-	isNull: Boolean
-}
-input IntComparator {
-	eq: Int
-	neq: Int
-	gt: Int
-	gte: Int
-	lt: Int
-	lte: Int
-	isNull: Boolean
-}
-input IntListComparator {
-	eq: [Int]
-	neq: [Int]
-	contains: [Int]
-	contained: [Int]
-	overlap: [Int]
-	isNull: Boolean
-}
-scalar Map
-input StringComparator {
-	eq: String
-	neq: String
-	contains: [String]
-	notContains: [String]
-	like: String
-	ilike: String
-	suffix: String
-	prefix: String
-	isNull: Boolean
-}
-input StringListComparator {
-	eq: [String]
-	neq: [String]
-	contains: [String]
-	containedBy: [String]
-	overlap: [String]
-	isNull: Boolean
-}
-type _AggregateResult {
-	count: Int!
-}
-enum _OrderingTypes {
-	ASC
-	DESC
-	ASC_NULL_FIRST
-	DESC_NULL_FIRST
-	ASC_NULL_LAST
-	DESC_NULL_LAST
-}
-enum _relationType {
-	ONE_TO_ONE
-	ONE_TO_MANY
-	MANY_TO_MANY
-}
-`, BuiltIn: false},
-	{Name: "../schema.graphql", Input: `type Person {
-	name: String
-}
-type Query {
-	person: Person!
-	user(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter user
-		"""
-		filter: UserFilterInput): [User] @generate
-	"""
-	user Aggregate
-	"""
-	_userAggregate(groupBy: [UserGroupBy!],
-		"""
-		Filter _userAggregate
-		"""
-		filter: UserFilterInput,
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for UsersAggregate
-		"""
-		orderBy: [UsersAggregateOrdering]): [UsersAggregate!]! @generate(filter: true)
-}
-type User @generateFilterInput {
-	name: String
-	age: Int
-	someInnerValue: User
-	someInnerValueList(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter someInnerValueList
-		"""
-		filter: UserFilterInput): [User]
-}
-`, BuiltIn: false},
-	{Name: "../custom.graphql", Input: `extend input StringComparator {
-	myCustomOperator: String!
-}
-`, BuiltIn: false},
 	{Name: "../fastgql_schema.graphql", Input: `input UserFilterInput {
 	name: StringComparator
 	age: IntComparator
@@ -828,6 +668,166 @@ type _UsersAggregateSum {
 	Compute the sum for count
 	"""
 	count: Float!
+}
+`, BuiltIn: false},
+	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True) on FIELD_DEFINITION
+directive @generateFilterInput(description: String) on OBJECT
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+input BooleanComparator {
+	eq: Boolean
+	neq: Boolean
+	isNull: Boolean
+}
+input BooleanListComparator {
+	eq: [Boolean]
+	neq: [Boolean]
+	contains: [Boolean]
+	contained: [Boolean]
+	overlap: [Boolean]
+	isNull: Boolean
+}
+input FloatComparator {
+	eq: Float
+	neq: Float
+	gt: Float
+	gte: Float
+	lt: Float
+	lte: Float
+	isNull: Boolean
+}
+input FloatListComparator {
+	eq: [Float]
+	neq: [Float]
+	contains: [Float]
+	contained: [Float]
+	overlap: [Float]
+	isNull: Boolean
+}
+input IntComparator {
+	eq: Int
+	neq: Int
+	gt: Int
+	gte: Int
+	lt: Int
+	lte: Int
+	isNull: Boolean
+}
+input IntListComparator {
+	eq: [Int]
+	neq: [Int]
+	contains: [Int]
+	contained: [Int]
+	overlap: [Int]
+	isNull: Boolean
+}
+scalar Map
+input StringComparator {
+	eq: String
+	neq: String
+	contains: [String]
+	notContains: [String]
+	like: String
+	ilike: String
+	suffix: String
+	prefix: String
+	isNull: Boolean
+}
+input StringListComparator {
+	eq: [String]
+	neq: [String]
+	contains: [String]
+	containedBy: [String]
+	overlap: [String]
+	isNull: Boolean
+}
+type _AggregateResult {
+	count: Int!
+}
+enum _OrderingTypes {
+	ASC
+	DESC
+	ASC_NULL_FIRST
+	DESC_NULL_FIRST
+	ASC_NULL_LAST
+	DESC_NULL_LAST
+}
+enum _relationType {
+	ONE_TO_ONE
+	ONE_TO_MANY
+	MANY_TO_MANY
+}
+`, BuiltIn: false},
+	{Name: "../schema.graphql", Input: `type Person {
+	name: String
+}
+type Query {
+	person: Person!
+	user(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter user
+		"""
+		filter: UserFilterInput): [User] @generate
+	"""
+	user Aggregate
+	"""
+	_userAggregate(groupBy: [UserGroupBy!],
+		"""
+		Filter _userAggregate
+		"""
+		filter: UserFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for UsersAggregate
+		"""
+		orderBy: [UsersAggregateOrdering]): [UsersAggregate!]! @generate(filter: true)
+}
+type User @generateFilterInput {
+	name: String
+	age: Int
+	someInnerValue: User
+	someInnerValueList(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter someInnerValueList
+		"""
+		filter: UserFilterInput): [User]
+}
+`, BuiltIn: false},
+	{Name: "../custom.graphql", Input: `extend input StringComparator {
+	myCustomOperator: String!
 }
 `, BuiltIn: false},
 }

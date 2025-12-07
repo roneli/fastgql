@@ -32,9 +32,9 @@ func NewExecutor(pool *pgxpool.Pool, config *builders.Config) *Executor {
 	}
 }
 
-// Execute builds and runs a query based on GraphQL context, scanning into dest.
-func (e *Executor) Execute(ctx context.Context, dest any) error {
-	query, args, err := buildQuery(ctx, e.builder)
+// Query executes a read query and scans results into dest.
+func (e *Executor) Query(ctx context.Context, dest any) error {
+	query, args, err := buildReadQuery(ctx, e.builder)
 	if err != nil {
 		return err
 	}
@@ -56,9 +56,9 @@ func (e *Executor) Execute(ctx context.Context, dest any) error {
 	return pgxscan.ScanAll(dest, rows)
 }
 
-// ExecuteWithTypes handles interface types that need type discrimination.
-func (e *Executor) ExecuteWithTypes(ctx context.Context, dest any, types map[string]reflect.Type, typeKey string) error {
-	query, args, err := buildQuery(ctx, e.builder)
+// QueryWithTypes handles interface types that need type discrimination.
+func (e *Executor) QueryWithTypes(ctx context.Context, dest any, types map[string]reflect.Type, typeKey string) error {
+	query, args, err := buildReadQuery(ctx, e.builder)
 	if err != nil {
 		return err
 	}
@@ -81,13 +81,24 @@ func (e *Executor) ExecuteWithTypes(ctx context.Context, dest any, types map[str
 	return nil
 }
 
-// Close closes the connection pool.
-func (e *Executor) Close() error {
-	e.pool.Close()
-	return nil
+// Mutate executes a create/update/delete mutation and scans results into dest.
+func (e *Executor) Mutate(ctx context.Context, dest any) error {
+	query, args, err := buildMutationQuery(ctx, e.builder)
+	if err != nil {
+		return err
+	}
+
+	rows, err := e.pool.Query(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	// Mutations typically return a single row
+	return pgxscan.ScanOne(dest, rows)
 }
 
 // Dialect returns the SQL dialect name.
+// This is a helper method for introspection, not part of the Executor interface.
 func (e *Executor) Dialect() string {
 	return e.dialect
 }

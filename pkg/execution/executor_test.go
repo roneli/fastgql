@@ -60,39 +60,6 @@ func TestMultiExecutor_Register(t *testing.T) {
 	})
 }
 
-func TestMultiExecutor_Dialect(t *testing.T) {
-	schema := &ast.Schema{}
-	multi := NewMultiExecutor(schema, "postgres")
-
-	assert.Equal(t, "multi", multi.Dialect())
-}
-
-func TestMultiExecutor_Close(t *testing.T) {
-	schema := &ast.Schema{}
-	multi := NewMultiExecutor(schema, "postgres")
-
-	t.Run("close_empty", func(t *testing.T) {
-		err := multi.Close()
-		assert.NoError(t, err)
-	})
-
-	t.Run("close_with_executors", func(t *testing.T) {
-		multi.Register("postgres", &mockExecutor{dialect: "postgres"})
-		multi.Register("mysql", &mockExecutor{dialect: "mysql"})
-
-		err := multi.Close()
-		assert.NoError(t, err)
-	})
-
-	t.Run("close_with_error", func(t *testing.T) {
-		multi2 := NewMultiExecutor(schema, "postgres")
-		multi2.Register("failing", &mockExecutor{dialect: "failing", closeErr: assert.AnError})
-
-		err := multi2.Close()
-		assert.Error(t, err)
-	})
-}
-
 func TestMultiExecutor_getDialectForType(t *testing.T) {
 	schema := &ast.Schema{
 		Types: map[string]*ast.Definition{
@@ -173,22 +140,17 @@ func TestMultiExecutor_getDialectForType(t *testing.T) {
 
 // mockExecutor implements Executor interface for testing
 type mockExecutor struct {
-	dialect  string
-	closeErr error
+	dialect string
 }
 
-func (m *mockExecutor) Execute(_ context.Context, _ any) error {
+func (m *mockExecutor) Query(_ context.Context, _ any) error {
 	return nil
 }
 
-func (m *mockExecutor) ExecuteWithTypes(_ context.Context, _ any, _ map[string]reflect.Type, _ string) error {
+func (m *mockExecutor) QueryWithTypes(_ context.Context, _ any, _ map[string]reflect.Type, _ string) error {
 	return nil
 }
 
-func (m *mockExecutor) Close() error {
-	return m.closeErr
-}
-
-func (m *mockExecutor) Dialect() string {
-	return m.dialect
+func (m *mockExecutor) Mutate(_ context.Context, _ any) error {
+	return nil
 }
