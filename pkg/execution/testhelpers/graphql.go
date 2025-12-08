@@ -65,7 +65,11 @@ func (c *TestClient) execute(req GraphQLRequest) *GraphQLResponse {
 
 	resp, err := http.Post(c.server.URL, "application/json", bytes.NewReader(body))
 	require.NoError(c.t, err)
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			c.t.Error("failed to close response body", err)
+		}
+	}()
 
 	data, err := io.ReadAll(resp.Body)
 	require.NoError(c.t, err)
@@ -74,4 +78,3 @@ func (c *TestClient) execute(req GraphQLRequest) *GraphQLResponse {
 	require.NoError(c.t, json.Unmarshal(data, &gqlResp))
 	return &gqlResp
 }
-

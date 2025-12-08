@@ -3,6 +3,7 @@ package sql
 import (
 	"fmt"
 	"math/rand"
+	"slices"
 	"strings"
 	"unsafe"
 
@@ -459,7 +460,16 @@ func (b Builder) buildFilterLogicalExp(table tableHelper, astDefinition *ast.Def
 func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition, filters map[string]any) (goqu.Expression, error) {
 	filterInputDef := builders.GetFilterInput(b.Schema, astDefinition)
 	expBuilder := exp.NewExpressionList(exp.AndType)
-	for k, v := range filters {
+
+	// Sort filter keys for deterministic SQL generation
+	filterKeys := make([]string, 0, len(filters))
+	for k := range filters {
+		filterKeys = append(filterKeys, k)
+	}
+	slices.Sort(filterKeys)
+
+	for _, k := range filterKeys {
+		v := filters[k]
 		keyType := filterInputDef.Fields.ForName(k).Type
 		switch {
 		case k == string(builders.LogicalOperatorAND) || k == string(builders.LogicalOperatorOR):
@@ -510,7 +520,15 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			if !ok {
 				return nil, fmt.Errorf("fatal value of key not map")
 			}
-			for op, value := range opMap {
+			// Sort operator keys for deterministic SQL generation
+			opKeys := make([]string, 0, len(opMap))
+			for op := range opMap {
+				opKeys = append(opKeys, op)
+			}
+			slices.Sort(opKeys)
+
+			for _, op := range opKeys {
+				value := opMap[op]
 				opExp, err := b.buildOperation(table.table, k, op, value)
 				if err != nil {
 					return nil, err

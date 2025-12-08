@@ -344,8 +344,8 @@ func TestBuilder_Query_EdgeCases(t *testing.T) {
 			Name:              "multiple_filters_combined",
 			SchemaFile:        "testdata/schema_simple.graphql",
 			GraphQLQuery:      `query { users(filter: {name: {like: "%test%"}, id: {gt: 5}}) { name id } }`,
-			ExpectedSQL:       `SELECT "sq0"."name" AS "name", "sq0"."id" AS "id" FROM "app"."users" AS "sq0" WHERE (("sq0"."name" LIKE $1) AND ("sq0"."id" > $2)) LIMIT $3`,
-			ExpectedArguments: []interface{}{"%test%", int64(5), int64(100)},
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", "sq0"."id" AS "id" FROM "app"."users" AS "sq0" WHERE (("sq0"."id" > $1) AND ("sq0"."name" LIKE $2)) LIMIT $3`,
+			ExpectedArguments: []interface{}{int64(5), "%test%", int64(100)},
 		},
 	}
 	_ = os.Chdir("/testdata")
