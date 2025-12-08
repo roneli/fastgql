@@ -1,6 +1,0 @@
-root: ./docs/
-
-structure:
-    readme: ./base.md
-    summary: ./SUMMARY.md
-

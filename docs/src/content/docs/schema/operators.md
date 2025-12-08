@@ -4,25 +4,36 @@ description: fastGQL custom operators type
 ---
 
 FastGQL defines a set of operators that can be used to extend the schema. These operators are defined in the `fastgql.graphql` file.
-These operators are used to run filters and queries on the database. By default, FastGQL supports common operators:
+These operators are used to run filters and queries on the database.
+
+## Standard Operators
+
+By default, FastGQL supports these operators for scalar types (String, Int, Float, etc.):
 
 - `eq` - equals
-- `ne` - not equals
+- `neq` - not equals
 - `gt` - greater than
 - `lt` - less than
 - `gte` - greater than or equal
 - `lte` - less than or equal
 - `in` - in
-- `nin` - not in
-- `like` - like
-- `ilike` - ilike
+- `notIn` - not in
+- `like` - like (string matching with wildcards)
+- `ilike` - case-insensitive like
 - `isNull` - is null
-- `contains` - contains
-- `notContains` - not contains
-- `overlap` - overlap
-- `containedBy` - contained by
-- `suffix` - suffix
-- `prefix` - prefix
+- `suffix` - string ends with
+- `prefix` - string starts with
+
+## List/Array Operators
+
+The following operators are available specifically for list/array types (StringListComparator, IntListComparator, etc.):
+
+- `contains` - array contains value(s)
+- `notContains` - array does not contain value(s)
+- `overlap` - arrays have overlapping elements
+- `containedBy` - array is contained by another array
+
+**Note:** These list operators are NOT available for scalar comparators like StringComparator or IntComparator.
 
 ## Adding Custom Operators
 

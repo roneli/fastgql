@@ -1,44 +1,32 @@
-# Starlight Starter Kit: Basics
+# FastGQL Documentation
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+This directory contains the official documentation for FastGQL, built with [Starlight](https://starlight.astro.build) (Astro documentation framework).
 
-```
-npm create astro@latest -- --template starlight
-```
+The documentation is published at [https://www.fastgql.io](https://www.fastgql.io)
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/starlight/tree/main/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/starlight/tree/main/examples/basics)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fwithastro%2Fstarlight%2Ftree%2Fmain%2Fexamples%2Fbasics&project-name=my-starlight-docs&repository-name=my-starlight-docs)
-
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro + Starlight project, you'll see the following folders and files:
+## 📁 Project Structure
 
 ```
-.
-├── public/
+docs/
+├── public/              # Static assets (favicons, images, etc.)
 ├── src/
-│   ├── assets/
+│   ├── assets/         # Images and other assets used in documentation
 │   ├── content/
-│   │   ├── docs/
-│   │   └── config.ts
+│   │   ├── docs/       # Documentation markdown files
+│   │   │   ├── start/  # Getting started guides
+│   │   │   ├── schema/ # Schema and directives documentation
+│   │   │   ├── queries/# Query documentation
+│   │   │   └── reference/ # API reference
+│   │   └── config.ts   # Documentation configuration
 │   └── env.d.ts
-├── astro.config.mjs
+├── astro.config.mjs    # Astro configuration
 ├── package.json
 └── tsconfig.json
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+## 🚀 Commands
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
-
-Static assets, like favicons, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
+All commands should be run from the `docs/` directory:
 
 | Command                   | Action                                           |
 | :------------------------ | :----------------------------------------------- |
@@ -46,9 +34,33 @@ All commands are run from the root of the project, from a terminal:
 | `npm run dev`             | Starts local dev server at `localhost:4321`      |
 | `npm run build`           | Build your production site to `./dist/`          |
 | `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
 
-## 👀 Want to learn more?
+## 📝 Contributing to Documentation
 
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+Documentation files are located in `src/content/docs/` and are written in Markdown (`.md`) or MDX (`.mdx`) format.
+
+Each file is automatically exposed as a route based on its file path. For example:
+- `src/content/docs/start/setup.md` → `/start/setup`
+- `src/content/docs/schema/directives.md` → `/schema/directives`
+
+### Adding New Pages
+
+1. Create a new `.md` file in the appropriate directory under `src/content/docs/`
+2. Add frontmatter with `title` and `description`:
+   ```markdown
+   ---
+   title: Page Title
+   description: Page description
+   ---
+   ```
+3. Write your content in Markdown
+
+### Adding Images
+
+Images can be added to `src/assets/` and referenced in Markdown with relative paths.
+
+## 🔗 Links
+
+- [FastGQL Repository](https://github.com/roneli/fastgql)
+- [FastGQL Documentation](https://www.fastgql.io)
+- [Starlight Documentation](https://starlight.astro.build/)
