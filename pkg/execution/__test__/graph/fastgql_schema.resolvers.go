@@ -8,37 +8,38 @@ package graph
 import (
 	"context"
 
+	"github.com/roneli/fastgql/pkg/execution/__test__/graph/generated"
 	"github.com/roneli/fastgql/pkg/execution/__test__/graph/model"
 )
 
 // CreatePosts is the resolver for the createPosts field.
-func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model1.CreatePostInput) (*model1.PostsPayload, error) {
+func (r *mutationResolver) CreatePosts(ctx context.Context, inputs []model.CreatePostInput) (*model.PostsPayload, error) {
 	var data model.PostsPayload
-	if err := r.Executor.Execute(ctx, &data); err != nil {
+	if err := r.Executor.Mutate(ctx, &data); err != nil {
 		return nil, err
 	}
 	return &data, nil
 }
 
 // DeletePosts is the resolver for the deletePosts field.
-func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model1.PostFilterInput) (*model1.PostsPayload, error) {
+func (r *mutationResolver) DeletePosts(ctx context.Context, cascade *bool, filter *model.PostFilterInput) (*model.PostsPayload, error) {
 	var data model.PostsPayload
-	if err := r.Executor.Execute(ctx, &data); err != nil {
+	if err := r.Executor.Mutate(ctx, &data); err != nil {
 		return nil, err
 	}
 	return &data, nil
 }
 
 // UpdatePosts is the resolver for the updatePosts field.
-func (r *mutationResolver) UpdatePosts(ctx context.Context, input model1.UpdatePostInput, filter *model1.PostFilterInput) (*model1.PostsPayload, error) {
+func (r *mutationResolver) UpdatePosts(ctx context.Context, input model.UpdatePostInput, filter *model.PostFilterInput) (*model.PostsPayload, error) {
 	var data model.PostsPayload
-	if err := r.Executor.Execute(ctx, &data); err != nil {
+	if err := r.Executor.Mutate(ctx, &data); err != nil {
 		return nil, err
 	}
 	return &data, nil
 }
 
-// Mutation returns generated1.MutationResolver implementation.
-func (r *Resolver) Mutation() generated1.MutationResolver { return &mutationResolver{r} }
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 type mutationResolver struct{ *Resolver }
