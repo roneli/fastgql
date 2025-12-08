@@ -1,4 +1,4 @@
-package helpers
+package testhelpers
 
 import (
 	"context"
@@ -19,14 +19,14 @@ import (
 // or spins up a new Postgres container using testcontainers.
 func GetTestPostgresPool(ctx context.Context) (*pgxpool.Pool, func(), error) {
 	connStr := os.Getenv("TEST_DATABASE_URL")
-	var cleanup = func() {}
+	cleanup := func() {}
 
 	if connStr == "" {
 		// No connection string provided, spin up a test container
 		_, b, _, _ := runtime.Caller(0)
 		basepath := filepath.Dir(b)
-		// Navigate up from pkg/execution/test/helpers to root
-		rootDir := filepath.Join(basepath, "..", "..", "..", "..")
+		// Navigate up from pkg/execution/testhelpers to root
+		rootDir := filepath.Join(basepath, "..", "..", "..")
 		initScriptPath := filepath.Join(rootDir, ".github", "workflows", "data", "init.sql")
 
 		// Check for Ryuk disabled env var or try to auto-detect if we should disable it
@@ -36,15 +36,15 @@ func GetTestPostgresPool(ctx context.Context) (*pgxpool.Pool, func(), error) {
 		// Alternatively, setting TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true often fixes it by running Ryuk as privileged.
 
 		pgContainer, err := postgres.Run(ctx,
-			"postgres:latest",
+			"postgres:16",
 			postgres.WithInitScripts(initScriptPath),
-			postgres.WithDatabase("postgres"),
-			postgres.WithUsername("postgres"),
-			postgres.WithPassword("password"),
+			postgres.WithDatabase("testdb"),
+			postgres.WithUsername("testuser"),
+			postgres.WithPassword("testpass"),
 			testcontainers.WithWaitStrategy(
 				wait.ForLog("database system is ready to accept connections").
 					WithOccurrence(2).
-					WithStartupTimeout(5*time.Second)),
+					WithStartupTimeout(30*time.Second)),
 		)
 		if err != nil {
 			return nil, cleanup, fmt.Errorf("failed to start postgres container: %w", err)
@@ -74,4 +74,3 @@ func GetTestPostgresPool(ctx context.Context) (*pgxpool.Pool, func(), error) {
 		cleanup()
 	}, nil
 }
-

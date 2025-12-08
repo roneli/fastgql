@@ -55,6 +55,30 @@ type AnimalsAggregate struct {
 	Sum *AnimalSum `json:"sum" db:"sum"`
 }
 
+// Ordering for AnimalsAggregate
+type AnimalsAggregateOrdering struct {
+	// Order AnimalsAggregate by group
+	Group *OrderingTypes `json:"group,omitempty" db:"group"`
+	// Order AnimalsAggregate by count
+	Count *OrderingTypes `json:"count,omitempty" db:"count"`
+}
+
+// Aggregate AnimalsAggregate
+type AnimalsAggregatesAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *AnimalsAggregateMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *AnimalsAggregateMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *AnimalsAggregateAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *AnimalsAggregateSum `json:"sum" db:"sum"`
+}
+
 type BooleanComparator struct {
 	Eq     *bool `json:"eq,omitempty" db:"eq"`
 	Neq    *bool `json:"neq,omitempty" db:"neq"`
@@ -109,6 +133,30 @@ type CategoriesAggregate struct {
 	Avg *CategoryAvg `json:"avg" db:"avg"`
 	// Sum Aggregate
 	Sum *CategorySum `json:"sum" db:"sum"`
+}
+
+// Ordering for CategoriesAggregate
+type CategoriesAggregateOrdering struct {
+	// Order CategoriesAggregate by group
+	Group *OrderingTypes `json:"group,omitempty" db:"group"`
+	// Order CategoriesAggregate by count
+	Count *OrderingTypes `json:"count,omitempty" db:"count"`
+}
+
+// Aggregate CategoriesAggregate
+type CategoriesAggregatesAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *CategoriesAggregateMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *CategoriesAggregateMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *CategoriesAggregateAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *CategoriesAggregateSum `json:"sum" db:"sum"`
 }
 
 type Category struct {
@@ -250,6 +298,30 @@ type PostsAggregate struct {
 	Sum *PostSum `json:"sum" db:"sum"`
 }
 
+// Ordering for PostsAggregate
+type PostsAggregateOrdering struct {
+	// Order PostsAggregate by group
+	Group *OrderingTypes `json:"group,omitempty" db:"group"`
+	// Order PostsAggregate by count
+	Count *OrderingTypes `json:"count,omitempty" db:"count"`
+}
+
+// Aggregate PostsAggregate
+type PostsAggregatesAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *PostsAggregateMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *PostsAggregateMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *PostsAggregateAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *PostsAggregateSum `json:"sum" db:"sum"`
+}
+
 type Query struct {
 }
 
@@ -318,6 +390,30 @@ type UsersAggregate struct {
 	Sum *UserSum `json:"sum" db:"sum"`
 }
 
+// Ordering for UsersAggregate
+type UsersAggregateOrdering struct {
+	// Order UsersAggregate by group
+	Group *OrderingTypes `json:"group,omitempty" db:"group"`
+	// Order UsersAggregate by count
+	Count *OrderingTypes `json:"count,omitempty" db:"count"`
+}
+
+// Aggregate UsersAggregate
+type UsersAggregatesAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *UsersAggregateMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *UsersAggregateMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *UsersAggregateAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *UsersAggregateSum `json:"sum" db:"sum"`
+}
+
 type AggregateResult struct {
 	Count int `json:"count" db:"count"`
 }
@@ -352,6 +448,54 @@ type AnimalMin struct {
 type AnimalSum struct {
 	// Compute the sum for id
 	ID float64 `json:"id" db:"id"`
+}
+
+// avg Aggregate
+type AnimalsAggregateAvg struct {
+	// Compute the avg for count
+	Count float64 `json:"count" db:"count"`
+}
+
+// max Aggregate
+type AnimalsAggregateMax struct {
+	// Compute the max for count
+	Count int `json:"count" db:"count"`
+}
+
+// min Aggregate
+type AnimalsAggregateMin struct {
+	// Compute the min for count
+	Count int `json:"count" db:"count"`
+}
+
+// sum Aggregate
+type AnimalsAggregateSum struct {
+	// Compute the sum for count
+	Count float64 `json:"count" db:"count"`
+}
+
+// avg Aggregate
+type CategoriesAggregateAvg struct {
+	// Compute the avg for count
+	Count float64 `json:"count" db:"count"`
+}
+
+// max Aggregate
+type CategoriesAggregateMax struct {
+	// Compute the max for count
+	Count int `json:"count" db:"count"`
+}
+
+// min Aggregate
+type CategoriesAggregateMin struct {
+	// Compute the min for count
+	Count int `json:"count" db:"count"`
+}
+
+// sum Aggregate
+type CategoriesAggregateSum struct {
+	// Compute the sum for count
+	Count float64 `json:"count" db:"count"`
 }
 
 // avg Aggregate
@@ -419,6 +563,30 @@ type PostSum struct {
 }
 
 // avg Aggregate
+type PostsAggregateAvg struct {
+	// Compute the avg for count
+	Count float64 `json:"count" db:"count"`
+}
+
+// max Aggregate
+type PostsAggregateMax struct {
+	// Compute the max for count
+	Count int `json:"count" db:"count"`
+}
+
+// min Aggregate
+type PostsAggregateMin struct {
+	// Compute the min for count
+	Count int `json:"count" db:"count"`
+}
+
+// sum Aggregate
+type PostsAggregateSum struct {
+	// Compute the sum for count
+	Count float64 `json:"count" db:"count"`
+}
+
+// avg Aggregate
 type UserAvg struct {
 	// Compute the avg for id
 	ID float64 `json:"id" db:"id"`
@@ -444,6 +612,30 @@ type UserMin struct {
 type UserSum struct {
 	// Compute the sum for id
 	ID float64 `json:"id" db:"id"`
+}
+
+// avg Aggregate
+type UsersAggregateAvg struct {
+	// Compute the avg for count
+	Count float64 `json:"count" db:"count"`
+}
+
+// max Aggregate
+type UsersAggregateMax struct {
+	// Compute the max for count
+	Count int `json:"count" db:"count"`
+}
+
+// min Aggregate
+type UsersAggregateMin struct {
+	// Compute the min for count
+	Count int `json:"count" db:"count"`
+}
+
+// sum Aggregate
+type UsersAggregateSum struct {
+	// Compute the sum for count
+	Count float64 `json:"count" db:"count"`
 }
 
 // Group by Animal
@@ -502,6 +694,122 @@ func (e *AnimalGroupBy) UnmarshalJSON(b []byte) error {
 }
 
 func (e AnimalGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Group by AnimalsAggregate
+type AnimalsAggregateGroupBy string
+
+const (
+	// Group by group
+	AnimalsAggregateGroupByGroup AnimalsAggregateGroupBy = "GROUP"
+	// Group by count
+	AnimalsAggregateGroupByCount AnimalsAggregateGroupBy = "COUNT"
+)
+
+var AllAnimalsAggregateGroupBy = []AnimalsAggregateGroupBy{
+	AnimalsAggregateGroupByGroup,
+	AnimalsAggregateGroupByCount,
+}
+
+func (e AnimalsAggregateGroupBy) IsValid() bool {
+	switch e {
+	case AnimalsAggregateGroupByGroup, AnimalsAggregateGroupByCount:
+		return true
+	}
+	return false
+}
+
+func (e AnimalsAggregateGroupBy) String() string {
+	return string(e)
+}
+
+func (e *AnimalsAggregateGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AnimalsAggregateGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AnimalsAggregateGroupBy", str)
+	}
+	return nil
+}
+
+func (e AnimalsAggregateGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AnimalsAggregateGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AnimalsAggregateGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Group by CategoriesAggregate
+type CategoriesAggregateGroupBy string
+
+const (
+	// Group by group
+	CategoriesAggregateGroupByGroup CategoriesAggregateGroupBy = "GROUP"
+	// Group by count
+	CategoriesAggregateGroupByCount CategoriesAggregateGroupBy = "COUNT"
+)
+
+var AllCategoriesAggregateGroupBy = []CategoriesAggregateGroupBy{
+	CategoriesAggregateGroupByGroup,
+	CategoriesAggregateGroupByCount,
+}
+
+func (e CategoriesAggregateGroupBy) IsValid() bool {
+	switch e {
+	case CategoriesAggregateGroupByGroup, CategoriesAggregateGroupByCount:
+		return true
+	}
+	return false
+}
+
+func (e CategoriesAggregateGroupBy) String() string {
+	return string(e)
+}
+
+func (e *CategoriesAggregateGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CategoriesAggregateGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CategoriesAggregateGroupBy", str)
+	}
+	return nil
+}
+
+func (e CategoriesAggregateGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *CategoriesAggregateGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e CategoriesAggregateGroupBy) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil
@@ -626,6 +934,64 @@ func (e PostGroupBy) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Group by PostsAggregate
+type PostsAggregateGroupBy string
+
+const (
+	// Group by group
+	PostsAggregateGroupByGroup PostsAggregateGroupBy = "GROUP"
+	// Group by count
+	PostsAggregateGroupByCount PostsAggregateGroupBy = "COUNT"
+)
+
+var AllPostsAggregateGroupBy = []PostsAggregateGroupBy{
+	PostsAggregateGroupByGroup,
+	PostsAggregateGroupByCount,
+}
+
+func (e PostsAggregateGroupBy) IsValid() bool {
+	switch e {
+	case PostsAggregateGroupByGroup, PostsAggregateGroupByCount:
+		return true
+	}
+	return false
+}
+
+func (e PostsAggregateGroupBy) String() string {
+	return string(e)
+}
+
+func (e *PostsAggregateGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PostsAggregateGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PostsAggregateGroupBy", str)
+	}
+	return nil
+}
+
+func (e PostsAggregateGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *PostsAggregateGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e PostsAggregateGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // Group by User
 type UserGroupBy string
 
@@ -679,6 +1045,64 @@ func (e *UserGroupBy) UnmarshalJSON(b []byte) error {
 }
 
 func (e UserGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Group by UsersAggregate
+type UsersAggregateGroupBy string
+
+const (
+	// Group by group
+	UsersAggregateGroupByGroup UsersAggregateGroupBy = "GROUP"
+	// Group by count
+	UsersAggregateGroupByCount UsersAggregateGroupBy = "COUNT"
+)
+
+var AllUsersAggregateGroupBy = []UsersAggregateGroupBy{
+	UsersAggregateGroupByGroup,
+	UsersAggregateGroupByCount,
+}
+
+func (e UsersAggregateGroupBy) IsValid() bool {
+	switch e {
+	case UsersAggregateGroupByGroup, UsersAggregateGroupByCount:
+		return true
+	}
+	return false
+}
+
+func (e UsersAggregateGroupBy) String() string {
+	return string(e)
+}
+
+func (e *UsersAggregateGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UsersAggregateGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UsersAggregateGroupBy", str)
+	}
+	return nil
+}
+
+func (e UsersAggregateGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *UsersAggregateGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e UsersAggregateGroupBy) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

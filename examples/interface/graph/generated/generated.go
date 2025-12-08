@@ -56,6 +56,15 @@ type ComplexityRoot struct {
 		Sum   func(childComplexity int) int
 	}
 
+	AnimalsAggregatesAggregate struct {
+		Avg   func(childComplexity int) int
+		Count func(childComplexity int) int
+		Group func(childComplexity int) int
+		Max   func(childComplexity int) int
+		Min   func(childComplexity int) int
+		Sum   func(childComplexity int) int
+	}
+
 	Cat struct {
 		Color func(childComplexity int) int
 		ID    func(childComplexity int) int
@@ -64,6 +73,15 @@ type ComplexityRoot struct {
 	}
 
 	CategoriesAggregate struct {
+		Avg   func(childComplexity int) int
+		Count func(childComplexity int) int
+		Group func(childComplexity int) int
+		Max   func(childComplexity int) int
+		Min   func(childComplexity int) int
+		Sum   func(childComplexity int) int
+	}
+
+	CategoriesAggregatesAggregate struct {
 		Avg   func(childComplexity int) int
 		Count func(childComplexity int) int
 		Group func(childComplexity int) int
@@ -86,11 +104,11 @@ type ComplexityRoot struct {
 
 	Post struct {
 		Categories          func(childComplexity int, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) int
-		CategoriesAggregate func(childComplexity int, groupBy []model.CategoryGroupBy, filter *model.CategoryFilterInput) int
+		CategoriesAggregate func(childComplexity int, groupBy []model.CategoryGroupBy, filter *model.CategoryFilterInput, limit *int, offset *int, orderBy []*model.CategoriesAggregateOrdering) int
 		ID                  func(childComplexity int) int
 		Name                func(childComplexity int) int
 		User                func(childComplexity int) int
-		UserAggregate       func(childComplexity int, groupBy []model.UserGroupBy, filter *model.UserFilterInput) int
+		UserAggregate       func(childComplexity int, groupBy []model.UserGroupBy, filter *model.UserFilterInput, limit *int, offset *int, orderBy []*model.UsersAggregateOrdering) int
 		UserID              func(childComplexity int) int
 	}
 
@@ -103,25 +121,43 @@ type ComplexityRoot struct {
 		Sum   func(childComplexity int) int
 	}
 
+	PostsAggregatesAggregate struct {
+		Avg   func(childComplexity int) int
+		Count func(childComplexity int) int
+		Group func(childComplexity int) int
+		Max   func(childComplexity int) int
+		Min   func(childComplexity int) int
+		Sum   func(childComplexity int) int
+	}
+
 	Query struct {
 		Animals             func(childComplexity int, limit *int, offset *int, orderBy []*model.AnimalOrdering, filter *model.AnimalFilterInput) int
-		AnimalsAggregate    func(childComplexity int, groupBy []model.AnimalGroupBy, filter *model.AnimalFilterInput) int
+		AnimalsAggregate    func(childComplexity int, groupBy []model.AnimalGroupBy, filter *model.AnimalFilterInput, limit *int, offset *int, orderBy []*model.AnimalsAggregateOrdering) int
 		Categories          func(childComplexity int, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) int
-		CategoriesAggregate func(childComplexity int, groupBy []model.CategoryGroupBy, filter *model.CategoryFilterInput) int
+		CategoriesAggregate func(childComplexity int, groupBy []model.CategoryGroupBy, filter *model.CategoryFilterInput, limit *int, offset *int, orderBy []*model.CategoriesAggregateOrdering) int
 		Posts               func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
-		PostsAggregate      func(childComplexity int, groupBy []model.PostGroupBy, filter *model.PostFilterInput) int
+		PostsAggregate      func(childComplexity int, groupBy []model.PostGroupBy, filter *model.PostFilterInput, limit *int, offset *int, orderBy []*model.PostsAggregateOrdering) int
 		Users               func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
-		UsersAggregate      func(childComplexity int, groupBy []model.UserGroupBy, filter *model.UserFilterInput) int
+		UsersAggregate      func(childComplexity int, groupBy []model.UserGroupBy, filter *model.UserFilterInput, limit *int, offset *int, orderBy []*model.UsersAggregateOrdering) int
 	}
 
 	User struct {
 		ID             func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Posts          func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
-		PostsAggregate func(childComplexity int, groupBy []model.PostGroupBy, filter *model.PostFilterInput) int
+		PostsAggregate func(childComplexity int, groupBy []model.PostGroupBy, filter *model.PostFilterInput, limit *int, offset *int, orderBy []*model.PostsAggregateOrdering) int
 	}
 
 	UsersAggregate struct {
+		Avg   func(childComplexity int) int
+		Count func(childComplexity int) int
+		Group func(childComplexity int) int
+		Max   func(childComplexity int) int
+		Min   func(childComplexity int) int
+		Sum   func(childComplexity int) int
+	}
+
+	UsersAggregatesAggregate struct {
 		Avg   func(childComplexity int) int
 		Count func(childComplexity int) int
 		Group func(childComplexity int) int
@@ -152,6 +188,38 @@ type ComplexityRoot struct {
 
 	_AnimalSum struct {
 		ID func(childComplexity int) int
+	}
+
+	_AnimalsAggregateAvg struct {
+		Count func(childComplexity int) int
+	}
+
+	_AnimalsAggregateMax struct {
+		Count func(childComplexity int) int
+	}
+
+	_AnimalsAggregateMin struct {
+		Count func(childComplexity int) int
+	}
+
+	_AnimalsAggregateSum struct {
+		Count func(childComplexity int) int
+	}
+
+	_CategoriesAggregateAvg struct {
+		Count func(childComplexity int) int
+	}
+
+	_CategoriesAggregateMax struct {
+		Count func(childComplexity int) int
+	}
+
+	_CategoriesAggregateMin struct {
+		Count func(childComplexity int) int
+	}
+
+	_CategoriesAggregateSum struct {
+		Count func(childComplexity int) int
 	}
 
 	_CategoryAvg struct {
@@ -194,6 +262,22 @@ type ComplexityRoot struct {
 		UserID func(childComplexity int) int
 	}
 
+	_PostsAggregateAvg struct {
+		Count func(childComplexity int) int
+	}
+
+	_PostsAggregateMax struct {
+		Count func(childComplexity int) int
+	}
+
+	_PostsAggregateMin struct {
+		Count func(childComplexity int) int
+	}
+
+	_PostsAggregateSum struct {
+		Count func(childComplexity int) int
+	}
+
 	_UserAvg struct {
 		ID func(childComplexity int) int
 	}
@@ -211,6 +295,22 @@ type ComplexityRoot struct {
 	_UserSum struct {
 		ID func(childComplexity int) int
 	}
+
+	_UsersAggregateAvg struct {
+		Count func(childComplexity int) int
+	}
+
+	_UsersAggregateMax struct {
+		Count func(childComplexity int) int
+	}
+
+	_UsersAggregateMin struct {
+		Count func(childComplexity int) int
+	}
+
+	_UsersAggregateSum struct {
+		Count func(childComplexity int) int
+	}
 }
 
 type QueryResolver interface {
@@ -218,10 +318,10 @@ type QueryResolver interface {
 	Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
 	Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error)
 	Animals(ctx context.Context, limit *int, offset *int, orderBy []*model.AnimalOrdering, filter *model.AnimalFilterInput) ([]model.Animal, error)
-	PostsAggregate(ctx context.Context, groupBy []model.PostGroupBy, filter *model.PostFilterInput) ([]*model.PostsAggregate, error)
-	UsersAggregate(ctx context.Context, groupBy []model.UserGroupBy, filter *model.UserFilterInput) ([]*model.UsersAggregate, error)
-	CategoriesAggregate(ctx context.Context, groupBy []model.CategoryGroupBy, filter *model.CategoryFilterInput) ([]*model.CategoriesAggregate, error)
-	AnimalsAggregate(ctx context.Context, groupBy []model.AnimalGroupBy, filter *model.AnimalFilterInput) ([]*model.AnimalsAggregate, error)
+	PostsAggregate(ctx context.Context, groupBy []model.PostGroupBy, filter *model.PostFilterInput, limit *int, offset *int, orderBy []*model.PostsAggregateOrdering) ([]*model.PostsAggregate, error)
+	UsersAggregate(ctx context.Context, groupBy []model.UserGroupBy, filter *model.UserFilterInput, limit *int, offset *int, orderBy []*model.UsersAggregateOrdering) ([]*model.UsersAggregate, error)
+	CategoriesAggregate(ctx context.Context, groupBy []model.CategoryGroupBy, filter *model.CategoryFilterInput, limit *int, offset *int, orderBy []*model.CategoriesAggregateOrdering) ([]*model.CategoriesAggregate, error)
+	AnimalsAggregate(ctx context.Context, groupBy []model.AnimalGroupBy, filter *model.AnimalFilterInput, limit *int, offset *int, orderBy []*model.AnimalsAggregateOrdering) ([]*model.AnimalsAggregate, error)
 }
 
 type executableSchema struct {
@@ -279,6 +379,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AnimalsAggregate.Sum(childComplexity), true
+
+	case "AnimalsAggregatesAggregate.avg":
+		if e.complexity.AnimalsAggregatesAggregate.Avg == nil {
+			break
+		}
+
+		return e.complexity.AnimalsAggregatesAggregate.Avg(childComplexity), true
+	case "AnimalsAggregatesAggregate.count":
+		if e.complexity.AnimalsAggregatesAggregate.Count == nil {
+			break
+		}
+
+		return e.complexity.AnimalsAggregatesAggregate.Count(childComplexity), true
+	case "AnimalsAggregatesAggregate.group":
+		if e.complexity.AnimalsAggregatesAggregate.Group == nil {
+			break
+		}
+
+		return e.complexity.AnimalsAggregatesAggregate.Group(childComplexity), true
+	case "AnimalsAggregatesAggregate.max":
+		if e.complexity.AnimalsAggregatesAggregate.Max == nil {
+			break
+		}
+
+		return e.complexity.AnimalsAggregatesAggregate.Max(childComplexity), true
+	case "AnimalsAggregatesAggregate.min":
+		if e.complexity.AnimalsAggregatesAggregate.Min == nil {
+			break
+		}
+
+		return e.complexity.AnimalsAggregatesAggregate.Min(childComplexity), true
+	case "AnimalsAggregatesAggregate.sum":
+		if e.complexity.AnimalsAggregatesAggregate.Sum == nil {
+			break
+		}
+
+		return e.complexity.AnimalsAggregatesAggregate.Sum(childComplexity), true
 
 	case "Cat.color":
 		if e.complexity.Cat.Color == nil {
@@ -342,6 +479,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.CategoriesAggregate.Sum(childComplexity), true
 
+	case "CategoriesAggregatesAggregate.avg":
+		if e.complexity.CategoriesAggregatesAggregate.Avg == nil {
+			break
+		}
+
+		return e.complexity.CategoriesAggregatesAggregate.Avg(childComplexity), true
+	case "CategoriesAggregatesAggregate.count":
+		if e.complexity.CategoriesAggregatesAggregate.Count == nil {
+			break
+		}
+
+		return e.complexity.CategoriesAggregatesAggregate.Count(childComplexity), true
+	case "CategoriesAggregatesAggregate.group":
+		if e.complexity.CategoriesAggregatesAggregate.Group == nil {
+			break
+		}
+
+		return e.complexity.CategoriesAggregatesAggregate.Group(childComplexity), true
+	case "CategoriesAggregatesAggregate.max":
+		if e.complexity.CategoriesAggregatesAggregate.Max == nil {
+			break
+		}
+
+		return e.complexity.CategoriesAggregatesAggregate.Max(childComplexity), true
+	case "CategoriesAggregatesAggregate.min":
+		if e.complexity.CategoriesAggregatesAggregate.Min == nil {
+			break
+		}
+
+		return e.complexity.CategoriesAggregatesAggregate.Min(childComplexity), true
+	case "CategoriesAggregatesAggregate.sum":
+		if e.complexity.CategoriesAggregatesAggregate.Sum == nil {
+			break
+		}
+
+		return e.complexity.CategoriesAggregatesAggregate.Sum(childComplexity), true
+
 	case "Category.id":
 		if e.complexity.Category.ID == nil {
 			break
@@ -401,7 +575,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Post.CategoriesAggregate(childComplexity, args["groupBy"].([]model.CategoryGroupBy), args["filter"].(*model.CategoryFilterInput)), true
+		return e.complexity.Post.CategoriesAggregate(childComplexity, args["groupBy"].([]model.CategoryGroupBy), args["filter"].(*model.CategoryFilterInput), args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.CategoriesAggregateOrdering)), true
 	case "Post.id":
 		if e.complexity.Post.ID == nil {
 			break
@@ -430,7 +604,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Post.UserAggregate(childComplexity, args["groupBy"].([]model.UserGroupBy), args["filter"].(*model.UserFilterInput)), true
+		return e.complexity.Post.UserAggregate(childComplexity, args["groupBy"].([]model.UserGroupBy), args["filter"].(*model.UserFilterInput), args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UsersAggregateOrdering)), true
 	case "Post.user_id":
 		if e.complexity.Post.UserID == nil {
 			break
@@ -475,6 +649,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PostsAggregate.Sum(childComplexity), true
 
+	case "PostsAggregatesAggregate.avg":
+		if e.complexity.PostsAggregatesAggregate.Avg == nil {
+			break
+		}
+
+		return e.complexity.PostsAggregatesAggregate.Avg(childComplexity), true
+	case "PostsAggregatesAggregate.count":
+		if e.complexity.PostsAggregatesAggregate.Count == nil {
+			break
+		}
+
+		return e.complexity.PostsAggregatesAggregate.Count(childComplexity), true
+	case "PostsAggregatesAggregate.group":
+		if e.complexity.PostsAggregatesAggregate.Group == nil {
+			break
+		}
+
+		return e.complexity.PostsAggregatesAggregate.Group(childComplexity), true
+	case "PostsAggregatesAggregate.max":
+		if e.complexity.PostsAggregatesAggregate.Max == nil {
+			break
+		}
+
+		return e.complexity.PostsAggregatesAggregate.Max(childComplexity), true
+	case "PostsAggregatesAggregate.min":
+		if e.complexity.PostsAggregatesAggregate.Min == nil {
+			break
+		}
+
+		return e.complexity.PostsAggregatesAggregate.Min(childComplexity), true
+	case "PostsAggregatesAggregate.sum":
+		if e.complexity.PostsAggregatesAggregate.Sum == nil {
+			break
+		}
+
+		return e.complexity.PostsAggregatesAggregate.Sum(childComplexity), true
+
 	case "Query.animals":
 		if e.complexity.Query.Animals == nil {
 			break
@@ -496,7 +707,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.AnimalsAggregate(childComplexity, args["groupBy"].([]model.AnimalGroupBy), args["filter"].(*model.AnimalFilterInput)), true
+		return e.complexity.Query.AnimalsAggregate(childComplexity, args["groupBy"].([]model.AnimalGroupBy), args["filter"].(*model.AnimalFilterInput), args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.AnimalsAggregateOrdering)), true
 	case "Query.categories":
 		if e.complexity.Query.Categories == nil {
 			break
@@ -518,7 +729,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.CategoriesAggregate(childComplexity, args["groupBy"].([]model.CategoryGroupBy), args["filter"].(*model.CategoryFilterInput)), true
+		return e.complexity.Query.CategoriesAggregate(childComplexity, args["groupBy"].([]model.CategoryGroupBy), args["filter"].(*model.CategoryFilterInput), args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.CategoriesAggregateOrdering)), true
 	case "Query.posts":
 		if e.complexity.Query.Posts == nil {
 			break
@@ -540,7 +751,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.PostsAggregate(childComplexity, args["groupBy"].([]model.PostGroupBy), args["filter"].(*model.PostFilterInput)), true
+		return e.complexity.Query.PostsAggregate(childComplexity, args["groupBy"].([]model.PostGroupBy), args["filter"].(*model.PostFilterInput), args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.PostsAggregateOrdering)), true
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
 			break
@@ -562,7 +773,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.UsersAggregate(childComplexity, args["groupBy"].([]model.UserGroupBy), args["filter"].(*model.UserFilterInput)), true
+		return e.complexity.Query.UsersAggregate(childComplexity, args["groupBy"].([]model.UserGroupBy), args["filter"].(*model.UserFilterInput), args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.UsersAggregateOrdering)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -597,7 +808,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.User.PostsAggregate(childComplexity, args["groupBy"].([]model.PostGroupBy), args["filter"].(*model.PostFilterInput)), true
+		return e.complexity.User.PostsAggregate(childComplexity, args["groupBy"].([]model.PostGroupBy), args["filter"].(*model.PostFilterInput), args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.PostsAggregateOrdering)), true
 
 	case "UsersAggregate.avg":
 		if e.complexity.UsersAggregate.Avg == nil {
@@ -635,6 +846,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.UsersAggregate.Sum(childComplexity), true
+
+	case "UsersAggregatesAggregate.avg":
+		if e.complexity.UsersAggregatesAggregate.Avg == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Avg(childComplexity), true
+	case "UsersAggregatesAggregate.count":
+		if e.complexity.UsersAggregatesAggregate.Count == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Count(childComplexity), true
+	case "UsersAggregatesAggregate.group":
+		if e.complexity.UsersAggregatesAggregate.Group == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Group(childComplexity), true
+	case "UsersAggregatesAggregate.max":
+		if e.complexity.UsersAggregatesAggregate.Max == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Max(childComplexity), true
+	case "UsersAggregatesAggregate.min":
+		if e.complexity.UsersAggregatesAggregate.Min == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Min(childComplexity), true
+	case "UsersAggregatesAggregate.sum":
+		if e.complexity.UsersAggregatesAggregate.Sum == nil {
+			break
+		}
+
+		return e.complexity.UsersAggregatesAggregate.Sum(childComplexity), true
 
 	case "_AggregateResult.count":
 		if e.complexity._AggregateResult.Count == nil {
@@ -694,6 +942,62 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity._AnimalSum.ID(childComplexity), true
+
+	case "_AnimalsAggregateAvg.count":
+		if e.complexity._AnimalsAggregateAvg.Count == nil {
+			break
+		}
+
+		return e.complexity._AnimalsAggregateAvg.Count(childComplexity), true
+
+	case "_AnimalsAggregateMax.count":
+		if e.complexity._AnimalsAggregateMax.Count == nil {
+			break
+		}
+
+		return e.complexity._AnimalsAggregateMax.Count(childComplexity), true
+
+	case "_AnimalsAggregateMin.count":
+		if e.complexity._AnimalsAggregateMin.Count == nil {
+			break
+		}
+
+		return e.complexity._AnimalsAggregateMin.Count(childComplexity), true
+
+	case "_AnimalsAggregateSum.count":
+		if e.complexity._AnimalsAggregateSum.Count == nil {
+			break
+		}
+
+		return e.complexity._AnimalsAggregateSum.Count(childComplexity), true
+
+	case "_CategoriesAggregateAvg.count":
+		if e.complexity._CategoriesAggregateAvg.Count == nil {
+			break
+		}
+
+		return e.complexity._CategoriesAggregateAvg.Count(childComplexity), true
+
+	case "_CategoriesAggregateMax.count":
+		if e.complexity._CategoriesAggregateMax.Count == nil {
+			break
+		}
+
+		return e.complexity._CategoriesAggregateMax.Count(childComplexity), true
+
+	case "_CategoriesAggregateMin.count":
+		if e.complexity._CategoriesAggregateMin.Count == nil {
+			break
+		}
+
+		return e.complexity._CategoriesAggregateMin.Count(childComplexity), true
+
+	case "_CategoriesAggregateSum.count":
+		if e.complexity._CategoriesAggregateSum.Count == nil {
+			break
+		}
+
+		return e.complexity._CategoriesAggregateSum.Count(childComplexity), true
 
 	case "_CategoryAvg.id":
 		if e.complexity._CategoryAvg.ID == nil {
@@ -799,6 +1103,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity._PostSum.UserID(childComplexity), true
 
+	case "_PostsAggregateAvg.count":
+		if e.complexity._PostsAggregateAvg.Count == nil {
+			break
+		}
+
+		return e.complexity._PostsAggregateAvg.Count(childComplexity), true
+
+	case "_PostsAggregateMax.count":
+		if e.complexity._PostsAggregateMax.Count == nil {
+			break
+		}
+
+		return e.complexity._PostsAggregateMax.Count(childComplexity), true
+
+	case "_PostsAggregateMin.count":
+		if e.complexity._PostsAggregateMin.Count == nil {
+			break
+		}
+
+		return e.complexity._PostsAggregateMin.Count(childComplexity), true
+
+	case "_PostsAggregateSum.count":
+		if e.complexity._PostsAggregateSum.Count == nil {
+			break
+		}
+
+		return e.complexity._PostsAggregateSum.Count(childComplexity), true
+
 	case "_UserAvg.id":
 		if e.complexity._UserAvg.ID == nil {
 			break
@@ -839,6 +1171,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity._UserSum.ID(childComplexity), true
 
+	case "_UsersAggregateAvg.count":
+		if e.complexity._UsersAggregateAvg.Count == nil {
+			break
+		}
+
+		return e.complexity._UsersAggregateAvg.Count(childComplexity), true
+
+	case "_UsersAggregateMax.count":
+		if e.complexity._UsersAggregateMax.Count == nil {
+			break
+		}
+
+		return e.complexity._UsersAggregateMax.Count(childComplexity), true
+
+	case "_UsersAggregateMin.count":
+		if e.complexity._UsersAggregateMin.Count == nil {
+			break
+		}
+
+		return e.complexity._UsersAggregateMin.Count(childComplexity), true
+
+	case "_UsersAggregateSum.count":
+		if e.complexity._UsersAggregateSum.Count == nil {
+			break
+		}
+
+		return e.complexity._UsersAggregateSum.Count(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -849,9 +1209,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputAnimalFilterInput,
 		ec.unmarshalInputAnimalOrdering,
+		ec.unmarshalInputAnimalsAggregateOrdering,
 		ec.unmarshalInputBooleanComparator,
 		ec.unmarshalInputBooleanListComparator,
 		ec.unmarshalInputCatFilterInput,
+		ec.unmarshalInputCategoriesAggregateOrdering,
 		ec.unmarshalInputCategoryFilterInput,
 		ec.unmarshalInputCategoryOrdering,
 		ec.unmarshalInputDogFilterInput,
@@ -861,10 +1223,12 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputIntListComparator,
 		ec.unmarshalInputPostFilterInput,
 		ec.unmarshalInputPostOrdering,
+		ec.unmarshalInputPostsAggregateOrdering,
 		ec.unmarshalInputStringComparator,
 		ec.unmarshalInputStringListComparator,
 		ec.unmarshalInputUserFilterInput,
 		ec.unmarshalInputUserOrdering,
+		ec.unmarshalInputUsersAggregateOrdering,
 	)
 	first := true
 
@@ -1029,6 +1393,61 @@ type AnimalsAggregate {
 	"""
 	sum: _AnimalSum!
 }
+"""
+Group by AnimalsAggregate
+"""
+enum AnimalsAggregateGroupBy {
+	"""
+	Group by group
+	"""
+	GROUP
+	"""
+	Group by count
+	"""
+	COUNT
+}
+"""
+Ordering for AnimalsAggregate
+"""
+input AnimalsAggregateOrdering {
+	"""
+	Order AnimalsAggregate by group
+	"""
+	group: _OrderingTypes
+	"""
+	Order AnimalsAggregate by count
+	"""
+	count: _OrderingTypes
+}
+"""
+Aggregate AnimalsAggregate
+"""
+type AnimalsAggregatesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _AnimalsAggregateMax!
+	"""
+	Min Aggregate
+	"""
+	min: _AnimalsAggregateMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _AnimalsAggregateAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _AnimalsAggregateSum!
+}
 input CatFilterInput {
 	id: IntComparator
 	name: StringComparator
@@ -1075,6 +1494,61 @@ type CategoriesAggregate {
 	Sum Aggregate
 	"""
 	sum: _CategorySum!
+}
+"""
+Group by CategoriesAggregate
+"""
+enum CategoriesAggregateGroupBy {
+	"""
+	Group by group
+	"""
+	GROUP
+	"""
+	Group by count
+	"""
+	COUNT
+}
+"""
+Ordering for CategoriesAggregate
+"""
+input CategoriesAggregateOrdering {
+	"""
+	Order CategoriesAggregate by group
+	"""
+	group: _OrderingTypes
+	"""
+	Order CategoriesAggregate by count
+	"""
+	count: _OrderingTypes
+}
+"""
+Aggregate CategoriesAggregate
+"""
+type CategoriesAggregatesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _CategoriesAggregateMax!
+	"""
+	Min Aggregate
+	"""
+	min: _CategoriesAggregateMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _CategoriesAggregateAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _CategoriesAggregateSum!
 }
 input CategoryFilterInput {
 	id: IntComparator
@@ -1218,6 +1692,61 @@ type PostsAggregate {
 	"""
 	sum: _PostSum!
 }
+"""
+Group by PostsAggregate
+"""
+enum PostsAggregateGroupBy {
+	"""
+	Group by group
+	"""
+	GROUP
+	"""
+	Group by count
+	"""
+	COUNT
+}
+"""
+Ordering for PostsAggregate
+"""
+input PostsAggregateOrdering {
+	"""
+	Order PostsAggregate by group
+	"""
+	group: _OrderingTypes
+	"""
+	Order PostsAggregate by count
+	"""
+	count: _OrderingTypes
+}
+"""
+Aggregate PostsAggregate
+"""
+type PostsAggregatesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _PostsAggregateMax!
+	"""
+	Min Aggregate
+	"""
+	min: _PostsAggregateMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _PostsAggregateAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _PostsAggregateSum!
+}
 input UserFilterInput {
 	id: IntComparator
 	name: StringComparator
@@ -1291,6 +1820,61 @@ type UsersAggregate {
 	sum: _UserSum!
 }
 """
+Group by UsersAggregate
+"""
+enum UsersAggregateGroupBy {
+	"""
+	Group by group
+	"""
+	GROUP
+	"""
+	Group by count
+	"""
+	COUNT
+}
+"""
+Ordering for UsersAggregate
+"""
+input UsersAggregateOrdering {
+	"""
+	Order UsersAggregate by group
+	"""
+	group: _OrderingTypes
+	"""
+	Order UsersAggregate by count
+	"""
+	count: _OrderingTypes
+}
+"""
+Aggregate UsersAggregate
+"""
+type UsersAggregatesAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _UsersAggregateMax!
+	"""
+	Min Aggregate
+	"""
+	min: _UsersAggregateMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _UsersAggregateAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _UsersAggregateSum!
+}
+"""
 avg Aggregate
 """
 type _AnimalAvg {
@@ -1341,6 +1925,78 @@ type _AnimalSum {
 	Compute the sum for id
 	"""
 	id: Float!
+}
+"""
+avg Aggregate
+"""
+type _AnimalsAggregateAvg {
+	"""
+	Compute the avg for count
+	"""
+	count: Float!
+}
+"""
+max Aggregate
+"""
+type _AnimalsAggregateMax {
+	"""
+	Compute the max for count
+	"""
+	count: Int!
+}
+"""
+min Aggregate
+"""
+type _AnimalsAggregateMin {
+	"""
+	Compute the min for count
+	"""
+	count: Int!
+}
+"""
+sum Aggregate
+"""
+type _AnimalsAggregateSum {
+	"""
+	Compute the sum for count
+	"""
+	count: Float!
+}
+"""
+avg Aggregate
+"""
+type _CategoriesAggregateAvg {
+	"""
+	Compute the avg for count
+	"""
+	count: Float!
+}
+"""
+max Aggregate
+"""
+type _CategoriesAggregateMax {
+	"""
+	Compute the max for count
+	"""
+	count: Int!
+}
+"""
+min Aggregate
+"""
+type _CategoriesAggregateMin {
+	"""
+	Compute the min for count
+	"""
+	count: Int!
+}
+"""
+sum Aggregate
+"""
+type _CategoriesAggregateSum {
+	"""
+	Compute the sum for count
+	"""
+	count: Float!
 }
 """
 avg Aggregate
@@ -1449,6 +2105,42 @@ type _PostSum {
 """
 avg Aggregate
 """
+type _PostsAggregateAvg {
+	"""
+	Compute the avg for count
+	"""
+	count: Float!
+}
+"""
+max Aggregate
+"""
+type _PostsAggregateMax {
+	"""
+	Compute the max for count
+	"""
+	count: Int!
+}
+"""
+min Aggregate
+"""
+type _PostsAggregateMin {
+	"""
+	Compute the min for count
+	"""
+	count: Int!
+}
+"""
+sum Aggregate
+"""
+type _PostsAggregateSum {
+	"""
+	Compute the sum for count
+	"""
+	count: Float!
+}
+"""
+avg Aggregate
+"""
 type _UserAvg {
 	"""
 	Compute the avg for id
@@ -1489,6 +2181,42 @@ type _UserSum {
 	Compute the sum for id
 	"""
 	id: Float!
+}
+"""
+avg Aggregate
+"""
+type _UsersAggregateAvg {
+	"""
+	Compute the avg for count
+	"""
+	count: Float!
+}
+"""
+max Aggregate
+"""
+type _UsersAggregateMax {
+	"""
+	Compute the max for count
+	"""
+	count: Int!
+}
+"""
+min Aggregate
+"""
+type _UsersAggregateMin {
+	"""
+	Compute the min for count
+	"""
+	count: Int!
+}
+"""
+sum Aggregate
+"""
+type _UsersAggregateSum {
+	"""
+	Compute the sum for count
+	"""
+	count: Float!
 }
 `, BuiltIn: false},
 	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
@@ -1633,7 +2361,19 @@ type Post @generateFilterInput @table(name: "posts") {
 		"""
 		Filter _categoriesAggregate
 		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+		filter: CategoryFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for CategoriesAggregate
+		"""
+		orderBy: [CategoriesAggregateOrdering]): [CategoriesAggregate!]! @generate(filter: true)
 	"""
 	user Aggregate
 	"""
@@ -1641,7 +2381,19 @@ type Post @generateFilterInput @table(name: "posts") {
 		"""
 		Filter _userAggregate
 		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+		filter: UserFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for UsersAggregate
+		"""
+		orderBy: [UsersAggregateOrdering]): [UsersAggregate!]! @generate(filter: true)
 }
 type Query {
 	posts(
@@ -1719,7 +2471,19 @@ type Query {
 		"""
 		Filter _postsAggregate
 		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+		filter: PostFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for PostsAggregate
+		"""
+		orderBy: [PostsAggregateOrdering]): [PostsAggregate!]! @generate(filter: true)
 	"""
 	users Aggregate
 	"""
@@ -1727,7 +2491,19 @@ type Query {
 		"""
 		Filter _usersAggregate
 		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+		filter: UserFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for UsersAggregate
+		"""
+		orderBy: [UsersAggregateOrdering]): [UsersAggregate!]! @generate(filter: true)
 	"""
 	categories Aggregate
 	"""
@@ -1735,7 +2511,19 @@ type Query {
 		"""
 		Filter _categoriesAggregate
 		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+		filter: CategoryFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for CategoriesAggregate
+		"""
+		orderBy: [CategoriesAggregateOrdering]): [CategoriesAggregate!]! @generate(filter: true)
 	"""
 	animals Aggregate
 	"""
@@ -1743,7 +2531,19 @@ type Query {
 		"""
 		Filter _animalsAggregate
 		"""
-		filter: AnimalFilterInput): [AnimalsAggregate!]! @generate(filter: true)
+		filter: AnimalFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for AnimalsAggregate
+		"""
+		orderBy: [AnimalsAggregateOrdering]): [AnimalsAggregate!]! @generate(filter: true)
 }
 type User @table(name: "user") @generateFilterInput {
 	id: Int!
@@ -1772,7 +2572,19 @@ type User @table(name: "user") @generateFilterInput {
 		"""
 		Filter _postsAggregate
 		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+		filter: PostFilterInput,
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for PostsAggregate
+		"""
+		orderBy: [PostsAggregateOrdering]): [PostsAggregate!]! @generate(filter: true)
 }
 `, BuiltIn: false},
 }
@@ -1817,6 +2629,21 @@ func (ec *executionContext) field_Post__categoriesAggregate_args(ctx context.Con
 		return nil, err
 	}
 	args["filter"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOCategoriesAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateOrdering)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
 	return args, nil
 }
 
@@ -1833,6 +2660,21 @@ func (ec *executionContext) field_Post__userAggregate_args(ctx context.Context, 
 		return nil, err
 	}
 	args["filter"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOUsersAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateOrdering)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
 	return args, nil
 }
 
@@ -1886,6 +2728,21 @@ func (ec *executionContext) field_Query__animalsAggregate_args(ctx context.Conte
 		return nil, err
 	}
 	args["filter"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAnimalsAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateOrdering)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
 	return args, nil
 }
 
@@ -1902,6 +2759,21 @@ func (ec *executionContext) field_Query__categoriesAggregate_args(ctx context.Co
 		return nil, err
 	}
 	args["filter"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOCategoriesAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateOrdering)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
 	return args, nil
 }
 
@@ -1918,6 +2790,21 @@ func (ec *executionContext) field_Query__postsAggregate_args(ctx context.Context
 		return nil, err
 	}
 	args["filter"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOPostsAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateOrdering)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
 	return args, nil
 }
 
@@ -1934,6 +2821,21 @@ func (ec *executionContext) field_Query__usersAggregate_args(ctx context.Context
 		return nil, err
 	}
 	args["filter"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOUsersAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateOrdering)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
 	return args, nil
 }
 
@@ -2054,6 +2956,21 @@ func (ec *executionContext) field_User__postsAggregate_args(ctx context.Context,
 		return nil, err
 	}
 	args["filter"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOPostsAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateOrdering)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
 	return args, nil
 }
 
@@ -2328,6 +3245,196 @@ func (ec *executionContext) fieldContext_AnimalsAggregate_sum(_ context.Context,
 				return ec.fieldContext__AnimalSum_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type _AnimalSum", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AnimalsAggregatesAggregate_group(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AnimalsAggregatesAggregate_group,
+		func(ctx context.Context) (any, error) {
+			return obj.Group, nil
+		},
+		nil,
+		ec.marshalOMap2map,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AnimalsAggregatesAggregate_group(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AnimalsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AnimalsAggregatesAggregate_count(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AnimalsAggregatesAggregate_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AnimalsAggregatesAggregate_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AnimalsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AnimalsAggregatesAggregate_max(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AnimalsAggregatesAggregate_max,
+		func(ctx context.Context) (any, error) {
+			return obj.Max, nil
+		},
+		nil,
+		ec.marshalN_AnimalsAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateMax,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AnimalsAggregatesAggregate_max(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AnimalsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__AnimalsAggregateMax_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _AnimalsAggregateMax", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AnimalsAggregatesAggregate_min(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AnimalsAggregatesAggregate_min,
+		func(ctx context.Context) (any, error) {
+			return obj.Min, nil
+		},
+		nil,
+		ec.marshalN_AnimalsAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateMin,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AnimalsAggregatesAggregate_min(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AnimalsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__AnimalsAggregateMin_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _AnimalsAggregateMin", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AnimalsAggregatesAggregate_avg(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AnimalsAggregatesAggregate_avg,
+		func(ctx context.Context) (any, error) {
+			return obj.Avg, nil
+		},
+		nil,
+		ec.marshalN_AnimalsAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateAvg,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AnimalsAggregatesAggregate_avg(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AnimalsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__AnimalsAggregateAvg_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _AnimalsAggregateAvg", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AnimalsAggregatesAggregate_sum(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AnimalsAggregatesAggregate_sum,
+		func(ctx context.Context) (any, error) {
+			return obj.Sum, nil
+		},
+		nil,
+		ec.marshalN_AnimalsAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateSum,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AnimalsAggregatesAggregate_sum(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AnimalsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__AnimalsAggregateSum_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _AnimalsAggregateSum", field.Name)
 		},
 	}
 	return fc, nil
@@ -2638,6 +3745,196 @@ func (ec *executionContext) fieldContext_CategoriesAggregate_sum(_ context.Conte
 				return ec.fieldContext__CategorySum_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type _CategorySum", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CategoriesAggregatesAggregate_group(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CategoriesAggregatesAggregate_group,
+		func(ctx context.Context) (any, error) {
+			return obj.Group, nil
+		},
+		nil,
+		ec.marshalOMap2map,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_CategoriesAggregatesAggregate_group(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CategoriesAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CategoriesAggregatesAggregate_count(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CategoriesAggregatesAggregate_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CategoriesAggregatesAggregate_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CategoriesAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CategoriesAggregatesAggregate_max(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CategoriesAggregatesAggregate_max,
+		func(ctx context.Context) (any, error) {
+			return obj.Max, nil
+		},
+		nil,
+		ec.marshalN_CategoriesAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateMax,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CategoriesAggregatesAggregate_max(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CategoriesAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__CategoriesAggregateMax_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _CategoriesAggregateMax", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CategoriesAggregatesAggregate_min(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CategoriesAggregatesAggregate_min,
+		func(ctx context.Context) (any, error) {
+			return obj.Min, nil
+		},
+		nil,
+		ec.marshalN_CategoriesAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateMin,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CategoriesAggregatesAggregate_min(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CategoriesAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__CategoriesAggregateMin_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _CategoriesAggregateMin", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CategoriesAggregatesAggregate_avg(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CategoriesAggregatesAggregate_avg,
+		func(ctx context.Context) (any, error) {
+			return obj.Avg, nil
+		},
+		nil,
+		ec.marshalN_CategoriesAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateAvg,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CategoriesAggregatesAggregate_avg(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CategoriesAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__CategoriesAggregateAvg_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _CategoriesAggregateAvg", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CategoriesAggregatesAggregate_sum(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CategoriesAggregatesAggregate_sum,
+		func(ctx context.Context) (any, error) {
+			return obj.Sum, nil
+		},
+		nil,
+		ec.marshalN_CategoriesAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateSum,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CategoriesAggregatesAggregate_sum(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CategoriesAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__CategoriesAggregateSum_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _CategoriesAggregateSum", field.Name)
 		},
 	}
 	return fc, nil
@@ -3299,6 +4596,196 @@ func (ec *executionContext) fieldContext_PostsAggregate_sum(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _PostsAggregatesAggregate_group(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PostsAggregatesAggregate_group,
+		func(ctx context.Context) (any, error) {
+			return obj.Group, nil
+		},
+		nil,
+		ec.marshalOMap2map,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PostsAggregatesAggregate_group(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PostsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PostsAggregatesAggregate_count(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PostsAggregatesAggregate_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PostsAggregatesAggregate_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PostsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PostsAggregatesAggregate_max(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PostsAggregatesAggregate_max,
+		func(ctx context.Context) (any, error) {
+			return obj.Max, nil
+		},
+		nil,
+		ec.marshalN_PostsAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateMax,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PostsAggregatesAggregate_max(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PostsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__PostsAggregateMax_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _PostsAggregateMax", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PostsAggregatesAggregate_min(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PostsAggregatesAggregate_min,
+		func(ctx context.Context) (any, error) {
+			return obj.Min, nil
+		},
+		nil,
+		ec.marshalN_PostsAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateMin,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PostsAggregatesAggregate_min(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PostsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__PostsAggregateMin_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _PostsAggregateMin", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PostsAggregatesAggregate_avg(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PostsAggregatesAggregate_avg,
+		func(ctx context.Context) (any, error) {
+			return obj.Avg, nil
+		},
+		nil,
+		ec.marshalN_PostsAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateAvg,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PostsAggregatesAggregate_avg(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PostsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__PostsAggregateAvg_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _PostsAggregateAvg", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PostsAggregatesAggregate_sum(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PostsAggregatesAggregate_sum,
+		func(ctx context.Context) (any, error) {
+			return obj.Sum, nil
+		},
+		nil,
+		ec.marshalN_PostsAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateSum,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PostsAggregatesAggregate_sum(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PostsAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__PostsAggregateSum_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _PostsAggregateSum", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3503,7 +4990,7 @@ func (ec *executionContext) _Query__postsAggregate(ctx context.Context, field gr
 		ec.fieldContext_Query__postsAggregate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().PostsAggregate(ctx, fc.Args["groupBy"].([]model.PostGroupBy), fc.Args["filter"].(*model.PostFilterInput))
+			return ec.resolvers.Query().PostsAggregate(ctx, fc.Args["groupBy"].([]model.PostGroupBy), fc.Args["filter"].(*model.PostFilterInput), fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.PostsAggregateOrdering))
 		},
 		nil,
 		ec.marshalNPostsAggregate2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateᚄ,
@@ -3558,7 +5045,7 @@ func (ec *executionContext) _Query__usersAggregate(ctx context.Context, field gr
 		ec.fieldContext_Query__usersAggregate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().UsersAggregate(ctx, fc.Args["groupBy"].([]model.UserGroupBy), fc.Args["filter"].(*model.UserFilterInput))
+			return ec.resolvers.Query().UsersAggregate(ctx, fc.Args["groupBy"].([]model.UserGroupBy), fc.Args["filter"].(*model.UserFilterInput), fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.UsersAggregateOrdering))
 		},
 		nil,
 		ec.marshalNUsersAggregate2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateᚄ,
@@ -3613,7 +5100,7 @@ func (ec *executionContext) _Query__categoriesAggregate(ctx context.Context, fie
 		ec.fieldContext_Query__categoriesAggregate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().CategoriesAggregate(ctx, fc.Args["groupBy"].([]model.CategoryGroupBy), fc.Args["filter"].(*model.CategoryFilterInput))
+			return ec.resolvers.Query().CategoriesAggregate(ctx, fc.Args["groupBy"].([]model.CategoryGroupBy), fc.Args["filter"].(*model.CategoryFilterInput), fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.CategoriesAggregateOrdering))
 		},
 		nil,
 		ec.marshalNCategoriesAggregate2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateᚄ,
@@ -3668,7 +5155,7 @@ func (ec *executionContext) _Query__animalsAggregate(ctx context.Context, field 
 		ec.fieldContext_Query__animalsAggregate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().AnimalsAggregate(ctx, fc.Args["groupBy"].([]model.AnimalGroupBy), fc.Args["filter"].(*model.AnimalFilterInput))
+			return ec.resolvers.Query().AnimalsAggregate(ctx, fc.Args["groupBy"].([]model.AnimalGroupBy), fc.Args["filter"].(*model.AnimalFilterInput), fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.AnimalsAggregateOrdering))
 		},
 		nil,
 		ec.marshalNAnimalsAggregate2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateᚄ,
@@ -4185,6 +5672,196 @@ func (ec *executionContext) fieldContext_UsersAggregate_sum(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _UsersAggregatesAggregate_group(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_group,
+		func(ctx context.Context) (any, error) {
+			return obj.Group, nil
+		},
+		nil,
+		ec.marshalOMap2map,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_group(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_max(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_max,
+		func(ctx context.Context) (any, error) {
+			return obj.Max, nil
+		},
+		nil,
+		ec.marshalN_UsersAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateMax,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_max(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__UsersAggregateMax_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _UsersAggregateMax", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_min(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_min,
+		func(ctx context.Context) (any, error) {
+			return obj.Min, nil
+		},
+		nil,
+		ec.marshalN_UsersAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateMin,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_min(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__UsersAggregateMin_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _UsersAggregateMin", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_avg(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_avg,
+		func(ctx context.Context) (any, error) {
+			return obj.Avg, nil
+		},
+		nil,
+		ec.marshalN_UsersAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateAvg,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_avg(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__UsersAggregateAvg_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _UsersAggregateAvg", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UsersAggregatesAggregate_sum(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregatesAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UsersAggregatesAggregate_sum,
+		func(ctx context.Context) (any, error) {
+			return obj.Sum, nil
+		},
+		nil,
+		ec.marshalN_UsersAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateSum,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_UsersAggregatesAggregate_sum(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UsersAggregatesAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext__UsersAggregateSum_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _UsersAggregateSum", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) __AggregateResult_count(ctx context.Context, field graphql.CollectedField, obj *model.AggregateResult) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4436,6 +6113,238 @@ func (ec *executionContext) __AnimalSum_id(ctx context.Context, field graphql.Co
 func (ec *executionContext) fieldContext__AnimalSum_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "_AnimalSum",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __AnimalsAggregateAvg_count(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregateAvg) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__AnimalsAggregateAvg_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__AnimalsAggregateAvg_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_AnimalsAggregateAvg",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __AnimalsAggregateMax_count(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregateMax) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__AnimalsAggregateMax_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__AnimalsAggregateMax_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_AnimalsAggregateMax",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __AnimalsAggregateMin_count(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregateMin) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__AnimalsAggregateMin_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__AnimalsAggregateMin_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_AnimalsAggregateMin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __AnimalsAggregateSum_count(ctx context.Context, field graphql.CollectedField, obj *model.AnimalsAggregateSum) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__AnimalsAggregateSum_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__AnimalsAggregateSum_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_AnimalsAggregateSum",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __CategoriesAggregateAvg_count(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregateAvg) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__CategoriesAggregateAvg_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__CategoriesAggregateAvg_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_CategoriesAggregateAvg",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __CategoriesAggregateMax_count(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregateMax) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__CategoriesAggregateMax_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__CategoriesAggregateMax_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_CategoriesAggregateMax",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __CategoriesAggregateMin_count(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregateMin) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__CategoriesAggregateMin_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__CategoriesAggregateMin_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_CategoriesAggregateMin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __CategoriesAggregateSum_count(ctx context.Context, field graphql.CollectedField, obj *model.CategoriesAggregateSum) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__CategoriesAggregateSum_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__CategoriesAggregateSum_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_CategoriesAggregateSum",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -4910,6 +6819,122 @@ func (ec *executionContext) fieldContext__PostSum_user_id(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) __PostsAggregateAvg_count(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregateAvg) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__PostsAggregateAvg_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__PostsAggregateAvg_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_PostsAggregateAvg",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __PostsAggregateMax_count(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregateMax) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__PostsAggregateMax_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__PostsAggregateMax_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_PostsAggregateMax",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __PostsAggregateMin_count(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregateMin) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__PostsAggregateMin_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__PostsAggregateMin_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_PostsAggregateMin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __PostsAggregateSum_count(ctx context.Context, field graphql.CollectedField, obj *model.PostsAggregateSum) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__PostsAggregateSum_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__PostsAggregateSum_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_PostsAggregateSum",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) __UserAvg_id(ctx context.Context, field graphql.CollectedField, obj *model.UserAvg) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5074,6 +7099,122 @@ func (ec *executionContext) __UserSum_id(ctx context.Context, field graphql.Coll
 func (ec *executionContext) fieldContext__UserSum_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "_UserSum",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __UsersAggregateAvg_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregateAvg) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__UsersAggregateAvg_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__UsersAggregateAvg_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_UsersAggregateAvg",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __UsersAggregateMax_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregateMax) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__UsersAggregateMax_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__UsersAggregateMax_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_UsersAggregateMax",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __UsersAggregateMin_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregateMin) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__UsersAggregateMin_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__UsersAggregateMin_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_UsersAggregateMin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __UsersAggregateSum_count(ctx context.Context, field graphql.CollectedField, obj *model.UsersAggregateSum) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__UsersAggregateSum_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__UsersAggregateSum_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_UsersAggregateSum",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -6647,6 +8788,40 @@ func (ec *executionContext) unmarshalInputAnimalOrdering(ctx context.Context, ob
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputAnimalsAggregateOrdering(ctx context.Context, obj any) (model.AnimalsAggregateOrdering, error) {
+	var it model.AnimalsAggregateOrdering
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"group", "count"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "group":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("group"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Group = data
+		case "count":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Count = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputBooleanComparator(ctx context.Context, obj any) (model.BooleanComparator, error) {
 	var it model.BooleanComparator
 	asMap := map[string]any{}
@@ -6813,6 +8988,40 @@ func (ec *executionContext) unmarshalInputCatFilterInput(ctx context.Context, ob
 				return it, err
 			}
 			it.Not = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCategoriesAggregateOrdering(ctx context.Context, obj any) (model.CategoriesAggregateOrdering, error) {
+	var it model.CategoriesAggregateOrdering
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"group", "count"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "group":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("group"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Group = data
+		case "count":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Count = data
 		}
 	}
 
@@ -7356,6 +9565,40 @@ func (ec *executionContext) unmarshalInputPostOrdering(ctx context.Context, obj 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPostsAggregateOrdering(ctx context.Context, obj any) (model.PostsAggregateOrdering, error) {
+	var it model.PostsAggregateOrdering
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"group", "count"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "group":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("group"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Group = data
+		case "count":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Count = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputStringComparator(ctx context.Context, obj any) (model.StringComparator, error) {
 	var it model.StringComparator
 	asMap := map[string]any{}
@@ -7597,6 +9840,40 @@ func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUsersAggregateOrdering(ctx context.Context, obj any) (model.UsersAggregateOrdering, error) {
+	var it model.UsersAggregateOrdering
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"group", "count"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "group":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("group"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Group = data
+		case "count":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Count = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -7663,6 +9940,67 @@ func (ec *executionContext) _AnimalsAggregate(ctx context.Context, sel ast.Selec
 			}
 		case "sum":
 			out.Values[i] = ec._AnimalsAggregate_sum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var animalsAggregatesAggregateImplementors = []string{"AnimalsAggregatesAggregate"}
+
+func (ec *executionContext) _AnimalsAggregatesAggregate(ctx context.Context, sel ast.SelectionSet, obj *model.AnimalsAggregatesAggregate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, animalsAggregatesAggregateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AnimalsAggregatesAggregate")
+		case "group":
+			out.Values[i] = ec._AnimalsAggregatesAggregate_group(ctx, field, obj)
+		case "count":
+			out.Values[i] = ec._AnimalsAggregatesAggregate_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "max":
+			out.Values[i] = ec._AnimalsAggregatesAggregate_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "min":
+			out.Values[i] = ec._AnimalsAggregatesAggregate_min(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "avg":
+			out.Values[i] = ec._AnimalsAggregatesAggregate_avg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sum":
+			out.Values[i] = ec._AnimalsAggregatesAggregate_sum(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7778,6 +10116,67 @@ func (ec *executionContext) _CategoriesAggregate(ctx context.Context, sel ast.Se
 			}
 		case "sum":
 			out.Values[i] = ec._CategoriesAggregate_sum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var categoriesAggregatesAggregateImplementors = []string{"CategoriesAggregatesAggregate"}
+
+func (ec *executionContext) _CategoriesAggregatesAggregate(ctx context.Context, sel ast.SelectionSet, obj *model.CategoriesAggregatesAggregate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, categoriesAggregatesAggregateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CategoriesAggregatesAggregate")
+		case "group":
+			out.Values[i] = ec._CategoriesAggregatesAggregate_group(ctx, field, obj)
+		case "count":
+			out.Values[i] = ec._CategoriesAggregatesAggregate_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "max":
+			out.Values[i] = ec._CategoriesAggregatesAggregate_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "min":
+			out.Values[i] = ec._CategoriesAggregatesAggregate_min(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "avg":
+			out.Values[i] = ec._CategoriesAggregatesAggregate_avg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sum":
+			out.Values[i] = ec._CategoriesAggregatesAggregate_sum(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7991,6 +10390,67 @@ func (ec *executionContext) _PostsAggregate(ctx context.Context, sel ast.Selecti
 			}
 		case "sum":
 			out.Values[i] = ec._PostsAggregate_sum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var postsAggregatesAggregateImplementors = []string{"PostsAggregatesAggregate"}
+
+func (ec *executionContext) _PostsAggregatesAggregate(ctx context.Context, sel ast.SelectionSet, obj *model.PostsAggregatesAggregate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, postsAggregatesAggregateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PostsAggregatesAggregate")
+		case "group":
+			out.Values[i] = ec._PostsAggregatesAggregate_group(ctx, field, obj)
+		case "count":
+			out.Values[i] = ec._PostsAggregatesAggregate_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "max":
+			out.Values[i] = ec._PostsAggregatesAggregate_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "min":
+			out.Values[i] = ec._PostsAggregatesAggregate_min(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "avg":
+			out.Values[i] = ec._PostsAggregatesAggregate_avg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sum":
+			out.Values[i] = ec._PostsAggregatesAggregate_sum(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8343,6 +10803,67 @@ func (ec *executionContext) _UsersAggregate(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var usersAggregatesAggregateImplementors = []string{"UsersAggregatesAggregate"}
+
+func (ec *executionContext) _UsersAggregatesAggregate(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregatesAggregate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, usersAggregatesAggregateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UsersAggregatesAggregate")
+		case "group":
+			out.Values[i] = ec._UsersAggregatesAggregate_group(ctx, field, obj)
+		case "count":
+			out.Values[i] = ec._UsersAggregatesAggregate_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "max":
+			out.Values[i] = ec._UsersAggregatesAggregate_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "min":
+			out.Values[i] = ec._UsersAggregatesAggregate_min(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "avg":
+			out.Values[i] = ec._UsersAggregatesAggregate_avg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sum":
+			out.Values[i] = ec._UsersAggregatesAggregate_sum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var _AggregateResultImplementors = []string{"_AggregateResult"}
 
 func (ec *executionContext) __AggregateResult(ctx context.Context, sel ast.SelectionSet, obj *model.AggregateResult) graphql.Marshaler {
@@ -8532,6 +11053,318 @@ func (ec *executionContext) __AnimalSum(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = graphql.MarshalString("_AnimalSum")
 		case "id":
 			out.Values[i] = ec.__AnimalSum_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _AnimalsAggregateAvgImplementors = []string{"_AnimalsAggregateAvg"}
+
+func (ec *executionContext) __AnimalsAggregateAvg(ctx context.Context, sel ast.SelectionSet, obj *model.AnimalsAggregateAvg) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _AnimalsAggregateAvgImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_AnimalsAggregateAvg")
+		case "count":
+			out.Values[i] = ec.__AnimalsAggregateAvg_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _AnimalsAggregateMaxImplementors = []string{"_AnimalsAggregateMax"}
+
+func (ec *executionContext) __AnimalsAggregateMax(ctx context.Context, sel ast.SelectionSet, obj *model.AnimalsAggregateMax) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _AnimalsAggregateMaxImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_AnimalsAggregateMax")
+		case "count":
+			out.Values[i] = ec.__AnimalsAggregateMax_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _AnimalsAggregateMinImplementors = []string{"_AnimalsAggregateMin"}
+
+func (ec *executionContext) __AnimalsAggregateMin(ctx context.Context, sel ast.SelectionSet, obj *model.AnimalsAggregateMin) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _AnimalsAggregateMinImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_AnimalsAggregateMin")
+		case "count":
+			out.Values[i] = ec.__AnimalsAggregateMin_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _AnimalsAggregateSumImplementors = []string{"_AnimalsAggregateSum"}
+
+func (ec *executionContext) __AnimalsAggregateSum(ctx context.Context, sel ast.SelectionSet, obj *model.AnimalsAggregateSum) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _AnimalsAggregateSumImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_AnimalsAggregateSum")
+		case "count":
+			out.Values[i] = ec.__AnimalsAggregateSum_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _CategoriesAggregateAvgImplementors = []string{"_CategoriesAggregateAvg"}
+
+func (ec *executionContext) __CategoriesAggregateAvg(ctx context.Context, sel ast.SelectionSet, obj *model.CategoriesAggregateAvg) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _CategoriesAggregateAvgImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_CategoriesAggregateAvg")
+		case "count":
+			out.Values[i] = ec.__CategoriesAggregateAvg_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _CategoriesAggregateMaxImplementors = []string{"_CategoriesAggregateMax"}
+
+func (ec *executionContext) __CategoriesAggregateMax(ctx context.Context, sel ast.SelectionSet, obj *model.CategoriesAggregateMax) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _CategoriesAggregateMaxImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_CategoriesAggregateMax")
+		case "count":
+			out.Values[i] = ec.__CategoriesAggregateMax_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _CategoriesAggregateMinImplementors = []string{"_CategoriesAggregateMin"}
+
+func (ec *executionContext) __CategoriesAggregateMin(ctx context.Context, sel ast.SelectionSet, obj *model.CategoriesAggregateMin) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _CategoriesAggregateMinImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_CategoriesAggregateMin")
+		case "count":
+			out.Values[i] = ec.__CategoriesAggregateMin_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _CategoriesAggregateSumImplementors = []string{"_CategoriesAggregateSum"}
+
+func (ec *executionContext) __CategoriesAggregateSum(ctx context.Context, sel ast.SelectionSet, obj *model.CategoriesAggregateSum) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _CategoriesAggregateSumImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_CategoriesAggregateSum")
+		case "count":
+			out.Values[i] = ec.__CategoriesAggregateSum_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8910,6 +11743,162 @@ func (ec *executionContext) __PostSum(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var _PostsAggregateAvgImplementors = []string{"_PostsAggregateAvg"}
+
+func (ec *executionContext) __PostsAggregateAvg(ctx context.Context, sel ast.SelectionSet, obj *model.PostsAggregateAvg) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _PostsAggregateAvgImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_PostsAggregateAvg")
+		case "count":
+			out.Values[i] = ec.__PostsAggregateAvg_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _PostsAggregateMaxImplementors = []string{"_PostsAggregateMax"}
+
+func (ec *executionContext) __PostsAggregateMax(ctx context.Context, sel ast.SelectionSet, obj *model.PostsAggregateMax) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _PostsAggregateMaxImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_PostsAggregateMax")
+		case "count":
+			out.Values[i] = ec.__PostsAggregateMax_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _PostsAggregateMinImplementors = []string{"_PostsAggregateMin"}
+
+func (ec *executionContext) __PostsAggregateMin(ctx context.Context, sel ast.SelectionSet, obj *model.PostsAggregateMin) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _PostsAggregateMinImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_PostsAggregateMin")
+		case "count":
+			out.Values[i] = ec.__PostsAggregateMin_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _PostsAggregateSumImplementors = []string{"_PostsAggregateSum"}
+
+func (ec *executionContext) __PostsAggregateSum(ctx context.Context, sel ast.SelectionSet, obj *model.PostsAggregateSum) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _PostsAggregateSumImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_PostsAggregateSum")
+		case "count":
+			out.Values[i] = ec.__PostsAggregateSum_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var _UserAvgImplementors = []string{"_UserAvg"}
 
 func (ec *executionContext) __UserAvg(ctx context.Context, sel ast.SelectionSet, obj *model.UserAvg) graphql.Marshaler {
@@ -9050,6 +12039,162 @@ func (ec *executionContext) __UserSum(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("_UserSum")
 		case "id":
 			out.Values[i] = ec.__UserSum_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _UsersAggregateAvgImplementors = []string{"_UsersAggregateAvg"}
+
+func (ec *executionContext) __UsersAggregateAvg(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregateAvg) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _UsersAggregateAvgImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_UsersAggregateAvg")
+		case "count":
+			out.Values[i] = ec.__UsersAggregateAvg_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _UsersAggregateMaxImplementors = []string{"_UsersAggregateMax"}
+
+func (ec *executionContext) __UsersAggregateMax(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregateMax) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _UsersAggregateMaxImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_UsersAggregateMax")
+		case "count":
+			out.Values[i] = ec.__UsersAggregateMax_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _UsersAggregateMinImplementors = []string{"_UsersAggregateMin"}
+
+func (ec *executionContext) __UsersAggregateMin(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregateMin) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _UsersAggregateMinImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_UsersAggregateMin")
+		case "count":
+			out.Values[i] = ec.__UsersAggregateMin_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _UsersAggregateSumImplementors = []string{"_UsersAggregateSum"}
+
+func (ec *executionContext) __UsersAggregateSum(ctx context.Context, sel ast.SelectionSet, obj *model.UsersAggregateSum) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _UsersAggregateSumImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_UsersAggregateSum")
+		case "count":
+			out.Values[i] = ec.__UsersAggregateSum_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -9801,6 +12946,86 @@ func (ec *executionContext) marshalN_AnimalSum2ᚖgithubᚗcomᚋroneliᚋfastgq
 	return ec.__AnimalSum(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalN_AnimalsAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateAvg(ctx context.Context, sel ast.SelectionSet, v *model.AnimalsAggregateAvg) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__AnimalsAggregateAvg(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_AnimalsAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateMax(ctx context.Context, sel ast.SelectionSet, v *model.AnimalsAggregateMax) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__AnimalsAggregateMax(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_AnimalsAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateMin(ctx context.Context, sel ast.SelectionSet, v *model.AnimalsAggregateMin) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__AnimalsAggregateMin(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_AnimalsAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateSum(ctx context.Context, sel ast.SelectionSet, v *model.AnimalsAggregateSum) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__AnimalsAggregateSum(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_CategoriesAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateAvg(ctx context.Context, sel ast.SelectionSet, v *model.CategoriesAggregateAvg) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__CategoriesAggregateAvg(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_CategoriesAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateMax(ctx context.Context, sel ast.SelectionSet, v *model.CategoriesAggregateMax) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__CategoriesAggregateMax(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_CategoriesAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateMin(ctx context.Context, sel ast.SelectionSet, v *model.CategoriesAggregateMin) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__CategoriesAggregateMin(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_CategoriesAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateSum(ctx context.Context, sel ast.SelectionSet, v *model.CategoriesAggregateSum) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__CategoriesAggregateSum(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoryAvg(ctx context.Context, sel ast.SelectionSet, v *model.CategoryAvg) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -9881,6 +13106,46 @@ func (ec *executionContext) marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__PostSum(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalN_PostsAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateAvg(ctx context.Context, sel ast.SelectionSet, v *model.PostsAggregateAvg) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__PostsAggregateAvg(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_PostsAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateMax(ctx context.Context, sel ast.SelectionSet, v *model.PostsAggregateMax) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__PostsAggregateMax(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_PostsAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateMin(ctx context.Context, sel ast.SelectionSet, v *model.PostsAggregateMin) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__PostsAggregateMin(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_PostsAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateSum(ctx context.Context, sel ast.SelectionSet, v *model.PostsAggregateSum) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__PostsAggregateSum(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUserAvg(ctx context.Context, sel ast.SelectionSet, v *model.UserAvg) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -9919,6 +13184,46 @@ func (ec *executionContext) marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgql�
 		return graphql.Null
 	}
 	return ec.__UserSum(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_UsersAggregateAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateAvg(ctx context.Context, sel ast.SelectionSet, v *model.UsersAggregateAvg) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__UsersAggregateAvg(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_UsersAggregateMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateMax(ctx context.Context, sel ast.SelectionSet, v *model.UsersAggregateMax) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__UsersAggregateMax(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_UsersAggregateMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateMin(ctx context.Context, sel ast.SelectionSet, v *model.UsersAggregateMin) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__UsersAggregateMin(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_UsersAggregateSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateSum(ctx context.Context, sel ast.SelectionSet, v *model.UsersAggregateSum) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__UsersAggregateSum(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -10349,6 +13654,32 @@ func (ec *executionContext) unmarshalOAnimalOrdering2ᚖgithubᚗcomᚋroneliᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOAnimalsAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateOrdering(ctx context.Context, v any) ([]*model.AnimalsAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.AnimalsAggregateOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOAnimalsAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOAnimalsAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐAnimalsAggregateOrdering(ctx context.Context, v any) (*model.AnimalsAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputAnimalsAggregateOrdering(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10432,6 +13763,32 @@ func (ec *executionContext) unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋ
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputCatFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOCategoriesAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateOrdering(ctx context.Context, v any) ([]*model.CategoriesAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.CategoriesAggregateOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOCategoriesAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOCategoriesAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐCategoriesAggregateOrdering(ctx context.Context, v any) (*model.CategoriesAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCategoriesAggregateOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -10912,6 +14269,32 @@ func (ec *executionContext) unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfa
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOPostsAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateOrdering(ctx context.Context, v any) ([]*model.PostsAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.PostsAggregateOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOPostsAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOPostsAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐPostsAggregateOrdering(ctx context.Context, v any) (*model.PostsAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPostsAggregateOrdering(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v any) ([]*string, error) {
 	if v == nil {
 		return nil, nil
@@ -11130,6 +14513,32 @@ func (ec *executionContext) unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfa
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputUserOrdering(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUsersAggregateOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateOrdering(ctx context.Context, v any) ([]*model.UsersAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.UsersAggregateOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOUsersAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOUsersAggregateOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐUsersAggregateOrdering(ctx context.Context, v any) (*model.UsersAggregateOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUsersAggregateOrdering(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

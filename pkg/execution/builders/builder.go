@@ -1,9 +1,6 @@
 package builders
 
 import (
-	"math/rand"
-	"unsafe"
-
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -18,12 +15,6 @@ const (
 	OrderingTypesDesc     OrderingTypes = "DESC"
 	OrderingTypesAscNull  OrderingTypes = "ASC_NULL_FIRST"
 	OrderingTypesDescNull OrderingTypes = "DESC_NULL_FIRST"
-
-	// GenerateTableName configuration
-	letterBytes   = "abcdefghijklmnopqrstuvwxyz"
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
 type (
@@ -40,6 +31,10 @@ type (
 		// ColumnCaseConverter converts columns from ast.Field Name to database field name, by default it converts to snake case
 		// but sometimes as a user you want to override this logic / define special abbreviations etc'
 		ColumnCaseConverter ColumnCaseConverter
+
+		// Dialect specifies the SQL dialect to use (e.g., "postgres", "mysql", "snowflake").
+		// Defaults to "postgres" if not specified.
+		Dialect string
 	}
 
 	OrderingTypes string
@@ -65,21 +60,3 @@ type (
 		Generate(n int) string
 	}
 )
-
-func GenerateTableName(n int) string {
-	b := make([]byte, n)
-	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
-	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = rand.Int63(), letterIdxMax
-		}
-		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
-			i--
-		}
-		cache >>= letterIdxBits
-		remain--
-	}
-
-	return *(*string)(unsafe.Pointer(&b))
-}

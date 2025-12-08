@@ -2,7 +2,10 @@ package sql
 
 import (
 	"fmt"
+	"math/rand"
+	"slices"
 	"strings"
+	"unsafe"
 
 	"github.com/roneli/fastgql/pkg/schema"
 
@@ -19,10 +22,33 @@ import (
 	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 )
 
+const (
+	letterBytes   = "abcdefghijklmnopqrstuvwxyz"
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
 type defaultTableNameGenerator struct{}
 
 func (tb defaultTableNameGenerator) Generate(_ int) string {
-	return builders.GenerateTableName(6)
+	return generateTableName(6)
+}
+
+func generateTableName(n int) string {
+	b := make([]byte, n)
+	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = rand.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+	return *(*string)(unsafe.Pointer(&b))
 }
 
 type Builder struct {
@@ -32,6 +58,7 @@ type Builder struct {
 	Operators           map[string]builders.Operator
 	AggregatorOperators map[string]builders.AggregatorOperator
 	CaseConverter       builders.ColumnCaseConverter
+	Dialect             string
 }
 
 func NewBuilder(config *builders.Config) Builder {
@@ -48,6 +75,11 @@ func NewBuilder(config *builders.Config) Builder {
 		caseConverter = config.ColumnCaseConverter
 	}
 
+	dialect := config.Dialect
+	if dialect == "" {
+		dialect = "postgres" // Default to PostgreSQL for backwards compatibility
+	}
+
 	operators := make(map[string]builders.Operator)
 	for k, v := range defaultOperators {
 		operators[k] = v
@@ -56,7 +88,25 @@ func NewBuilder(config *builders.Config) Builder {
 		operators[k] = v
 	}
 
-	return Builder{Schema: config.Schema, Logger: l, TableNameGenerator: tableNameGenerator, Operators: operators, AggregatorOperators: defaultAggregatorOperators, CaseConverter: caseConverter}
+	return Builder{
+		Schema:              config.Schema,
+		Logger:              l,
+		TableNameGenerator:  tableNameGenerator,
+		Operators:           operators,
+		AggregatorOperators: defaultAggregatorOperators,
+		CaseConverter:       caseConverter,
+		Dialect:             dialect,
+	}
+}
+
+// Capabilities returns what this SQL database supports.
+func (b Builder) Capabilities() builders.Capabilities {
+	return builders.Capabilities{
+		SupportsJoins:        true,
+		SupportsReturning:    true,
+		SupportsTransactions: true,
+		MaxRelationDepth:     -1, // unlimited
+	}
 }
 
 // Create generates an SQL create query based on graphql ast.
@@ -160,7 +210,7 @@ func (b Builder) buildUpdate(tableDef tableDefinition, field builders.Field) (*g
 		newRecord[b.CaseConverter(k)] = v
 	}
 	table := tableDef.TableExpression().As(tableAlias)
-	q := goqu.Dialect("postgres").Update(table).Set(newRecord).Prepared(true).Returning(goqu.Star())
+	q := goqu.Dialect(b.Dialect).Update(table).Set(newRecord).Prepared(true).Returning(goqu.Star())
 	// if not filter is defined we will just return the query
 	filterArg, ok := field.Arguments["filter"]
 	if !ok {
@@ -188,12 +238,12 @@ func (b Builder) buildInsert(tableDef tableDefinition, kv []map[string]any) (*go
 		}
 		kv[i] = newRecord
 	}
-	return goqu.Dialect("postgres").Insert(table).Rows(kv).Prepared(true).Returning(goqu.Star()), nil
+	return goqu.Dialect(b.Dialect).Insert(table).Rows(kv).Prepared(true).Returning(goqu.Star()), nil
 }
 
 func (b Builder) buildDelete(tableDef tableDefinition, field builders.Field) (*goqu.DeleteDataset, error) {
 	b.Logger.Debug("building delete", "tableDefinition", tableDef.name)
-	q := goqu.Dialect("postgres").Delete(tableDef.TableExpression()).Returning(goqu.Star())
+	q := goqu.Dialect(b.Dialect).Delete(tableDef.TableExpression()).Returning(goqu.Star())
 	filterArg, ok := field.Arguments["filter"]
 	// if not filter is defined we will just return the query
 	if !ok {
@@ -212,7 +262,7 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 	b.Logger.Debug("building query", map[string]any{"tableDefinition": tableDef.name})
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
-	query := queryHelper{goqu.From(table), table, tableAlias, nil}
+	query := queryHelper{goqu.From(table), table, tableAlias, nil, b.Dialect}
 
 	fieldsAdded := make(map[string]struct{})
 	// if type is abstract check if it has a typename
@@ -296,7 +346,7 @@ func (b Builder) buildAggregate(tableDef tableDefinition, field builders.Field, 
 	b.Logger.Debug("building aggregate", "tableDefinition", tableDef.name)
 	tableAlias := b.TableNameGenerator.Generate(6)
 	table := tableDef.TableExpression().As(tableAlias)
-	query := &queryHelper{goqu.Dialect("postgres").From(table), table, tableAlias, nil}
+	query := &queryHelper{goqu.Dialect(b.Dialect).From(table), table, tableAlias, nil, b.Dialect}
 	var fieldExp exp.Expression
 	for _, f := range field.Selections {
 		switch f.Name {
@@ -410,7 +460,16 @@ func (b Builder) buildFilterLogicalExp(table tableHelper, astDefinition *ast.Def
 func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition, filters map[string]any) (goqu.Expression, error) {
 	filterInputDef := builders.GetFilterInput(b.Schema, astDefinition)
 	expBuilder := exp.NewExpressionList(exp.AndType)
-	for k, v := range filters {
+
+	// Sort filter keys for deterministic SQL generation
+	filterKeys := make([]string, 0, len(filters))
+	for k := range filters {
+		filterKeys = append(filterKeys, k)
+	}
+	slices.Sort(filterKeys)
+
+	for _, k := range filterKeys {
+		v := filters[k]
 		keyType := filterInputDef.Fields.ForName(k).Type
 		switch {
 		case k == string(builders.LogicalOperatorAND) || k == string(builders.LogicalOperatorOR):
@@ -461,7 +520,15 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			if !ok {
 				return nil, fmt.Errorf("fatal value of key not map")
 			}
-			for op, value := range opMap {
+			// Sort operator keys for deterministic SQL generation
+			opKeys := make([]string, 0, len(opMap))
+			for op := range opMap {
+				opKeys = append(opKeys, op)
+			}
+			slices.Sort(opKeys)
+
+			for _, op := range opKeys {
+				value := opMap[op]
 				opExp, err := b.buildOperation(table.table, k, op, value)
 				if err != nil {
 					return nil, err
@@ -502,6 +569,7 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 			table:         m2mTable,
 			alias:         m2mTableAlias,
 			selects:       relationQuery.selects,
+			dialect:       b.Dialect,
 		}
 		// Join m2mBuilder with the relBuilder
 		m2mQuery.SelectDataset = m2mQuery.LeftJoin(
@@ -557,7 +625,7 @@ func (b Builder) buildFilterQuery(parentTable tableHelper, rf *ast.Definition, r
 		return nil, fmt.Errorf("missing @table directive to create filter query for %s: %w", rf.Name, err)
 	}
 	table := goqu.T(td.Name).Schema(td.Schema).As(tableAlias)
-	fq := &queryHelper{goqu.From(table), table, tableAlias, nil}
+	fq := &queryHelper{goqu.From(table), table, tableAlias, nil, b.Dialect}
 
 	switch rel.RelType {
 	case schema.ManyToMany:

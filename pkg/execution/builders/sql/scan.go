@@ -1,4 +1,4 @@
-package execution
+package sql
 
 import (
 	"fmt"
@@ -11,7 +11,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-// TypeNameScanner is a scanner for type name based on the type name key.
+// TypeNameScanner is a scanner for interface types that determines the concrete type
+// based on a type discriminator field in the result.
+// This is PostgreSQL-specific as it uses pgx types.
 type TypeNameScanner[T any] struct {
 	types       map[string]reflect.Type
 	typeNameKey string
@@ -19,6 +21,8 @@ type TypeNameScanner[T any] struct {
 }
 
 // NewTypeNameScanner creates a new TypeNameScanner for the given types and type name key.
+// The types map should map type names (lowercase) to their reflect.Type.
+// The typeNameKey is the column name containing the type discriminator.
 func NewTypeNameScanner[T any](types map[string]reflect.Type, typeNameKey string) *TypeNameScanner[T] {
 	// lower case all keys
 	var t2 = make(map[string]reflect.Type)
@@ -32,6 +36,7 @@ func NewTypeNameScanner[T any](types map[string]reflect.Type, typeNameKey string
 	}
 }
 
+// ScanRow scans a single row into the appropriate concrete type based on the type discriminator.
 func (t *TypeNameScanner[T]) ScanRow(row pgx.CollectableRow) (T, error) {
 	var (
 		typeValue string
@@ -54,6 +59,7 @@ func (t *TypeNameScanner[T]) ScanRow(row pgx.CollectableRow) (T, error) {
 	return v.(T), nil
 }
 
+// ScanJson scans JSON data into the appropriate concrete type based on the type discriminator.
 func (t *TypeNameScanner[T]) ScanJson(data []byte) (T, error) {
 	var value T
 	vtn := strings.ToLower(jsoniter.Get(data, t.typeNameKey).ToString())
@@ -81,3 +87,4 @@ func getTypeName(row pgx.CollectableRow, i int, typeName string) (string, int) {
 	}
 	return "", -1
 }
+

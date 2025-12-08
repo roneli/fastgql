@@ -13,7 +13,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/roneli/fastgql/pkg/execution/test/graph/model"
+	"github.com/roneli/fastgql/pkg/execution/__test__/graph/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -1028,296 +1028,12 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../common.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
-directive @generateFilterInput(description: String) on OBJECT | INTERFACE
-directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
-directive @isInterfaceFilter on INPUT_FIELD_DEFINITION
-directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
-directive @typename(name: String!) on INTERFACE
-input BooleanComparator {
-	eq: Boolean
-	neq: Boolean
-	isNull: Boolean
-}
-input BooleanListComparator {
-	eq: [Boolean]
-	neq: [Boolean]
-	contains: [Boolean]
-	contained: [Boolean]
-	overlap: [Boolean]
-	isNull: Boolean
-}
-input FloatComparator {
-	eq: Float
-	neq: Float
-	gt: Float
-	gte: Float
-	lt: Float
-	lte: Float
-	isNull: Boolean
-}
-input FloatListComparator {
-	eq: [Float]
-	neq: [Float]
-	contains: [Float]
-	contained: [Float]
-	overlap: [Float]
-	isNull: Boolean
-}
-input IntComparator {
-	eq: Int
-	neq: Int
-	gt: Int
-	gte: Int
-	lt: Int
-	lte: Int
-	isNull: Boolean
-}
-input IntListComparator {
-	eq: [Int]
-	neq: [Int]
-	contains: [Int]
-	contained: [Int]
-	overlap: [Int]
-	isNull: Boolean
-}
-scalar Map
-input StringComparator {
-	eq: String
-	neq: String
-	contains: [String]
-	notContains: [String]
-	like: String
-	ilike: String
-	suffix: String
-	prefix: String
-	isNull: Boolean
-}
-input StringListComparator {
-	eq: [String]
-	neq: [String]
-	contains: [String]
-	containedBy: [String]
-	overlap: [String]
-	isNull: Boolean
-}
-type _AggregateResult {
-	count: Int!
-}
-enum _OrderingTypes {
-	ASC
-	DESC
-	ASC_NULL_FIRST
-	DESC_NULL_FIRST
-	ASC_NULL_LAST
-	DESC_NULL_LAST
-}
-enum _relationType {
-	ONE_TO_ONE
-	ONE_TO_MANY
-	MANY_TO_MANY
-}
-`, BuiltIn: false},
-	{Name: "../schema.graphql", Input: `interface Animal @table(name: "animals") @typename(name: "type") @generateFilterInput {
-	id: Int!
-	name: String!
-	type: String!
-}
-type Cat implements Animal {
-	id: Int!
-	name: String!
-	type: String!
-	color: String!
-}
-type Category @generateFilterInput @table(name: "category") {
-	id: Int!
-	name: String
-}
-type Dog implements Animal {
-	id: Int!
-	name: String!
-	type: String!
-	breed: String!
-}
-type Post @generateFilterInput @table(name: "post") @generateMutations {
-	id: Int!
-	name: String
-	categories(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Category
-		"""
-		orderBy: [CategoryOrdering],
-		"""
-		Filter categories
-		"""
-		filter: CategoryFilterInput): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-	user_id: Int
-	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
-	"""
-	categories Aggregate
-	"""
-	_categoriesAggregate(groupBy: [CategoryGroupBy!],
-		"""
-		Filter _categoriesAggregate
-		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
-	"""
-	user Aggregate
-	"""
-	_userAggregate(groupBy: [UserGroupBy!],
-		"""
-		Filter _userAggregate
-		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
-}
-type Query {
-	posts(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Post
-		"""
-		orderBy: [PostOrdering],
-		"""
-		Filter posts
-		"""
-		filter: PostFilterInput): [Post] @generate
-	users(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter users
-		"""
-		filter: UserFilterInput): [User] @generate
-	categories(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Category
-		"""
-		orderBy: [CategoryOrdering],
-		"""
-		Filter categories
-		"""
-		filter: CategoryFilterInput): [Category] @generate
-	animals(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Animal
-		"""
-		orderBy: [AnimalOrdering],
-		"""
-		Filter animals
-		"""
-		filter: AnimalFilterInput): [Animal] @generate
-	"""
-	posts Aggregate
-	"""
-	_postsAggregate(groupBy: [PostGroupBy!],
-		"""
-		Filter _postsAggregate
-		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
-	"""
-	users Aggregate
-	"""
-	_usersAggregate(groupBy: [UserGroupBy!],
-		"""
-		Filter _usersAggregate
-		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
-	"""
-	categories Aggregate
-	"""
-	_categoriesAggregate(groupBy: [CategoryGroupBy!],
-		"""
-		Filter _categoriesAggregate
-		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
-	"""
-	animals Aggregate
-	"""
-	_animalsAggregate(groupBy: [AnimalGroupBy!],
-		"""
-		Filter _animalsAggregate
-		"""
-		filter: AnimalFilterInput): [AnimalsAggregate!]! @generate(filter: true)
-}
-type User @table(name: "user") @generateFilterInput {
-	id: Int!
-	name: String!
-	posts(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Post
-		"""
-		orderBy: [PostOrdering],
-		"""
-		Filter posts
-		"""
-		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
-	"""
-	posts Aggregate
-	"""
-	_postsAggregate(groupBy: [PostGroupBy!],
-		"""
-		Filter _postsAggregate
-		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
-}
-`, BuiltIn: false},
 	{Name: "../fastgql_schema.graphql", Input: `input AnimalFilterInput {
 	id: IntComparator
 	name: StringComparator
 	type: StringComparator
-	dog: DogFilterInput @isInterfaceFilter
 	cat: CatFilterInput @isInterfaceFilter
+	dog: DogFilterInput @isInterfaceFilter
 	"""
 	Logical AND of FilterInput
 	"""
@@ -1911,6 +1627,290 @@ input UpdatePostInput {
 	user_id: Int
 }
 `, BuiltIn: false},
+	{Name: "../common.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
+directive @generateFilterInput(description: String) on OBJECT | INTERFACE
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+directive @isInterfaceFilter on INPUT_FIELD_DEFINITION
+directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+directive @typename(name: String!) on INTERFACE
+input BooleanComparator {
+	eq: Boolean
+	neq: Boolean
+	isNull: Boolean
+}
+input BooleanListComparator {
+	eq: [Boolean]
+	neq: [Boolean]
+	contains: [Boolean]
+	contained: [Boolean]
+	overlap: [Boolean]
+	isNull: Boolean
+}
+input FloatComparator {
+	eq: Float
+	neq: Float
+	gt: Float
+	gte: Float
+	lt: Float
+	lte: Float
+	isNull: Boolean
+}
+input FloatListComparator {
+	eq: [Float]
+	neq: [Float]
+	contains: [Float]
+	contained: [Float]
+	overlap: [Float]
+	isNull: Boolean
+}
+input IntComparator {
+	eq: Int
+	neq: Int
+	gt: Int
+	gte: Int
+	lt: Int
+	lte: Int
+	isNull: Boolean
+}
+input IntListComparator {
+	eq: [Int]
+	neq: [Int]
+	contains: [Int]
+	contained: [Int]
+	overlap: [Int]
+	isNull: Boolean
+}
+scalar Map
+input StringComparator {
+	eq: String
+	neq: String
+	contains: [String]
+	notContains: [String]
+	like: String
+	ilike: String
+	suffix: String
+	prefix: String
+	isNull: Boolean
+}
+input StringListComparator {
+	eq: [String]
+	neq: [String]
+	contains: [String]
+	containedBy: [String]
+	overlap: [String]
+	isNull: Boolean
+}
+type _AggregateResult {
+	count: Int!
+}
+enum _OrderingTypes {
+	ASC
+	DESC
+	ASC_NULL_FIRST
+	DESC_NULL_FIRST
+	ASC_NULL_LAST
+	DESC_NULL_LAST
+}
+enum _relationType {
+	ONE_TO_ONE
+	ONE_TO_MANY
+	MANY_TO_MANY
+}
+`, BuiltIn: false},
+	{Name: "../schema.graphql", Input: `interface Animal @table(name: "animals") @typename(name: "type") @generateFilterInput {
+	id: Int!
+	name: String!
+	type: String!
+}
+type Cat implements Animal {
+	id: Int!
+	name: String!
+	type: String!
+	color: String!
+}
+type Category @generateFilterInput @table(name: "category") {
+	id: Int!
+	name: String
+}
+type Dog implements Animal {
+	id: Int!
+	name: String!
+	type: String!
+	breed: String!
+}
+type Post @generateFilterInput @table(name: "post") @generateMutations {
+	id: Int!
+	name: String
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user_id: Int
+	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate(groupBy: [CategoryGroupBy!],
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+	"""
+	user Aggregate
+	"""
+	_userAggregate(groupBy: [UserGroupBy!],
+		"""
+		Filter _userAggregate
+		"""
+		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+}
+type Query {
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @generate
+	users(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter users
+		"""
+		filter: UserFilterInput): [User] @generate
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @generate
+	animals(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Animal
+		"""
+		orderBy: [AnimalOrdering],
+		"""
+		Filter animals
+		"""
+		filter: AnimalFilterInput): [Animal] @generate
+	"""
+	posts Aggregate
+	"""
+	_postsAggregate(groupBy: [PostGroupBy!],
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+	"""
+	users Aggregate
+	"""
+	_usersAggregate(groupBy: [UserGroupBy!],
+		"""
+		Filter _usersAggregate
+		"""
+		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate(groupBy: [CategoryGroupBy!],
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+	"""
+	animals Aggregate
+	"""
+	_animalsAggregate(groupBy: [AnimalGroupBy!],
+		"""
+		Filter _animalsAggregate
+		"""
+		filter: AnimalFilterInput): [AnimalsAggregate!]! @generate(filter: true)
+}
+type User @table(name: "user") @generateFilterInput {
+	id: Int!
+	name: String!
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+	"""
+	posts Aggregate
+	"""
+	_postsAggregate(groupBy: [PostGroupBy!],
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -1943,7 +1943,7 @@ func (ec *executionContext) dir_typename_args(ctx context.Context, rawArgs map[s
 func (ec *executionContext) field_Mutation_createPosts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "inputs", ec.unmarshalNCreatePostInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCreatePostInputᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "inputs", ec.unmarshalNCreatePostInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCreatePostInputᚄ)
 	if err != nil {
 		return nil, err
 	}
@@ -1959,7 +1959,7 @@ func (ec *executionContext) field_Mutation_deletePosts_args(ctx context.Context,
 		return nil, err
 	}
 	args["cascade"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -1970,12 +1970,12 @@ func (ec *executionContext) field_Mutation_deletePosts_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_updatePosts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUpdatePostInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUpdatePostInput)
 	if err != nil {
 		return nil, err
 	}
 	args["input"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -1986,12 +1986,12 @@ func (ec *executionContext) field_Mutation_updatePosts_args(ctx context.Context,
 func (ec *executionContext) field_Post__categoriesAggregate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryGroupByᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryGroupByᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["groupBy"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2002,12 +2002,12 @@ func (ec *executionContext) field_Post__categoriesAggregate_args(ctx context.Con
 func (ec *executionContext) field_Post__userAggregate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserGroupByᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserGroupByᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["groupBy"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2028,12 +2028,12 @@ func (ec *executionContext) field_Post_categories_args(ctx context.Context, rawA
 		return nil, err
 	}
 	args["offset"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryOrdering)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryOrdering)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2055,12 +2055,12 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query__animalsAggregate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalGroupByᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalGroupByᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["groupBy"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalFilterInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2071,12 +2071,12 @@ func (ec *executionContext) field_Query__animalsAggregate_args(ctx context.Conte
 func (ec *executionContext) field_Query__categoriesAggregate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryGroupByᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryGroupByᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["groupBy"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2087,12 +2087,12 @@ func (ec *executionContext) field_Query__categoriesAggregate_args(ctx context.Co
 func (ec *executionContext) field_Query__postsAggregate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostGroupByᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostGroupByᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["groupBy"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2103,12 +2103,12 @@ func (ec *executionContext) field_Query__postsAggregate_args(ctx context.Context
 func (ec *executionContext) field_Query__usersAggregate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserGroupByᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserGroupByᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["groupBy"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2129,12 +2129,12 @@ func (ec *executionContext) field_Query_animals_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["offset"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAnimalOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalOrdering)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAnimalOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalOrdering)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalFilterInput)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2155,12 +2155,12 @@ func (ec *executionContext) field_Query_categories_args(ctx context.Context, raw
 		return nil, err
 	}
 	args["offset"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryOrdering)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryOrdering)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2181,12 +2181,12 @@ func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs 
 		return nil, err
 	}
 	args["offset"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostOrdering)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostOrdering)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2207,12 +2207,12 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 		return nil, err
 	}
 	args["offset"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOUserOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserOrdering)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOUserOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserOrdering)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2223,12 +2223,12 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 func (ec *executionContext) field_User__postsAggregate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostGroupByᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostGroupByᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["groupBy"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2249,12 +2249,12 @@ func (ec *executionContext) field_User_posts_args(ctx context.Context, rawArgs m
 		return nil, err
 	}
 	args["offset"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostOrdering)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostOrdering)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2382,7 +2382,7 @@ func (ec *executionContext) _AnimalsAggregate_max(ctx context.Context, field gra
 			return obj.Max, nil
 		},
 		nil,
-		ec.marshalN_AnimalMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalMax,
+		ec.marshalN_AnimalMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalMax,
 		true,
 		true,
 	)
@@ -2419,7 +2419,7 @@ func (ec *executionContext) _AnimalsAggregate_min(ctx context.Context, field gra
 			return obj.Min, nil
 		},
 		nil,
-		ec.marshalN_AnimalMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalMin,
+		ec.marshalN_AnimalMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalMin,
 		true,
 		true,
 	)
@@ -2456,7 +2456,7 @@ func (ec *executionContext) _AnimalsAggregate_avg(ctx context.Context, field gra
 			return obj.Avg, nil
 		},
 		nil,
-		ec.marshalN_AnimalAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalAvg,
+		ec.marshalN_AnimalAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalAvg,
 		true,
 		true,
 	)
@@ -2489,7 +2489,7 @@ func (ec *executionContext) _AnimalsAggregate_sum(ctx context.Context, field gra
 			return obj.Sum, nil
 		},
 		nil,
-		ec.marshalN_AnimalSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalSum,
+		ec.marshalN_AnimalSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalSum,
 		true,
 		true,
 	)
@@ -2696,7 +2696,7 @@ func (ec *executionContext) _CategoriesAggregate_max(ctx context.Context, field 
 			return obj.Max, nil
 		},
 		nil,
-		ec.marshalN_CategoryMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryMax,
+		ec.marshalN_CategoryMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryMax,
 		true,
 		true,
 	)
@@ -2731,7 +2731,7 @@ func (ec *executionContext) _CategoriesAggregate_min(ctx context.Context, field 
 			return obj.Min, nil
 		},
 		nil,
-		ec.marshalN_CategoryMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryMin,
+		ec.marshalN_CategoryMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryMin,
 		true,
 		true,
 	)
@@ -2766,7 +2766,7 @@ func (ec *executionContext) _CategoriesAggregate_avg(ctx context.Context, field 
 			return obj.Avg, nil
 		},
 		nil,
-		ec.marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryAvg,
+		ec.marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryAvg,
 		true,
 		true,
 	)
@@ -2799,7 +2799,7 @@ func (ec *executionContext) _CategoriesAggregate_sum(ctx context.Context, field 
 			return obj.Sum, nil
 		},
 		nil,
-		ec.marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategorySum,
+		ec.marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategorySum,
 		true,
 		true,
 	)
@@ -3007,7 +3007,7 @@ func (ec *executionContext) _Mutation_createPosts(ctx context.Context, field gra
 			return ec.resolvers.Mutation().CreatePosts(ctx, fc.Args["inputs"].([]model.CreatePostInput))
 		},
 		nil,
-		ec.marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostsPayload,
+		ec.marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsPayload,
 		true,
 		false,
 	)
@@ -3054,7 +3054,7 @@ func (ec *executionContext) _Mutation_deletePosts(ctx context.Context, field gra
 			return ec.resolvers.Mutation().DeletePosts(ctx, fc.Args["cascade"].(*bool), fc.Args["filter"].(*model.PostFilterInput))
 		},
 		nil,
-		ec.marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostsPayload,
+		ec.marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsPayload,
 		true,
 		false,
 	)
@@ -3101,7 +3101,7 @@ func (ec *executionContext) _Mutation_updatePosts(ctx context.Context, field gra
 			return ec.resolvers.Mutation().UpdatePosts(ctx, fc.Args["input"].(model.UpdatePostInput), fc.Args["filter"].(*model.PostFilterInput))
 		},
 		nil,
-		ec.marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostsPayload,
+		ec.marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsPayload,
 		true,
 		false,
 	)
@@ -3205,7 +3205,7 @@ func (ec *executionContext) _Post_categories(ctx context.Context, field graphql.
 			return obj.Categories, nil
 		},
 		nil,
-		ec.marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategory,
+		ec.marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategory,
 		true,
 		false,
 	)
@@ -3280,7 +3280,7 @@ func (ec *executionContext) _Post_user(ctx context.Context, field graphql.Collec
 			return obj.User, nil
 		},
 		nil,
-		ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUser,
+		ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUser,
 		true,
 		false,
 	)
@@ -3319,7 +3319,7 @@ func (ec *executionContext) _Post__categoriesAggregate(ctx context.Context, fiel
 			return obj.CategoriesAggregate, nil
 		},
 		nil,
-		ec.marshalNCategoriesAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoriesAggregateᚄ,
+		ec.marshalNCategoriesAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoriesAggregateᚄ,
 		true,
 		true,
 	)
@@ -3373,7 +3373,7 @@ func (ec *executionContext) _Post__userAggregate(ctx context.Context, field grap
 			return obj.UserAggregate, nil
 		},
 		nil,
-		ec.marshalNUsersAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUsersAggregateᚄ,
+		ec.marshalNUsersAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUsersAggregateᚄ,
 		true,
 		true,
 	)
@@ -3485,7 +3485,7 @@ func (ec *executionContext) _PostsAggregate_max(ctx context.Context, field graph
 			return obj.Max, nil
 		},
 		nil,
-		ec.marshalN_PostMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostMax,
+		ec.marshalN_PostMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostMax,
 		true,
 		true,
 	)
@@ -3522,7 +3522,7 @@ func (ec *executionContext) _PostsAggregate_min(ctx context.Context, field graph
 			return obj.Min, nil
 		},
 		nil,
-		ec.marshalN_PostMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostMin,
+		ec.marshalN_PostMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostMin,
 		true,
 		true,
 	)
@@ -3559,7 +3559,7 @@ func (ec *executionContext) _PostsAggregate_avg(ctx context.Context, field graph
 			return obj.Avg, nil
 		},
 		nil,
-		ec.marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostAvg,
+		ec.marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostAvg,
 		true,
 		true,
 	)
@@ -3594,7 +3594,7 @@ func (ec *executionContext) _PostsAggregate_sum(ctx context.Context, field graph
 			return obj.Sum, nil
 		},
 		nil,
-		ec.marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostSum,
+		ec.marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostSum,
 		true,
 		true,
 	)
@@ -3658,7 +3658,7 @@ func (ec *executionContext) _PostsPayload_posts(ctx context.Context, field graph
 			return obj.Posts, nil
 		},
 		nil,
-		ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPost,
+		ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPost,
 		true,
 		false,
 	)
@@ -3704,7 +3704,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 			return ec.resolvers.Query().Posts(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.PostOrdering), fc.Args["filter"].(*model.PostFilterInput))
 		},
 		nil,
-		ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPost,
+		ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPost,
 		true,
 		false,
 	)
@@ -3761,7 +3761,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 			return ec.resolvers.Query().Users(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.UserOrdering), fc.Args["filter"].(*model.UserFilterInput))
 		},
 		nil,
-		ec.marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUser,
+		ec.marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUser,
 		true,
 		false,
 	)
@@ -3812,7 +3812,7 @@ func (ec *executionContext) _Query_categories(ctx context.Context, field graphql
 			return ec.resolvers.Query().Categories(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.CategoryOrdering), fc.Args["filter"].(*model.CategoryFilterInput))
 		},
 		nil,
-		ec.marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategory,
+		ec.marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategory,
 		true,
 		false,
 	)
@@ -3859,7 +3859,7 @@ func (ec *executionContext) _Query_animals(ctx context.Context, field graphql.Co
 			return ec.resolvers.Query().Animals(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.AnimalOrdering), fc.Args["filter"].(*model.AnimalFilterInput))
 		},
 		nil,
-		ec.marshalOAnimal2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimal,
+		ec.marshalOAnimal2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimal,
 		true,
 		false,
 	)
@@ -3900,7 +3900,7 @@ func (ec *executionContext) _Query__postsAggregate(ctx context.Context, field gr
 			return ec.resolvers.Query().PostsAggregate(ctx, fc.Args["groupBy"].([]model.PostGroupBy), fc.Args["filter"].(*model.PostFilterInput))
 		},
 		nil,
-		ec.marshalNPostsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostsAggregateᚄ,
+		ec.marshalNPostsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsAggregateᚄ,
 		true,
 		true,
 	)
@@ -3955,7 +3955,7 @@ func (ec *executionContext) _Query__usersAggregate(ctx context.Context, field gr
 			return ec.resolvers.Query().UsersAggregate(ctx, fc.Args["groupBy"].([]model.UserGroupBy), fc.Args["filter"].(*model.UserFilterInput))
 		},
 		nil,
-		ec.marshalNUsersAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUsersAggregateᚄ,
+		ec.marshalNUsersAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUsersAggregateᚄ,
 		true,
 		true,
 	)
@@ -4010,7 +4010,7 @@ func (ec *executionContext) _Query__categoriesAggregate(ctx context.Context, fie
 			return ec.resolvers.Query().CategoriesAggregate(ctx, fc.Args["groupBy"].([]model.CategoryGroupBy), fc.Args["filter"].(*model.CategoryFilterInput))
 		},
 		nil,
-		ec.marshalNCategoriesAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoriesAggregateᚄ,
+		ec.marshalNCategoriesAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoriesAggregateᚄ,
 		true,
 		true,
 	)
@@ -4065,7 +4065,7 @@ func (ec *executionContext) _Query__animalsAggregate(ctx context.Context, field 
 			return ec.resolvers.Query().AnimalsAggregate(ctx, fc.Args["groupBy"].([]model.AnimalGroupBy), fc.Args["filter"].(*model.AnimalFilterInput))
 		},
 		nil,
-		ec.marshalNAnimalsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalsAggregateᚄ,
+		ec.marshalNAnimalsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalsAggregateᚄ,
 		true,
 		true,
 	)
@@ -4285,7 +4285,7 @@ func (ec *executionContext) _User_posts(ctx context.Context, field graphql.Colle
 			return obj.Posts, nil
 		},
 		nil,
-		ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPost,
+		ec.marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPost,
 		true,
 		false,
 	)
@@ -4341,7 +4341,7 @@ func (ec *executionContext) _User__postsAggregate(ctx context.Context, field gra
 			return obj.PostsAggregate, nil
 		},
 		nil,
-		ec.marshalNPostsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostsAggregateᚄ,
+		ec.marshalNPostsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsAggregateᚄ,
 		true,
 		true,
 	)
@@ -4453,7 +4453,7 @@ func (ec *executionContext) _UsersAggregate_max(ctx context.Context, field graph
 			return obj.Max, nil
 		},
 		nil,
-		ec.marshalN_UserMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserMax,
+		ec.marshalN_UserMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserMax,
 		true,
 		true,
 	)
@@ -4488,7 +4488,7 @@ func (ec *executionContext) _UsersAggregate_min(ctx context.Context, field graph
 			return obj.Min, nil
 		},
 		nil,
-		ec.marshalN_UserMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserMin,
+		ec.marshalN_UserMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserMin,
 		true,
 		true,
 	)
@@ -4523,7 +4523,7 @@ func (ec *executionContext) _UsersAggregate_avg(ctx context.Context, field graph
 			return obj.Avg, nil
 		},
 		nil,
-		ec.marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserAvg,
+		ec.marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserAvg,
 		true,
 		true,
 	)
@@ -4556,7 +4556,7 @@ func (ec *executionContext) _UsersAggregate_sum(ctx context.Context, field graph
 			return obj.Sum, nil
 		},
 		nil,
-		ec.marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserSum,
+		ec.marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserSum,
 		true,
 		true,
 	)
@@ -6931,7 +6931,7 @@ func (ec *executionContext) unmarshalInputAnimalFilterInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name", "type", "dog", "cat", "AND", "OR", "NOT"}
+	fieldsInOrder := [...]string{"id", "name", "type", "cat", "dog", "AND", "OR", "NOT"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6940,56 +6940,56 @@ func (ec *executionContext) unmarshalInputAnimalFilterInput(ctx context.Context,
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
 		case "type":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Type = data
-		case "dog":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dog"))
-			data, err := ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Dog = data
 		case "cat":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cat"))
-			data, err := ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
+			data, err := ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Cat = data
+		case "dog":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dog"))
+			data, err := ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Dog = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			data, err := ec.unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
+			data, err := ec.unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.And = data
 		case "OR":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			data, err := ec.unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
+			data, err := ec.unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Or = data
 		case "NOT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			data, err := ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
+			data, err := ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7016,21 +7016,21 @@ func (ec *executionContext) unmarshalInputAnimalOrdering(ctx context.Context, ob
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
 		case "type":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7160,49 +7160,49 @@ func (ec *executionContext) unmarshalInputCatFilterInput(ctx context.Context, ob
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
 		case "type":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Type = data
 		case "color":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("color"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Color = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			data, err := ec.unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
+			data, err := ec.unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.And = data
 		case "OR":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			data, err := ec.unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
+			data, err := ec.unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Or = data
 		case "NOT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			data, err := ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
+			data, err := ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCatFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7229,35 +7229,35 @@ func (ec *executionContext) unmarshalInputCategoryFilterInput(ctx context.Contex
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			data, err := ec.unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			data, err := ec.unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.And = data
 		case "OR":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			data, err := ec.unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			data, err := ec.unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Or = data
 		case "NOT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			data, err := ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			data, err := ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7284,14 +7284,14 @@ func (ec *executionContext) unmarshalInputCategoryOrdering(ctx context.Context, 
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7359,49 +7359,49 @@ func (ec *executionContext) unmarshalInputDogFilterInput(ctx context.Context, ob
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
 		case "type":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Type = data
 		case "breed":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("breed"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Breed = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			data, err := ec.unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
+			data, err := ec.unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.And = data
 		case "OR":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			data, err := ec.unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
+			data, err := ec.unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Or = data
 		case "NOT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			data, err := ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
+			data, err := ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐDogFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7690,56 +7690,56 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
 		case "categories":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categories"))
-			data, err := ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
+			data, err := ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Categories = data
 		case "user_id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
-			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.UserID = data
 		case "user":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
-			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.User = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			data, err := ec.unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			data, err := ec.unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.And = data
 		case "OR":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			data, err := ec.unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			data, err := ec.unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Or = data
 		case "NOT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			data, err := ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			data, err := ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7766,21 +7766,21 @@ func (ec *executionContext) unmarshalInputPostOrdering(ctx context.Context, obj 
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
 		case "user_id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7993,42 +7993,42 @@ func (ec *executionContext) unmarshalInputUserFilterInput(ctx context.Context, o
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
 		case "posts":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("posts"))
-			data, err := ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
+			data, err := ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Posts = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
-			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.And = data
 		case "OR":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
-			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			data, err := ec.unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Or = data
 		case "NOT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
-			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
+			data, err := ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8055,14 +8055,14 @@ func (ec *executionContext) unmarshalInputUserOrdering(ctx context.Context, obj 
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9982,21 +9982,21 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNAnimalGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalGroupBy(ctx context.Context, v any) (model.AnimalGroupBy, error) {
+func (ec *executionContext) unmarshalNAnimalGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalGroupBy(ctx context.Context, v any) (model.AnimalGroupBy, error) {
 	var res model.AnimalGroupBy
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNAnimalGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalGroupBy(ctx context.Context, sel ast.SelectionSet, v model.AnimalGroupBy) graphql.Marshaler {
+func (ec *executionContext) marshalNAnimalGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalGroupBy(ctx context.Context, sel ast.SelectionSet, v model.AnimalGroupBy) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNAnimalsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalsAggregate(ctx context.Context, sel ast.SelectionSet, v model.AnimalsAggregate) graphql.Marshaler {
+func (ec *executionContext) marshalNAnimalsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalsAggregate(ctx context.Context, sel ast.SelectionSet, v model.AnimalsAggregate) graphql.Marshaler {
 	return ec._AnimalsAggregate(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAnimalsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalsAggregateᚄ(ctx context.Context, sel ast.SelectionSet, v []model.AnimalsAggregate) graphql.Marshaler {
+func (ec *executionContext) marshalNAnimalsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalsAggregateᚄ(ctx context.Context, sel ast.SelectionSet, v []model.AnimalsAggregate) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -10020,7 +10020,7 @@ func (ec *executionContext) marshalNAnimalsAggregate2ᚕgithubᚗcomᚋroneliᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAnimalsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalsAggregate(ctx, sel, v[i])
+			ret[i] = ec.marshalNAnimalsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalsAggregate(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10056,11 +10056,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNCategoriesAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoriesAggregate(ctx context.Context, sel ast.SelectionSet, v model.CategoriesAggregate) graphql.Marshaler {
+func (ec *executionContext) marshalNCategoriesAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoriesAggregate(ctx context.Context, sel ast.SelectionSet, v model.CategoriesAggregate) graphql.Marshaler {
 	return ec._CategoriesAggregate(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCategoriesAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoriesAggregateᚄ(ctx context.Context, sel ast.SelectionSet, v []model.CategoriesAggregate) graphql.Marshaler {
+func (ec *executionContext) marshalNCategoriesAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoriesAggregateᚄ(ctx context.Context, sel ast.SelectionSet, v []model.CategoriesAggregate) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -10084,7 +10084,7 @@ func (ec *executionContext) marshalNCategoriesAggregate2ᚕgithubᚗcomᚋroneli
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNCategoriesAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoriesAggregate(ctx, sel, v[i])
+			ret[i] = ec.marshalNCategoriesAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoriesAggregate(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10104,29 +10104,29 @@ func (ec *executionContext) marshalNCategoriesAggregate2ᚕgithubᚗcomᚋroneli
 	return ret
 }
 
-func (ec *executionContext) unmarshalNCategoryGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryGroupBy(ctx context.Context, v any) (model.CategoryGroupBy, error) {
+func (ec *executionContext) unmarshalNCategoryGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryGroupBy(ctx context.Context, v any) (model.CategoryGroupBy, error) {
 	var res model.CategoryGroupBy
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNCategoryGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryGroupBy(ctx context.Context, sel ast.SelectionSet, v model.CategoryGroupBy) graphql.Marshaler {
+func (ec *executionContext) marshalNCategoryGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryGroupBy(ctx context.Context, sel ast.SelectionSet, v model.CategoryGroupBy) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNCreatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCreatePostInput(ctx context.Context, v any) (model.CreatePostInput, error) {
+func (ec *executionContext) unmarshalNCreatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCreatePostInput(ctx context.Context, v any) (model.CreatePostInput, error) {
 	res, err := ec.unmarshalInputCreatePostInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCreatePostInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCreatePostInputᚄ(ctx context.Context, v any) ([]model.CreatePostInput, error) {
+func (ec *executionContext) unmarshalNCreatePostInput2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCreatePostInputᚄ(ctx context.Context, v any) ([]model.CreatePostInput, error) {
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]model.CreatePostInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNCreatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCreatePostInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNCreatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCreatePostInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10166,21 +10166,21 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNPostGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostGroupBy(ctx context.Context, v any) (model.PostGroupBy, error) {
+func (ec *executionContext) unmarshalNPostGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostGroupBy(ctx context.Context, v any) (model.PostGroupBy, error) {
 	var res model.PostGroupBy
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPostGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostGroupBy(ctx context.Context, sel ast.SelectionSet, v model.PostGroupBy) graphql.Marshaler {
+func (ec *executionContext) marshalNPostGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostGroupBy(ctx context.Context, sel ast.SelectionSet, v model.PostGroupBy) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNPostsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostsAggregate(ctx context.Context, sel ast.SelectionSet, v model.PostsAggregate) graphql.Marshaler {
+func (ec *executionContext) marshalNPostsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsAggregate(ctx context.Context, sel ast.SelectionSet, v model.PostsAggregate) graphql.Marshaler {
 	return ec._PostsAggregate(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPostsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostsAggregateᚄ(ctx context.Context, sel ast.SelectionSet, v []model.PostsAggregate) graphql.Marshaler {
+func (ec *executionContext) marshalNPostsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsAggregateᚄ(ctx context.Context, sel ast.SelectionSet, v []model.PostsAggregate) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -10204,7 +10204,7 @@ func (ec *executionContext) marshalNPostsAggregate2ᚕgithubᚗcomᚋroneliᚋfa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPostsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostsAggregate(ctx, sel, v[i])
+			ret[i] = ec.marshalNPostsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsAggregate(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10270,26 +10270,26 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	return ret
 }
 
-func (ec *executionContext) unmarshalNUpdatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUpdatePostInput(ctx context.Context, v any) (model.UpdatePostInput, error) {
+func (ec *executionContext) unmarshalNUpdatePostInput2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUpdatePostInput(ctx context.Context, v any) (model.UpdatePostInput, error) {
 	res, err := ec.unmarshalInputUpdatePostInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUserGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserGroupBy(ctx context.Context, v any) (model.UserGroupBy, error) {
+func (ec *executionContext) unmarshalNUserGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserGroupBy(ctx context.Context, v any) (model.UserGroupBy, error) {
 	var res model.UserGroupBy
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNUserGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserGroupBy(ctx context.Context, sel ast.SelectionSet, v model.UserGroupBy) graphql.Marshaler {
+func (ec *executionContext) marshalNUserGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserGroupBy(ctx context.Context, sel ast.SelectionSet, v model.UserGroupBy) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNUsersAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUsersAggregate(ctx context.Context, sel ast.SelectionSet, v model.UsersAggregate) graphql.Marshaler {
+func (ec *executionContext) marshalNUsersAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUsersAggregate(ctx context.Context, sel ast.SelectionSet, v model.UsersAggregate) graphql.Marshaler {
 	return ec._UsersAggregate(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUsersAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUsersAggregateᚄ(ctx context.Context, sel ast.SelectionSet, v []model.UsersAggregate) graphql.Marshaler {
+func (ec *executionContext) marshalNUsersAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUsersAggregateᚄ(ctx context.Context, sel ast.SelectionSet, v []model.UsersAggregate) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -10313,7 +10313,7 @@ func (ec *executionContext) marshalNUsersAggregate2ᚕgithubᚗcomᚋroneliᚋfa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNUsersAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUsersAggregate(ctx, sel, v[i])
+			ret[i] = ec.marshalNUsersAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUsersAggregate(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10333,7 +10333,7 @@ func (ec *executionContext) marshalNUsersAggregate2ᚕgithubᚗcomᚋroneliᚋfa
 	return ret
 }
 
-func (ec *executionContext) marshalN_AnimalAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalAvg(ctx context.Context, sel ast.SelectionSet, v *model.AnimalAvg) graphql.Marshaler {
+func (ec *executionContext) marshalN_AnimalAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalAvg(ctx context.Context, sel ast.SelectionSet, v *model.AnimalAvg) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10343,7 +10343,7 @@ func (ec *executionContext) marshalN_AnimalAvg2ᚖgithubᚗcomᚋroneliᚋfastgq
 	return ec.__AnimalAvg(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_AnimalMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalMax(ctx context.Context, sel ast.SelectionSet, v *model.AnimalMax) graphql.Marshaler {
+func (ec *executionContext) marshalN_AnimalMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalMax(ctx context.Context, sel ast.SelectionSet, v *model.AnimalMax) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10353,7 +10353,7 @@ func (ec *executionContext) marshalN_AnimalMax2ᚖgithubᚗcomᚋroneliᚋfastgq
 	return ec.__AnimalMax(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_AnimalMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalMin(ctx context.Context, sel ast.SelectionSet, v *model.AnimalMin) graphql.Marshaler {
+func (ec *executionContext) marshalN_AnimalMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalMin(ctx context.Context, sel ast.SelectionSet, v *model.AnimalMin) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10363,7 +10363,7 @@ func (ec *executionContext) marshalN_AnimalMin2ᚖgithubᚗcomᚋroneliᚋfastgq
 	return ec.__AnimalMin(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_AnimalSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalSum(ctx context.Context, sel ast.SelectionSet, v *model.AnimalSum) graphql.Marshaler {
+func (ec *executionContext) marshalN_AnimalSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalSum(ctx context.Context, sel ast.SelectionSet, v *model.AnimalSum) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10373,7 +10373,7 @@ func (ec *executionContext) marshalN_AnimalSum2ᚖgithubᚗcomᚋroneliᚋfastgq
 	return ec.__AnimalSum(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryAvg(ctx context.Context, sel ast.SelectionSet, v *model.CategoryAvg) graphql.Marshaler {
+func (ec *executionContext) marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryAvg(ctx context.Context, sel ast.SelectionSet, v *model.CategoryAvg) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10383,7 +10383,7 @@ func (ec *executionContext) marshalN_CategoryAvg2ᚖgithubᚗcomᚋroneliᚋfast
 	return ec.__CategoryAvg(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_CategoryMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryMax(ctx context.Context, sel ast.SelectionSet, v *model.CategoryMax) graphql.Marshaler {
+func (ec *executionContext) marshalN_CategoryMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryMax(ctx context.Context, sel ast.SelectionSet, v *model.CategoryMax) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10393,7 +10393,7 @@ func (ec *executionContext) marshalN_CategoryMax2ᚖgithubᚗcomᚋroneliᚋfast
 	return ec.__CategoryMax(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_CategoryMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryMin(ctx context.Context, sel ast.SelectionSet, v *model.CategoryMin) graphql.Marshaler {
+func (ec *executionContext) marshalN_CategoryMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryMin(ctx context.Context, sel ast.SelectionSet, v *model.CategoryMin) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10403,7 +10403,7 @@ func (ec *executionContext) marshalN_CategoryMin2ᚖgithubᚗcomᚋroneliᚋfast
 	return ec.__CategoryMin(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategorySum(ctx context.Context, sel ast.SelectionSet, v *model.CategorySum) graphql.Marshaler {
+func (ec *executionContext) marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategorySum(ctx context.Context, sel ast.SelectionSet, v *model.CategorySum) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10413,7 +10413,7 @@ func (ec *executionContext) marshalN_CategorySum2ᚖgithubᚗcomᚋroneliᚋfast
 	return ec.__CategorySum(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostAvg(ctx context.Context, sel ast.SelectionSet, v *model.PostAvg) graphql.Marshaler {
+func (ec *executionContext) marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostAvg(ctx context.Context, sel ast.SelectionSet, v *model.PostAvg) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10423,7 +10423,7 @@ func (ec *executionContext) marshalN_PostAvg2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__PostAvg(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_PostMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostMax(ctx context.Context, sel ast.SelectionSet, v *model.PostMax) graphql.Marshaler {
+func (ec *executionContext) marshalN_PostMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostMax(ctx context.Context, sel ast.SelectionSet, v *model.PostMax) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10433,7 +10433,7 @@ func (ec *executionContext) marshalN_PostMax2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__PostMax(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_PostMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostMin(ctx context.Context, sel ast.SelectionSet, v *model.PostMin) graphql.Marshaler {
+func (ec *executionContext) marshalN_PostMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostMin(ctx context.Context, sel ast.SelectionSet, v *model.PostMin) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10443,7 +10443,7 @@ func (ec *executionContext) marshalN_PostMin2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__PostMin(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostSum(ctx context.Context, sel ast.SelectionSet, v *model.PostSum) graphql.Marshaler {
+func (ec *executionContext) marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostSum(ctx context.Context, sel ast.SelectionSet, v *model.PostSum) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10453,7 +10453,7 @@ func (ec *executionContext) marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__PostSum(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserAvg(ctx context.Context, sel ast.SelectionSet, v *model.UserAvg) graphql.Marshaler {
+func (ec *executionContext) marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserAvg(ctx context.Context, sel ast.SelectionSet, v *model.UserAvg) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10463,7 +10463,7 @@ func (ec *executionContext) marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__UserAvg(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_UserMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserMax(ctx context.Context, sel ast.SelectionSet, v *model.UserMax) graphql.Marshaler {
+func (ec *executionContext) marshalN_UserMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserMax(ctx context.Context, sel ast.SelectionSet, v *model.UserMax) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10473,7 +10473,7 @@ func (ec *executionContext) marshalN_UserMax2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__UserMax(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_UserMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserMin(ctx context.Context, sel ast.SelectionSet, v *model.UserMin) graphql.Marshaler {
+func (ec *executionContext) marshalN_UserMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserMin(ctx context.Context, sel ast.SelectionSet, v *model.UserMin) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10483,7 +10483,7 @@ func (ec *executionContext) marshalN_UserMin2ᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ec.__UserMin(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserSum(ctx context.Context, sel ast.SelectionSet, v *model.UserSum) graphql.Marshaler {
+func (ec *executionContext) marshalN_UserSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserSum(ctx context.Context, sel ast.SelectionSet, v *model.UserSum) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -10746,24 +10746,24 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) unmarshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐRelationType(ctx context.Context, v any) (model.RelationType, error) {
+func (ec *executionContext) unmarshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐRelationType(ctx context.Context, v any) (model.RelationType, error) {
 	var res model.RelationType
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐRelationType(ctx context.Context, sel ast.SelectionSet, v model.RelationType) graphql.Marshaler {
+func (ec *executionContext) marshalN_relationType2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐRelationType(ctx context.Context, sel ast.SelectionSet, v model.RelationType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalOAnimal2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimal(ctx context.Context, sel ast.SelectionSet, v model.Animal) graphql.Marshaler {
+func (ec *executionContext) marshalOAnimal2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimal(ctx context.Context, sel ast.SelectionSet, v model.Animal) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Animal(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOAnimal2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimal(ctx context.Context, sel ast.SelectionSet, v []model.Animal) graphql.Marshaler {
+func (ec *executionContext) marshalOAnimal2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimal(ctx context.Context, sel ast.SelectionSet, v []model.Animal) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -10790,7 +10790,7 @@ func (ec *executionContext) marshalOAnimal2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOAnimal2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimal(ctx, sel, v[i])
+			ret[i] = ec.marshalOAnimal2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimal(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10804,7 +10804,7 @@ func (ec *executionContext) marshalOAnimal2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋ
 	return ret
 }
 
-func (ec *executionContext) unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalFilterInput(ctx context.Context, v any) ([]*model.AnimalFilterInput, error) {
+func (ec *executionContext) unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalFilterInput(ctx context.Context, v any) ([]*model.AnimalFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10814,7 +10814,7 @@ func (ec *executionContext) unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋron
 	res := make([]*model.AnimalFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10822,7 +10822,7 @@ func (ec *executionContext) unmarshalOAnimalFilterInput2ᚕᚖgithubᚗcomᚋron
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalFilterInput(ctx context.Context, v any) (*model.AnimalFilterInput, error) {
+func (ec *executionContext) unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalFilterInput(ctx context.Context, v any) (*model.AnimalFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10830,7 +10830,7 @@ func (ec *executionContext) unmarshalOAnimalFilterInput2ᚖgithubᚗcomᚋroneli
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalGroupByᚄ(ctx context.Context, v any) ([]model.AnimalGroupBy, error) {
+func (ec *executionContext) unmarshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalGroupByᚄ(ctx context.Context, v any) ([]model.AnimalGroupBy, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10840,7 +10840,7 @@ func (ec *executionContext) unmarshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋf
 	res := make([]model.AnimalGroupBy, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNAnimalGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalGroupBy(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNAnimalGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalGroupBy(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10848,7 +10848,7 @@ func (ec *executionContext) unmarshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋf
 	return res, nil
 }
 
-func (ec *executionContext) marshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalGroupByᚄ(ctx context.Context, sel ast.SelectionSet, v []model.AnimalGroupBy) graphql.Marshaler {
+func (ec *executionContext) marshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalGroupByᚄ(ctx context.Context, sel ast.SelectionSet, v []model.AnimalGroupBy) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -10875,7 +10875,7 @@ func (ec *executionContext) marshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋfas
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAnimalGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalGroupBy(ctx, sel, v[i])
+			ret[i] = ec.marshalNAnimalGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalGroupBy(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10895,7 +10895,7 @@ func (ec *executionContext) marshalOAnimalGroupBy2ᚕgithubᚗcomᚋroneliᚋfas
 	return ret
 }
 
-func (ec *executionContext) unmarshalOAnimalOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalOrdering(ctx context.Context, v any) ([]*model.AnimalOrdering, error) {
+func (ec *executionContext) unmarshalOAnimalOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalOrdering(ctx context.Context, v any) ([]*model.AnimalOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10905,7 +10905,7 @@ func (ec *executionContext) unmarshalOAnimalOrdering2ᚕᚖgithubᚗcomᚋroneli
 	res := make([]*model.AnimalOrdering, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOAnimalOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalOrdering(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOAnimalOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalOrdering(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10913,7 +10913,7 @@ func (ec *executionContext) unmarshalOAnimalOrdering2ᚕᚖgithubᚗcomᚋroneli
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOAnimalOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐAnimalOrdering(ctx context.Context, v any) (*model.AnimalOrdering, error) {
+func (ec *executionContext) unmarshalOAnimalOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐAnimalOrdering(ctx context.Context, v any) (*model.AnimalOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10981,7 +10981,7 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCatFilterInput(ctx context.Context, v any) ([]*model.CatFilterInput, error) {
+func (ec *executionContext) unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCatFilterInput(ctx context.Context, v any) ([]*model.CatFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10991,7 +10991,7 @@ func (ec *executionContext) unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneli
 	res := make([]*model.CatFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCatFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCatFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10999,7 +10999,7 @@ func (ec *executionContext) unmarshalOCatFilterInput2ᚕᚖgithubᚗcomᚋroneli
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCatFilterInput(ctx context.Context, v any) (*model.CatFilterInput, error) {
+func (ec *executionContext) unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCatFilterInput(ctx context.Context, v any) (*model.CatFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11007,7 +11007,7 @@ func (ec *executionContext) unmarshalOCatFilterInput2ᚖgithubᚗcomᚋroneliᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v []*model.Category) graphql.Marshaler {
+func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v []*model.Category) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -11034,7 +11034,7 @@ func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastg
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOCategory2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategory(ctx, sel, v[i])
+			ret[i] = ec.marshalOCategory2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategory(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -11048,14 +11048,14 @@ func (ec *executionContext) marshalOCategory2ᚕᚖgithubᚗcomᚋroneliᚋfastg
 	return ret
 }
 
-func (ec *executionContext) marshalOCategory2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v *model.Category) graphql.Marshaler {
+func (ec *executionContext) marshalOCategory2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v *model.Category) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Category(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v any) ([]*model.CategoryFilterInput, error) {
+func (ec *executionContext) unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v any) ([]*model.CategoryFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11065,7 +11065,7 @@ func (ec *executionContext) unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋr
 	res := make([]*model.CategoryFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11073,7 +11073,7 @@ func (ec *executionContext) unmarshalOCategoryFilterInput2ᚕᚖgithubᚗcomᚋr
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v any) (*model.CategoryFilterInput, error) {
+func (ec *executionContext) unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryFilterInput(ctx context.Context, v any) (*model.CategoryFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11081,7 +11081,7 @@ func (ec *executionContext) unmarshalOCategoryFilterInput2ᚖgithubᚗcomᚋrone
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryGroupByᚄ(ctx context.Context, v any) ([]model.CategoryGroupBy, error) {
+func (ec *executionContext) unmarshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryGroupByᚄ(ctx context.Context, v any) ([]model.CategoryGroupBy, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11091,7 +11091,7 @@ func (ec *executionContext) unmarshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneli�
 	res := make([]model.CategoryGroupBy, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNCategoryGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryGroupBy(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNCategoryGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryGroupBy(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11099,7 +11099,7 @@ func (ec *executionContext) unmarshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneli�
 	return res, nil
 }
 
-func (ec *executionContext) marshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryGroupByᚄ(ctx context.Context, sel ast.SelectionSet, v []model.CategoryGroupBy) graphql.Marshaler {
+func (ec *executionContext) marshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryGroupByᚄ(ctx context.Context, sel ast.SelectionSet, v []model.CategoryGroupBy) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -11126,7 +11126,7 @@ func (ec *executionContext) marshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋf
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNCategoryGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryGroupBy(ctx, sel, v[i])
+			ret[i] = ec.marshalNCategoryGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryGroupBy(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -11146,7 +11146,7 @@ func (ec *executionContext) marshalOCategoryGroupBy2ᚕgithubᚗcomᚋroneliᚋf
 	return ret
 }
 
-func (ec *executionContext) unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryOrdering(ctx context.Context, v any) ([]*model.CategoryOrdering, error) {
+func (ec *executionContext) unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryOrdering(ctx context.Context, v any) ([]*model.CategoryOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11156,7 +11156,7 @@ func (ec *executionContext) unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋrone
 	res := make([]*model.CategoryOrdering, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryOrdering(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryOrdering(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11164,7 +11164,7 @@ func (ec *executionContext) unmarshalOCategoryOrdering2ᚕᚖgithubᚗcomᚋrone
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐCategoryOrdering(ctx context.Context, v any) (*model.CategoryOrdering, error) {
+func (ec *executionContext) unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐCategoryOrdering(ctx context.Context, v any) (*model.CategoryOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11172,7 +11172,7 @@ func (ec *executionContext) unmarshalOCategoryOrdering2ᚖgithubᚗcomᚋroneli�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐDogFilterInput(ctx context.Context, v any) ([]*model.DogFilterInput, error) {
+func (ec *executionContext) unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐDogFilterInput(ctx context.Context, v any) ([]*model.DogFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11182,7 +11182,7 @@ func (ec *executionContext) unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneli
 	res := make([]*model.DogFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐDogFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐDogFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11190,7 +11190,7 @@ func (ec *executionContext) unmarshalODogFilterInput2ᚕᚖgithubᚗcomᚋroneli
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐDogFilterInput(ctx context.Context, v any) (*model.DogFilterInput, error) {
+func (ec *executionContext) unmarshalODogFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐDogFilterInput(ctx context.Context, v any) (*model.DogFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11293,7 +11293,7 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
-func (ec *executionContext) unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐIntComparator(ctx context.Context, v any) (*model.IntComparator, error) {
+func (ec *executionContext) unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx context.Context, v any) (*model.IntComparator, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11319,7 +11319,7 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -11346,7 +11346,7 @@ func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalOPost2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -11360,14 +11360,14 @@ func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ret
 }
 
-func (ec *executionContext) marshalOPost2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalOPost2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Post(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v any) ([]*model.PostFilterInput, error) {
+func (ec *executionContext) unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v any) ([]*model.PostFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11377,7 +11377,7 @@ func (ec *executionContext) unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋronel
 	res := make([]*model.PostFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11385,7 +11385,7 @@ func (ec *executionContext) unmarshalOPostFilterInput2ᚕᚖgithubᚗcomᚋronel
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v any) (*model.PostFilterInput, error) {
+func (ec *executionContext) unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput(ctx context.Context, v any) (*model.PostFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11393,7 +11393,7 @@ func (ec *executionContext) unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneli�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostGroupByᚄ(ctx context.Context, v any) ([]model.PostGroupBy, error) {
+func (ec *executionContext) unmarshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostGroupByᚄ(ctx context.Context, v any) ([]model.PostGroupBy, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11403,7 +11403,7 @@ func (ec *executionContext) unmarshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfas
 	res := make([]model.PostGroupBy, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNPostGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostGroupBy(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNPostGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostGroupBy(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11411,7 +11411,7 @@ func (ec *executionContext) unmarshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfas
 	return res, nil
 }
 
-func (ec *executionContext) marshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostGroupByᚄ(ctx context.Context, sel ast.SelectionSet, v []model.PostGroupBy) graphql.Marshaler {
+func (ec *executionContext) marshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostGroupByᚄ(ctx context.Context, sel ast.SelectionSet, v []model.PostGroupBy) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -11438,7 +11438,7 @@ func (ec *executionContext) marshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastg
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPostGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostGroupBy(ctx, sel, v[i])
+			ret[i] = ec.marshalNPostGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostGroupBy(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -11458,7 +11458,7 @@ func (ec *executionContext) marshalOPostGroupBy2ᚕgithubᚗcomᚋroneliᚋfastg
 	return ret
 }
 
-func (ec *executionContext) unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostOrdering(ctx context.Context, v any) ([]*model.PostOrdering, error) {
+func (ec *executionContext) unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostOrdering(ctx context.Context, v any) ([]*model.PostOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11468,7 +11468,7 @@ func (ec *executionContext) unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneli�
 	res := make([]*model.PostOrdering, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostOrdering(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostOrdering(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11476,7 +11476,7 @@ func (ec *executionContext) unmarshalOPostOrdering2ᚕᚖgithubᚗcomᚋroneli�
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostOrdering(ctx context.Context, v any) (*model.PostOrdering, error) {
+func (ec *executionContext) unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostOrdering(ctx context.Context, v any) (*model.PostOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11484,7 +11484,7 @@ func (ec *executionContext) unmarshalOPostOrdering2ᚖgithubᚗcomᚋroneliᚋfa
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐPostsPayload(ctx context.Context, sel ast.SelectionSet, v *model.PostsPayload) graphql.Marshaler {
+func (ec *executionContext) marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsPayload(ctx context.Context, sel ast.SelectionSet, v *model.PostsPayload) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -11539,7 +11539,7 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐStringComparator(ctx context.Context, v any) (*model.StringComparator, error) {
+func (ec *executionContext) unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx context.Context, v any) (*model.StringComparator, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11547,7 +11547,7 @@ func (ec *executionContext) unmarshalOStringComparator2ᚖgithubᚗcomᚋroneli�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -11574,7 +11574,7 @@ func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+			ret[i] = ec.marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -11588,14 +11588,14 @@ func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋroneliᚋfastgql�
 	return ret
 }
 
-func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v any) ([]*model.UserFilterInput, error) {
+func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v any) ([]*model.UserFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11605,7 +11605,7 @@ func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋronel
 	res := make([]*model.UserFilterInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11613,7 +11613,7 @@ func (ec *executionContext) unmarshalOUserFilterInput2ᚕᚖgithubᚗcomᚋronel
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v any) (*model.UserFilterInput, error) {
+func (ec *executionContext) unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserFilterInput(ctx context.Context, v any) (*model.UserFilterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11621,7 +11621,7 @@ func (ec *executionContext) unmarshalOUserFilterInput2ᚖgithubᚗcomᚋroneli�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserGroupByᚄ(ctx context.Context, v any) ([]model.UserGroupBy, error) {
+func (ec *executionContext) unmarshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserGroupByᚄ(ctx context.Context, v any) ([]model.UserGroupBy, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11631,7 +11631,7 @@ func (ec *executionContext) unmarshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfas
 	res := make([]model.UserGroupBy, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNUserGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserGroupBy(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNUserGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserGroupBy(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11639,7 +11639,7 @@ func (ec *executionContext) unmarshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfas
 	return res, nil
 }
 
-func (ec *executionContext) marshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserGroupByᚄ(ctx context.Context, sel ast.SelectionSet, v []model.UserGroupBy) graphql.Marshaler {
+func (ec *executionContext) marshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserGroupByᚄ(ctx context.Context, sel ast.SelectionSet, v []model.UserGroupBy) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -11666,7 +11666,7 @@ func (ec *executionContext) marshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastg
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNUserGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserGroupBy(ctx, sel, v[i])
+			ret[i] = ec.marshalNUserGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserGroupBy(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -11686,7 +11686,7 @@ func (ec *executionContext) marshalOUserGroupBy2ᚕgithubᚗcomᚋroneliᚋfastg
 	return ret
 }
 
-func (ec *executionContext) unmarshalOUserOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserOrdering(ctx context.Context, v any) ([]*model.UserOrdering, error) {
+func (ec *executionContext) unmarshalOUserOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserOrdering(ctx context.Context, v any) ([]*model.UserOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11696,7 +11696,7 @@ func (ec *executionContext) unmarshalOUserOrdering2ᚕᚖgithubᚗcomᚋroneli�
 	res := make([]*model.UserOrdering, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserOrdering(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserOrdering(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -11704,7 +11704,7 @@ func (ec *executionContext) unmarshalOUserOrdering2ᚕᚖgithubᚗcomᚋroneli�
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐUserOrdering(ctx context.Context, v any) (*model.UserOrdering, error) {
+func (ec *executionContext) unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserOrdering(ctx context.Context, v any) (*model.UserOrdering, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11712,7 +11712,7 @@ func (ec *executionContext) unmarshalOUserOrdering2ᚖgithubᚗcomᚋroneliᚋfa
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, v any) (*model.OrderingTypes, error) {
+func (ec *executionContext) unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, v any) (*model.OrderingTypes, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -11721,7 +11721,7 @@ func (ec *executionContext) unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋtestᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, sel ast.SelectionSet, v *model.OrderingTypes) graphql.Marshaler {
+func (ec *executionContext) marshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx context.Context, sel ast.SelectionSet, v *model.OrderingTypes) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
