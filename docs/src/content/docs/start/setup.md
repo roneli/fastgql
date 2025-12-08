@@ -6,7 +6,7 @@ description: How to setup fastGQL
 This tutorial will take you through the process of building a GraphQL server with fastgql that can: 
 automatically query, filter, order and pagination users, posts & categories from a postgres database.
 
-You can find the finished code for this tutorial [here](https://github.com/roneli/fastgql/tree/master/example/init).
+You can find the finished code for this tutorial [here](https://github.com/roneli/fastgql/tree/master/examples/init).
 
 If you are familiar with [gqlgen](https://gqlgen.com), the setup is nearly identical, with a little work in your Schema you won't need to define any resolvers!
 
@@ -99,9 +99,15 @@ If we take a look in `graph/schema.fastgql.go` you will see all the resolvers th
 
 {% code overflow="wrap" %}
 ```go
-func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy *model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
- 	var data []*model.Post
-	if err := r.Executor.Scan(ctx, "postgres", &data); err != nil {
+func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) ([]*model.Post, error) {
+	var data []*model.Post
+	q, args, err := sql.BuildQuery(ctx, sql.NewBuilder(r.Cfg))
+	if err != nil {
+		return nil, err
+	}
+	if err := sql.ExecuteQuery(ctx, r.Executor, func(rows pgx.Rows) error {
+		return pgxscan.ScanAll(&data, rows)
+	}, q, args...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -109,7 +115,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, orde
 ```
 {% endcode %}
 
-We just need to start a postgres server and insert a schema, you can try the example's [compose file](https://github.com/roneli/fastgql/tree/master/example/docker-compose.yml) and execute the [schema.sql](https://github.com/roneli/fastgql/blob/master/example/graph/schema.graphql):
+We just need to start a postgres server and insert a schema. You can use the [docker-compose.yml](https://github.com/roneli/fastgql/blob/master/.github/workflows/data/docker-compose.yml) and [init.sql](https://github.com/roneli/fastgql/blob/master/.github/workflows/data/init.sql) files from the repository for a quick setup:
 
 Finally, we just need to define our postgres connection str that defined in server.go. We can override with `PG_CONN_STR` env variable.
 

@@ -77,11 +77,12 @@ directive @generateMutations(create: Boolean = True, delete: Boolean = True, upd
 
 Builder directives are used by builders to build queries based on the given GraphQL query requested.
 
-We have two builder directives:
+We have three builder directives:
 
 * [#table](directives#table "mention")
 * [#relation](directives#relation "mention")
 * [#typename](directives#typename "mention")
+* [#fastgqlfield](directives#fastgqlfield "mention")
 
 ### @table
 
@@ -123,7 +124,7 @@ There are three major types of database relationships:
 * <mark style="color:purple;">`ONE_TO_MANY`</mark>
 * <mark style="color:purple;">`MANY_TO_MANY`</mark>
 
-### @typename 
+### @typename
 
 The `@typename` directive is used for interface support (experimental), the typename tell fastgql builder what field in the table we should use
 to use when scanning into the original type of the interface
@@ -133,5 +134,35 @@ interface Animal @table(name: "animals") @typename(name: "type") @generateFilter
 	id: Int!
 	name: String!
 	type: String!
+}
+```
+
+### @fastgqlField
+
+The `@fastgqlField` directive is used to mark fields that should be skipped during SELECT query generation. This is useful for fields that are not actual columns in the database and need to be resolved manually in your resolver code.
+
+```graphql
+# Mark a field to be skipped in SELECT queries
+directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+```
+
+**Example:**
+
+In this example, the `fullName` field is computed from other fields and doesn't exist as a database column. We use `@fastgqlField` to tell fastGQL to skip it when building SELECT queries:
+
+```graphql
+type User @table(name: "users") @generateFilterInput {
+    id: Int!
+    firstName: String!
+    lastName: String!
+    fullName: String! @fastgqlField
+}
+```
+
+You would then manually resolve the `fullName` field in your resolver:
+
+```go
+func (r *userResolver) FullName(ctx context.Context, obj *model.User) (string, error) {
+    return obj.FirstName + " " + obj.LastName, nil
 }
 ```

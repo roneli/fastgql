@@ -5,7 +5,7 @@
 
 
 <div style="align-content: center ">
-  <a aria-label="License" href="https://github.com/roneli/fastgql/license.md">
+  <a aria-label="License" href="https://github.com/roneli/fastgql/blob/master/LICENSE">
     <img alt="" src="https://img.shields.io/npm/l/next.svg?style=for-the-badge&labelColor=000000">
    <a aria-label="read the docs" href="https://www.fastgql.io">
         <img alt="" src="https://img.shields.io/website?down_color=red&down_message=down&label=docs&style=for-the-badge&up_color=green&up_message=available&url=https%3A%2F%2Fwww.fastgql.io&labelColor=000000">
@@ -48,5 +48,5 @@ an [issue](https://github.com/roneli/fastgql/issues) first to prevent double wor
 
 ## Roadmap 🚧
 - Integration testing, and generation testing
-- configurable database connections, augmenters and better schema control
-- Support multiple database (mongodb, cockroachDB, neo4j)
+- Expand database support (CockroachDB, Neo4j, etc.)
+- Enhanced schema control and configuration

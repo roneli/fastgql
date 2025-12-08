@@ -15,8 +15,6 @@ this available.
 
 # ================== schema generation fastgql directives  ==================
 
-# ================== schema generation fastgql directives  ==================
-
 # Generate Resolver directive tells fastgql to generate an automatic resolver for a given field
 # @generateResolver can only be defined on Query and Mutation fields.
 # adding pagination, ordering, aggregate, filter to false will disable the generation of the corresponding arguments
