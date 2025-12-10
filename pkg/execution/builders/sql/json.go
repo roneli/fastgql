@@ -15,9 +15,9 @@ import (
 
 // JsonPathCondition represents a single condition for Map scalar filtering
 type JsonPathCondition struct {
-	Path  string      // JSON path: "price", "items[0].name", "nested.field"
-	Op    string      // Operator: eq, neq, gt, gte, lt, lte, like, isNull
-	Value interface{} // The comparison value
+	Path  string // JSON path: "price", "items[0].name", "nested.field"
+	Op    string // Operator: eq, neq, gt, gte, lt, lte, like, isNull
+	Value any    // The comparison value
 }
 
 // JsonFilter represents the full filter for a Map scalar column
@@ -90,7 +90,7 @@ func BuildJsonPathExpression(conditions []JsonPathCondition, logic string) (stri
 		return "", nil, fmt.Errorf("no conditions provided")
 	}
 
-	var parts []string
+	var parts = make([]string, 0)
 	vars := make(map[string]any)
 
 	for i, cond := range conditions {
