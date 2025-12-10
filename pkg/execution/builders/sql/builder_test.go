@@ -546,6 +546,147 @@ func TestBuilder_Query_JsonFiltering(t *testing.T) {
 	}
 }
 
+func TestBuilder_Query_JsonFieldSelection(t *testing.T) {
+	testCases := []TestBuilderCase{
+		{
+			Name:       "json_field_simple_scalar",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						color
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('color', "sq0"."attributes"->$1) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $2`,
+			ExpectedArguments: []interface{}{"color", int64(100)},
+		},
+		{
+			Name:       "json_field_multiple_scalars",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						color
+						size
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('color', "sq0"."attributes"->$1, 'size', "sq0"."attributes"->$2) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $3`,
+			ExpectedArguments: []interface{}{"color", "size", int64(100)},
+		},
+		{
+			Name:       "json_field_nested_object",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						color
+						details {
+							manufacturer
+							model
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('color', "sq0"."attributes"->$1, 'details', jsonb_build_object('manufacturer', "sq0"."attributes"->$2->$3, 'model', "sq0"."attributes"->$4->$5)) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $6`,
+			ExpectedArguments: []interface{}{"color", "details", "manufacturer", "details", "model", int64(100)},
+		},
+		{
+			Name:       "json_field_deep_nesting",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						details {
+							warranty {
+								years
+								provider
+							}
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('details', jsonb_build_object('warranty', jsonb_build_object('years', "sq0"."attributes"->$1->$2->$3, 'provider', "sq0"."attributes"->$4->$5->$6))) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $7`,
+			ExpectedArguments: []interface{}{"details", "warranty", "years", "details", "warranty", "provider", int64(100)},
+		},
+		{
+			Name:       "json_field_mixed_scalar_and_nested",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						color
+						size
+						details {
+							manufacturer
+						}
+						specs {
+							weight
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('color', "sq0"."attributes"->$1, 'size', "sq0"."attributes"->$2, 'details', jsonb_build_object('manufacturer', "sq0"."attributes"->$3->$4), 'specs', jsonb_build_object('weight', "sq0"."attributes"->$5->$6)) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $7`,
+			ExpectedArguments: []interface{}{"color", "size", "details", "manufacturer", "specs", "weight", int64(100)},
+		},
+		{
+			Name:       "json_field_three_level_nesting",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						specs {
+							dimensions {
+								width
+								height
+								depth
+							}
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('specs', jsonb_build_object('dimensions', jsonb_build_object('width', "sq0"."attributes"->$1->$2->$3, 'height', "sq0"."attributes"->$4->$5->$6, 'depth', "sq0"."attributes"->$7->$8->$9))) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $10`,
+			ExpectedArguments: []interface{}{"specs", "dimensions", "width", "specs", "dimensions", "height", "specs", "dimensions", "depth", int64(100)},
+		},
+		{
+			Name:       "json_field_nested_object_all_fields",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						details {
+							manufacturer
+							model
+							warranty {
+								years
+								provider
+							}
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('details', jsonb_build_object('manufacturer', "sq0"."attributes"->$1->$2, 'model', "sq0"."attributes"->$3->$4, 'warranty', jsonb_build_object('years', "sq0"."attributes"->$5->$6->$7, 'provider', "sq0"."attributes"->$8->$9->$10))) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $11`,
+			ExpectedArguments: []interface{}{"details", "manufacturer", "details", "model", "details", "warranty", "years", "details", "warranty", "provider", int64(100)},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
+				return b.Query(f)
+			})
+		})
+	}
+}
+
 func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders.Field) (string, []interface{}, error)) {
 	fs := afero.NewOsFs()
 	data, err := afero.ReadFile(fs, testCase.SchemaFile)

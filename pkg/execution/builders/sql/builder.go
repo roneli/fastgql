@@ -296,6 +296,11 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 			if err := b.buildRelationAggregate(&query, childField); err != nil {
 				return nil, fmt.Errorf("failed to build relation for %s", childField.Name)
 			}
+		case builders.TypeJson:
+			b.Logger.Debug("adding JSON field", "tableDefinition", tableDef.name, "fieldName", childField.Name)
+			if err := b.buildJsonField(&query, childField); err != nil {
+				return nil, fmt.Errorf("failed to build JSON field for %s: %w", childField.Name, err)
+			}
 		default:
 			b.Logger.Error("unknown field type", "tableDefinition", tableDef.name, "fieldName", childField.Name, "fieldType", childField.FieldType)
 			panic("unknown field type")
@@ -618,6 +623,41 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: aggTableName})
 
 	}
+	return nil
+}
+
+func (b Builder) buildJsonField(query *queryHelper, jsonField builders.Field) error {
+	// Get @json directive to find the column name
+	jsonDir := jsonField.Definition.Directives.ForName("json")
+	if jsonDir == nil {
+		return fmt.Errorf("field %s missing @json directive", jsonField.Name)
+	}
+	columnArg := jsonDir.Arguments.ForName("column")
+	if columnArg == nil {
+		return fmt.Errorf("@json directive missing 'column' argument")
+	}
+	jsonColumnName := columnArg.Value.Raw
+
+	// Get the JSONB column reference from the parent table
+	jsonCol := query.table.Col(b.CaseConverter(jsonColumnName))
+
+	// Build expression using jsonb_path_query_first for efficient extraction
+	jsonObjExpr, err := buildJsonFieldObject(jsonCol, jsonField.Selections, "", b.Dialect)
+	if err != nil {
+		return fmt.Errorf("building JSON object for field %s: %w", jsonField.Name, err)
+	}
+
+	// Apply alias to the expression
+	aliasedExpr := jsonObjExpr.(exp.Aliaseable).As(jsonField.Name)
+
+	// Add as a single column with the field name as alias
+	query.selects = append(query.selects, column{
+		table:      query.alias,
+		name:       jsonField.Name,
+		alias:      jsonField.Name,
+		expression: aliasedExpr,
+	})
+
 	return nil
 }
 

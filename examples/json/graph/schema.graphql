@@ -1,0 +1,46 @@
+# Example schema demonstrating JSON field selection with @json directive
+
+type ProductDetails {
+    manufacturer: String
+    model: String
+    warranty: WarrantyInfo
+}
+
+type WarrantyInfo {
+    years: Int
+    provider: String
+}
+
+type Specs {
+    weight: Float
+    dimensions: Dimensions
+}
+
+type Dimensions {
+    width: Float
+    height: Float
+    depth: Float
+}
+
+type ProductAttributes {
+    color: String
+    size: Int
+    tags: [String]
+    details: ProductDetails
+    specs: Specs
+}
+
+type Product @generateFilterInput @table(name: "products", schema: "app") {
+    id: Int!
+    name: String!
+    # Typed JSON field - supports nested field selection
+    attributes: ProductAttributes @json(column: "attributes")
+    # Dynamic JSON field - uses Map scalar
+    metadata: Map
+}
+
+type Query {
+    products: [Product] @generate
+}
+
+# =================== Default Scalar types supported by fastgql ==================

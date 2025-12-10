@@ -21,6 +21,7 @@ const (
 	TypeRelation  fieldType = "Relation"
 	TypeAggregate fieldType = "Aggregate"
 	TypeObject    fieldType = "Object"
+	TypeJson      fieldType = "Json"
 )
 
 type OperationType string
@@ -321,6 +322,9 @@ func parseFieldType(field *ast.Field, typeDef *ast.Definition) fieldType {
 	case strings.HasSuffix(field.Name, "Aggregate"):
 		return TypeAggregate
 	case typeDef.IsCompositeType():
+		if d := field.Definition.Directives.ForName("json"); d != nil {
+			return TypeJson
+		}
 		if d := field.Definition.Directives.ForName("relation"); d != nil {
 			return TypeRelation
 		}

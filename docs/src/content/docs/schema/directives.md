@@ -170,7 +170,7 @@ func (r *userResolver) FullName(ctx context.Context, obj *model.User) (string, e
 
 ### @json
 
-The `@json` directive marks a field as stored in a PostgreSQL JSONB column. This allows you to work with structured JSON data in your database while providing type-safe filtering capabilities in GraphQL.
+The `@json` directive marks a field as stored in a PostgreSQL JSONB column. This allows you to work with structured JSON data in your database while providing both type-safe filtering capabilities and efficient nested field selection in GraphQL.
 
 ```graphql
 # Marks a field as stored in a JSONB column
@@ -194,12 +194,18 @@ type ProductAttributes {
     color: String
     size: Int
     tags: [String]
+    details: ProductDetails
+}
+
+type ProductDetails {
+    manufacturer: String
+    model: String
 }
 
 type Product @generateFilterInput @table(name: "products") {
     id: Int!
     name: String!
-    # Typed JSON field - filters like a relation
+    # Typed JSON field - supports filtering and nested field selection
     attributes: ProductAttributes @json(column: "attributes")
 }
 
@@ -208,7 +214,7 @@ type Query {
 }
 ```
 
-This automatically generates a `ProductAttributesFilterInput` that you can use to filter:
+**Filtering:** This automatically generates a `ProductAttributesFilterInput` that you can use to filter:
 
 ```graphql
 query {
@@ -220,12 +226,47 @@ query {
 }
 ```
 
+**Nested Field Selection:** You can select specific nested fields from the JSON data, and FastGQL will efficiently extract only the requested fields using PostgreSQL's native `->` operator:
+
+```graphql
+query {
+    # Select only color and size from attributes
+    products {
+        name
+        attributes {
+            color
+            size
+        }
+    }
+}
+```
+
+```graphql
+query {
+    # Select nested object fields
+    products {
+        name
+        attributes {
+            color
+            details {
+                manufacturer
+                model
+            }
+        }
+    }
+}
+```
+
+FastGQL uses `jsonb_build_object` to construct the response matching your GraphQL query structure, extracting only the fields you request for optimal performance.
+
 **Benefits:**
 - Type-safe filtering with full GraphQL type validation
+- Efficient nested field selection (only extracts requested fields)
 - Supports all standard operators (eq, neq, gt, lt, etc.)
 - Supports logical operators (AND, OR, NOT)
-- Supports nested objects and arrays
+- Supports nested objects to any depth
 - Auto-completion in GraphQL IDEs
+- Uses native PostgreSQL operators for performance
 
 #### 2. Map Scalar (Dynamic JSON)
 
@@ -237,10 +278,12 @@ For dynamic JSON data where the structure is not known at schema definition time
 type Product @generateFilterInput @table(name: "products") {
     id: Int!
     name: String!
-    # Dynamic JSON field - uses MapComparator
+    # Dynamic JSON field - uses MapComparator for filtering
     metadata: Map
 }
 ```
+
+With `Map` scalar, the entire JSON value is returned as-is. You cannot select specific nested fields like with typed JSON.
 
 See [MapComparator](../operators#mapcomparator) for filtering options with dynamic JSON.
 
@@ -250,10 +293,14 @@ See [MapComparator](../operators#mapcomparator) for filtering options with dynam
   - Your JSON structure is known and consistent
   - You want type safety and validation
   - You need IDE auto-completion
+  - You want to select specific nested fields efficiently
   - Your JSON data represents a well-defined domain object
 
 - **Use Map scalar** when:
   - Your JSON structure varies between records
-  - You need maximum flexibility
+  - You need maximum runtime flexibility
   - You're storing arbitrary metadata or configuration
   - Your JSON structure is defined by users or external systems
+  - You always need the entire JSON value
+
+**Performance Note:** Typed JSON with `@json` directive uses PostgreSQL's native `->` operator for field extraction and `jsonb_build_object` for constructing the response. This is highly efficient and allows the database to extract only the fields specified in your GraphQL query.

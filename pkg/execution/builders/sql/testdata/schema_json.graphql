@@ -1,10 +1,34 @@
 # Test schema for JSON/JSONB filtering
 
 # Product with typed JSON attributes
+type ProductDetails {
+    manufacturer: String
+    model: String
+    warranty: WarrantyInfo
+}
+
+type WarrantyInfo {
+    years: Int
+    provider: String
+}
+
 type ProductAttributes {
     color: String
     size: Int
     tags: [String]
+    details: ProductDetails
+    specs: Specs
+}
+
+type Specs {
+    weight: Float
+    dimensions: Dimensions
+}
+
+type Dimensions {
+    width: Float
+    height: Float
+    depth: Float
 }
 
 type Product @generateFilterInput @table(name: "products", schema: "app") {
@@ -111,8 +135,53 @@ input MapPathCondition {
 input ProductAttributesFilterInput {
     color: StringComparator
     size: IntComparator
+    details: ProductDetailsFilterInput
     AND: [ProductAttributesFilterInput]
     OR: [ProductAttributesFilterInput]
     NOT: ProductAttributesFilterInput
+}
+
+input ProductDetailsFilterInput {
+    manufacturer: StringComparator
+    model: StringComparator
+    warranty: WarrantyInfoFilterInput
+    AND: [ProductDetailsFilterInput]
+    OR: [ProductDetailsFilterInput]
+    NOT: ProductDetailsFilterInput
+}
+
+input WarrantyInfoFilterInput {
+    years: IntComparator
+    provider: StringComparator
+    AND: [WarrantyInfoFilterInput]
+    OR: [WarrantyInfoFilterInput]
+    NOT: WarrantyInfoFilterInput
+}
+
+input SpecsFilterInput {
+    weight: FloatComparator
+    dimensions: DimensionsFilterInput
+    AND: [SpecsFilterInput]
+    OR: [SpecsFilterInput]
+    NOT: SpecsFilterInput
+}
+
+input DimensionsFilterInput {
+    width: FloatComparator
+    height: FloatComparator
+    depth: FloatComparator
+    AND: [DimensionsFilterInput]
+    OR: [DimensionsFilterInput]
+    NOT: DimensionsFilterInput
+}
+
+input FloatComparator {
+    eq: Float
+    neq: Float
+    gt: Float
+    gte: Float
+    lt: Float
+    lte: Float
+    isNull: Boolean
 }
 

@@ -27,7 +27,8 @@ var (
 	FastGQLSchema string
 	//go:embed server.gotpl
 	fastGqlServerTpl  string
-	FastGQLDirectives = []string{tableDirectiveName, generateDirectiveName, "generateFilterInput", "isInterfaceFilter", skipGenerateDirectiveName, "generateMutations", relationDirectiveName}
+	FastGQLDirectives = []string{tableDirectiveName, generateDirectiveName, "generateFilterInput", "isInterfaceFilter",
+		skipGenerateDirectiveName, "generateMutations", jsonDirectiveName, relationDirectiveName}
 	defaultAugmenters = []Augmenter{
 		MutationsAugmenter,
 		PaginationAugmenter,

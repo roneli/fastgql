@@ -20,6 +20,7 @@ const (
 	skipGenerateDirectiveName = "skipGenerate"
 	tableDirectiveName        = "table"
 	relationDirectiveName     = "relation"
+	jsonDirectiveName         = "json"
 )
 
 type TableDirective struct {

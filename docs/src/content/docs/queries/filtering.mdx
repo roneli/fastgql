@@ -130,6 +130,14 @@ query ObjectFilterExample {
 
 FastGQL provides powerful filtering capabilities for PostgreSQL JSONB columns, allowing you to query structured and dynamic JSON data stored in your database. There are two approaches for working with JSON data, each suited to different use cases.
 
+:::note[Filtering vs. Field Selection]
+**Filtering** determines WHICH rows to return based on JSON content (this section).
+
+**Field Selection** determines WHICH fields to extract from JSON in the response. See [JSON Field Selection](queries.md#json-field-selection) for details on selecting specific nested fields from typed JSON columns.
+
+Both features can be used together - filter which rows to return, then select specific fields from the JSON data in those rows.
+:::
+
 ### Typed JSON Filtering (Recommended)
 
 For JSON data with a known, consistent structure, use the `@json` directive with a GraphQL object type. This provides type-safe filtering with full IDE support and validation.
@@ -535,3 +543,30 @@ type Product @generateFilterInput @table(name: "products") {
 ```
 
 This allows you to have type-safe filtering for known fields while maintaining flexibility for dynamic data.
+
+### Combining Filtering and Field Selection
+
+You can combine JSON filtering (to determine which rows to return) with field selection (to extract specific fields) in the same query:
+
+```graphql
+query {
+    # Filter: Return only products where attributes.color == "red"
+    # Selection: Extract only the manufacturer from the nested details
+    products(filter: { attributes: { color: { eq: "red" } } }) {
+        name
+        attributes {
+            color
+            details {
+                manufacturer
+            }
+        }
+    }
+}
+```
+
+This query:
+1. Filters products to only include those with red color (database WHERE clause)
+2. For matching products, extracts only the `color` field and `manufacturer` from nested `details`
+3. Does not extract other fields like `size`, `model`, `warranty`, etc.
+
+Both operations are performed efficiently at the database level using PostgreSQL's native JSONB operators.
