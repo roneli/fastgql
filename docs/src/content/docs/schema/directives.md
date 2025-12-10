@@ -77,11 +77,12 @@ directive @generateMutations(create: Boolean = True, delete: Boolean = True, upd
 
 Builder directives are used by builders to build queries based on the given GraphQL query requested.
 
-We have three builder directives:
+We have the following builder directives:
 
 * [#table](directives#table "mention")
 * [#relation](directives#relation "mention")
 * [#typename](directives#typename "mention")
+* [#json](directives#json "mention")
 * [#fastgqlfield](directives#fastgqlfield "mention")
 
 ### @table
@@ -124,7 +125,7 @@ There are three major types of database relationships:
 * <mark style="color:purple;">`ONE_TO_MANY`</mark>
 * <mark style="color:purple;">`MANY_TO_MANY`</mark>
 
-### @typename
+### @typename 
 
 The `@typename` directive is used for interface support (experimental), the typename tell fastgql builder what field in the table we should use
 to use when scanning into the original type of the interface
@@ -166,3 +167,93 @@ func (r *userResolver) FullName(ctx context.Context, obj *model.User) (string, e
     return obj.FirstName + " " + obj.LastName, nil
 }
 ```
+
+### @json
+
+The `@json` directive marks a field as stored in a PostgreSQL JSONB column. This allows you to work with structured JSON data in your database while providing type-safe filtering capabilities in GraphQL.
+
+```graphql
+# Marks a field as stored in a JSONB column
+directive @json(column: String!) on FIELD_DEFINITION
+```
+
+**Arguments:**
+- `column` (required): The name of the JSONB column in the database table. By default, FastGQL converts GraphQL field names to snake_case for database columns, so you typically specify the snake_case column name here.
+
+There are two approaches for working with JSON data in FastGQL:
+
+#### 1. Typed JSON (Recommended)
+
+For structured JSON data with a known schema, use the `@json` directive on a field with a GraphQL object type. FastGQL will automatically generate a FilterInput that allows type-safe filtering with the same operators available for regular fields.
+
+**Example:**
+
+```graphql
+# Define the structure of your JSON data
+type ProductAttributes {
+    color: String
+    size: Int
+    tags: [String]
+}
+
+type Product @generateFilterInput @table(name: "products") {
+    id: Int!
+    name: String!
+    # Typed JSON field - filters like a relation
+    attributes: ProductAttributes @json(column: "attributes")
+}
+
+type Query {
+    products: [Product] @generate
+}
+```
+
+This automatically generates a `ProductAttributesFilterInput` that you can use to filter:
+
+```graphql
+query {
+    # Filter products where attributes.color == "red"
+    products(filter: { attributes: { color: { eq: "red" } } }) {
+        name
+        attributes
+    }
+}
+```
+
+**Benefits:**
+- Type-safe filtering with full GraphQL type validation
+- Supports all standard operators (eq, neq, gt, lt, etc.)
+- Supports logical operators (AND, OR, NOT)
+- Supports nested objects and arrays
+- Auto-completion in GraphQL IDEs
+
+#### 2. Map Scalar (Dynamic JSON)
+
+For dynamic JSON data where the structure is not known at schema definition time, use the `Map` scalar type. This provides runtime filtering using JSONPath expressions.
+
+**Example:**
+
+```graphql
+type Product @generateFilterInput @table(name: "products") {
+    id: Int!
+    name: String!
+    # Dynamic JSON field - uses MapComparator
+    metadata: Map
+}
+```
+
+See [MapComparator](../operators#mapcomparator) for filtering options with dynamic JSON.
+
+**When to use which approach:**
+
+- **Use Typed JSON (@json)** when:
+  - Your JSON structure is known and consistent
+  - You want type safety and validation
+  - You need IDE auto-completion
+  - Your JSON data represents a well-defined domain object
+
+- **Use Map scalar** when:
+  - Your JSON structure varies between records
+  - You need maximum flexibility
+  - You're storing arbitrary metadata or configuration
+  - Your JSON structure is defined by users or external systems

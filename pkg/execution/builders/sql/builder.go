@@ -492,6 +492,22 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 				return nil, err
 			}
 			expBuilder = expBuilder.Append(goqu.Func("NOT", filterExp))
+		case keyType.Name() == "MapComparator":
+			// Handle Map scalar filtering with JSONPath
+			kv, ok := v.(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("MapComparator value must be a map")
+			}
+			filter, err := ParseMapComparator(kv)
+			if err != nil {
+				return nil, fmt.Errorf("parsing MapComparator for %s: %w", k, err)
+			}
+			col := table.table.Col(b.CaseConverter(k))
+			jsonExp, err := BuildMapFilter(col, filter)
+			if err != nil {
+				return nil, fmt.Errorf("building JSON filter for %s: %w", k, err)
+			}
+			expBuilder = expBuilder.Append(jsonExp)
 		case strings.HasSuffix(keyType.Name(), "FilterInput"):
 			kv, ok := v.(map[string]any)
 			if !ok {
@@ -505,7 +521,23 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			}
 
 			ffd := astDefinition.Fields.ForName(k)
-			// Create a Builder
+
+			// Check if field has @json directive - use JSONPath filter instead of EXISTS subquery
+			if jsonDir := ffd.Directives.ForName("json"); jsonDir != nil {
+				col := table.table.Col(b.CaseConverter(k))
+				jsonPath, vars, err := BuildJsonFilterFromOperatorMap(kv)
+				if err != nil {
+					return nil, fmt.Errorf("building JSON filter for @json field %s: %w", k, err)
+				}
+				jsonExp, err := BuildJsonPathExistsExpression(col, jsonPath, vars)
+				if err != nil {
+					return nil, fmt.Errorf("building JSONPath expression for %s: %w", k, err)
+				}
+				expBuilder = expBuilder.Append(jsonExp)
+				continue
+			}
+
+			// Create a Builder for relational filter
 			rel := schema.GetRelationDirective(ffd)
 			if rel == nil {
 				return nil, fmt.Errorf("missing directive relation")

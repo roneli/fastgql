@@ -1,0 +1,118 @@
+# Test schema for JSON/JSONB filtering
+
+# Product with typed JSON attributes
+type ProductAttributes {
+    color: String
+    size: Int
+    tags: [String]
+}
+
+type Product @generateFilterInput @table(name: "products", schema: "app") {
+    id: Int!
+    name: String!
+    # Typed JSON field - filters like a relation but uses JSONPath under the hood
+    attributes: ProductAttributes @json(column: "attributes")
+    # Dynamic JSON field - uses MapComparator
+    metadata: Map
+}
+
+type Query {
+    products: [Product] @generate
+}
+
+# ================== schema generation fastgql directives  ==================
+
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
+
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+
+directive @generateFilterInput(description: String) repeatable on OBJECT
+
+# ================== Directives supported by fastgql for Querying ==================
+
+directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+
+directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+
+directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+
+directive @typename(name: String!) on INTERFACE
+
+# JSON directive marks a field as stored in a JSONB column
+directive @json(column: String!) on FIELD_DEFINITION
+
+# =================== Default Scalar types supported by fastgql ===================
+scalar Map
+
+# ================== Default Filter input types supported by fastgql ==================
+
+enum _relationType {
+    ONE_TO_ONE
+    ONE_TO_MANY
+    MANY_TO_MANY
+}
+
+enum _OrderingTypes {
+    ASC
+    DESC
+    ASC_NULL_FIRST
+    DESC_NULL_FIRST
+    ASC_NULL_LAST
+    DESC_NULL_LAST
+}
+
+type _AggregateResult {
+    count: Int!
+}
+
+input StringComparator {
+    eq: String
+    neq: String
+    contains: [String]
+    notContains: [String]
+    like: String
+    ilike: String
+    suffix: String
+    prefix: String
+    isNull: Boolean
+}
+
+input IntComparator {
+    eq: Int
+    neq: Int
+    gt: Int
+    gte: Int
+    lt: Int
+    lte: Int
+    isNull: Boolean
+}
+
+# MapComparator for dynamic JSON (Map scalar) filtering
+input MapComparator {
+    contains: Map
+    where: [MapPathCondition!]
+    whereAny: [MapPathCondition!]
+    isNull: Boolean
+}
+
+input MapPathCondition {
+    path: String!
+    eq: String
+    neq: String
+    gt: Float
+    gte: Float
+    lt: Float
+    lte: Float
+    like: String
+    isNull: Boolean
+}
+
+# Filter input for ProductAttributes (typed JSON)
+input ProductAttributesFilterInput {
+    color: StringComparator
+    size: IntComparator
+    AND: [ProductAttributesFilterInput]
+    OR: [ProductAttributesFilterInput]
+    NOT: ProductAttributesFilterInput
+}
+

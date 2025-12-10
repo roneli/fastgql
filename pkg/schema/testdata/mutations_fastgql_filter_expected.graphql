@@ -28,6 +28,7 @@ type Mutation {
         filter: ObjectFilterInput): ObjectsPayload @generate(filter: true, filterTypeName: "ObjectFilterInput")
 }
 input ObjectFilterInput {
+    id: IDComparator
     name: StringComparator
     """
     Logical AND of FilterInput

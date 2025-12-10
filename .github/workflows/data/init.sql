@@ -76,3 +76,30 @@ INSERT INTO animals (name, type, breed, color) VALUES ('Fluffy', 'cat', 'persian
 INSERT INTO animals (name, type, breed, color) VALUES ('Rover', 'dog', 'bulldog', 'brown');
 INSERT INTO animals (name, type, breed, color) VALUES ('Mittens', 'cat', 'maine coon', 'black');
 
+-- Products table with JSONB columns for testing JSON filtering
+CREATE TABLE product (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    attributes JSONB,    -- Typed JSON for structured attributes
+    metadata JSONB,      -- Dynamic Map for arbitrary data
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert products with various JSON structures
+INSERT INTO product (name, attributes, metadata) VALUES 
+    ('Widget', 
+     '{"color": "red", "size": 10, "details": {"manufacturer": "Acme", "model": "Pro-100"}}',
+     '{"tags": ["sale", "featured"], "price": 99.99, "discount": "true"}'),
+    ('Gadget', 
+     '{"color": "blue", "size": 20, "details": {"manufacturer": "TechCo", "model": "Ultra-200"}}',
+     '{"tags": ["new"], "price": 149.99}'),
+    ('Gizmo', 
+     '{"color": "red", "size": 15, "details": {"manufacturer": "Acme", "model": "Basic-50"}}',
+     '{"tags": ["sale"], "price": 49.99, "discount": "true"}'),
+    ('Tool', 
+     '{"color": "green", "size": 5, "details": {"manufacturer": "ToolCorp", "model": "Mini-10"}}',
+     '{"tags": ["featured"], "price": 29.99}'),
+    ('Device', 
+     '{"color": "blue", "size": 25, "details": {"manufacturer": "TechCo", "model": "Pro-300"}}',
+     '{"tags": ["new", "featured"], "price": 199.99, "rating": 4.5}');
+

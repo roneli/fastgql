@@ -187,6 +187,12 @@ type FloatListComparator struct {
 	IsNull    *bool      `json:"isNull,omitempty" db:"is_null"`
 }
 
+type IDComparator struct {
+	Eq     *string `json:"eq,omitempty" db:"eq"`
+	Neq    *string `json:"neq,omitempty" db:"neq"`
+	IsNull *bool   `json:"isNull,omitempty" db:"is_null"`
+}
+
 type IntComparator struct {
 	Eq     *int  `json:"eq,omitempty" db:"eq"`
 	Neq    *int  `json:"neq,omitempty" db:"neq"`
@@ -204,6 +210,25 @@ type IntListComparator struct {
 	Contained []*int `json:"contained,omitempty" db:"contained"`
 	Overlap   []*int `json:"overlap,omitempty" db:"overlap"`
 	IsNull    *bool  `json:"isNull,omitempty" db:"is_null"`
+}
+
+type MapComparator struct {
+	Contains map[string]any     `json:"contains,omitempty" db:"contains"`
+	Where    []MapPathCondition `json:"where,omitempty" db:"where"`
+	WhereAny []MapPathCondition `json:"whereAny,omitempty" db:"where_any"`
+	IsNull   *bool              `json:"isNull,omitempty" db:"is_null"`
+}
+
+type MapPathCondition struct {
+	Path   string   `json:"path" db:"path"`
+	Eq     *string  `json:"eq,omitempty" db:"eq"`
+	Neq    *string  `json:"neq,omitempty" db:"neq"`
+	Gt     *float64 `json:"gt,omitempty" db:"gt"`
+	Gte    *float64 `json:"gte,omitempty" db:"gte"`
+	Lt     *float64 `json:"lt,omitempty" db:"lt"`
+	Lte    *float64 `json:"lte,omitempty" db:"lte"`
+	Like   *string  `json:"like,omitempty" db:"like"`
+	IsNull *bool    `json:"isNull,omitempty" db:"is_null"`
 }
 
 // Graphql Mutations
@@ -267,6 +292,88 @@ type PostsPayload struct {
 	// rows affection by mutation
 	RowsAffected int     `json:"rows_affected" db:"rows_affected"`
 	Posts        []*Post `json:"posts,omitempty" db:"posts"`
+}
+
+type Product struct {
+	ID         int                `json:"id" db:"id"`
+	Name       string             `json:"name" db:"name"`
+	Attributes *ProductAttributes `json:"attributes,omitempty" db:"attributes"`
+	Metadata   map[string]any     `json:"metadata,omitempty" db:"metadata"`
+}
+
+type ProductAttributes struct {
+	Color   *string         `json:"color,omitempty" db:"color"`
+	Size    *int            `json:"size,omitempty" db:"size"`
+	Details *ProductDetails `json:"details,omitempty" db:"details"`
+}
+
+// Filter input for JSON type ProductAttributes
+type ProductAttributesFilterInput struct {
+	Color   *StringComparator          `json:"color,omitempty" db:"color"`
+	Size    *IntComparator             `json:"size,omitempty" db:"size"`
+	Details *ProductDetailsFilterInput `json:"details,omitempty" db:"details"`
+	// Logical AND of FilterInput
+	And []*ProductAttributesFilterInput `json:"AND,omitempty" db:"and"`
+	// Logical OR of FilterInput
+	Or []*ProductAttributesFilterInput `json:"OR,omitempty" db:"or"`
+	// Logical NOT of FilterInput
+	Not *ProductAttributesFilterInput `json:"NOT,omitempty" db:"not"`
+}
+
+type ProductDetails struct {
+	Manufacturer *string `json:"manufacturer,omitempty" db:"manufacturer"`
+	Model        *string `json:"model,omitempty" db:"model"`
+}
+
+// Filter input for JSON type ProductDetails
+type ProductDetailsFilterInput struct {
+	Manufacturer *StringComparator `json:"manufacturer,omitempty" db:"manufacturer"`
+	Model        *StringComparator `json:"model,omitempty" db:"model"`
+	// Logical AND of FilterInput
+	And []*ProductDetailsFilterInput `json:"AND,omitempty" db:"and"`
+	// Logical OR of FilterInput
+	Or []*ProductDetailsFilterInput `json:"OR,omitempty" db:"or"`
+	// Logical NOT of FilterInput
+	Not *ProductDetailsFilterInput `json:"NOT,omitempty" db:"not"`
+}
+
+type ProductFilterInput struct {
+	ID         *IntComparator                `json:"id,omitempty" db:"id"`
+	Name       *StringComparator             `json:"name,omitempty" db:"name"`
+	Attributes *ProductAttributesFilterInput `json:"attributes,omitempty" db:"attributes"`
+	Metadata   *MapComparator                `json:"metadata,omitempty" db:"metadata"`
+	// Logical AND of FilterInput
+	And []*ProductFilterInput `json:"AND,omitempty" db:"and"`
+	// Logical OR of FilterInput
+	Or []*ProductFilterInput `json:"OR,omitempty" db:"or"`
+	// Logical NOT of FilterInput
+	Not *ProductFilterInput `json:"NOT,omitempty" db:"not"`
+}
+
+// Ordering for Product
+type ProductOrdering struct {
+	// Order Product by id
+	ID *OrderingTypes `json:"id,omitempty" db:"id"`
+	// Order Product by name
+	Name *OrderingTypes `json:"name,omitempty" db:"name"`
+	// Order Product by metadata
+	Metadata *OrderingTypes `json:"metadata,omitempty" db:"metadata"`
+}
+
+// Aggregate Product
+type ProductsAggregate struct {
+	// Group
+	Group map[string]any `json:"group,omitempty" db:"group"`
+	// Count results
+	Count int `json:"count" db:"count"`
+	// Max Aggregate
+	Max *ProductMax `json:"max" db:"max"`
+	// Min Aggregate
+	Min *ProductMin `json:"min" db:"min"`
+	// Avg Aggregate
+	Avg *ProductAvg `json:"avg" db:"avg"`
+	// Sum Aggregate
+	Sum *ProductSum `json:"sum" db:"sum"`
 }
 
 type Query struct {
@@ -442,6 +549,34 @@ type PostSum struct {
 	ID float64 `json:"id" db:"id"`
 	// Compute the sum for user_id
 	UserID float64 `json:"user_id" db:"user_id"`
+}
+
+// avg Aggregate
+type ProductAvg struct {
+	// Compute the avg for id
+	ID float64 `json:"id" db:"id"`
+}
+
+// max Aggregate
+type ProductMax struct {
+	// Compute the max for id
+	ID int `json:"id" db:"id"`
+	// Compute the max for name
+	Name string `json:"name" db:"name"`
+}
+
+// min Aggregate
+type ProductMin struct {
+	// Compute the min for id
+	ID int `json:"id" db:"id"`
+	// Compute the min for name
+	Name string `json:"name" db:"name"`
+}
+
+// sum Aggregate
+type ProductSum struct {
+	// Compute the sum for id
+	ID float64 `json:"id" db:"id"`
 }
 
 // avg Aggregate
@@ -647,6 +782,67 @@ func (e *PostGroupBy) UnmarshalJSON(b []byte) error {
 }
 
 func (e PostGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Group by Product
+type ProductGroupBy string
+
+const (
+	// Group by id
+	ProductGroupByID ProductGroupBy = "ID"
+	// Group by name
+	ProductGroupByName ProductGroupBy = "NAME"
+	// Group by metadata
+	ProductGroupByMetadata ProductGroupBy = "METADATA"
+)
+
+var AllProductGroupBy = []ProductGroupBy{
+	ProductGroupByID,
+	ProductGroupByName,
+	ProductGroupByMetadata,
+}
+
+func (e ProductGroupBy) IsValid() bool {
+	switch e {
+	case ProductGroupByID, ProductGroupByName, ProductGroupByMetadata:
+		return true
+	}
+	return false
+}
+
+func (e ProductGroupBy) String() string {
+	return string(e)
+}
+
+func (e *ProductGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ProductGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ProductGroupBy", str)
+	}
+	return nil
+}
+
+func (e ProductGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *ProductGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e ProductGroupBy) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

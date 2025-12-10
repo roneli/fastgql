@@ -118,6 +118,10 @@ func buildFilterInput(s *ast.Schema, input *ast.Definition, object *ast.Definiti
 		if !ok {
 			continue
 		}
+
+		// Check if field has @json directive
+		hasJsonDirective := field.Directives.ForName("json") != nil
+
 		var fieldDef *ast.Definition
 		switch def.Kind {
 		case ast.Scalar, ast.Enum:
@@ -127,7 +131,19 @@ func buildFilterInput(s *ast.Schema, input *ast.Definition, object *ast.Definiti
 				fieldDef = s.Types[fmt.Sprintf("%sComparator", fieldType.Name())]
 			}
 		case ast.Object, ast.Interface:
-			fieldDef = s.Types[fmt.Sprintf("%sFilterInput", fieldType.Name())]
+			if hasJsonDirective {
+				// For @json fields with object types, create a FilterInput for the JSON type
+				// This allows filtering like: attributes: { color: { eq: "red" } }
+				filterInputName := fmt.Sprintf("%sFilterInput", fieldType.Name())
+				if _, exists := s.Types[filterInputName]; !exists {
+					// Create the FilterInput for this JSON type
+					createJsonTypeFilterInput(s, def, filterInputName)
+				}
+				fieldDef = s.Types[filterInputName]
+			} else {
+				// Regular object/interface relation
+				fieldDef = s.Types[fmt.Sprintf("%sFilterInput", fieldType.Name())]
+			}
 		}
 
 		if fieldDef == nil {
@@ -184,6 +200,83 @@ func buildFilterInput(s *ast.Schema, input *ast.Definition, object *ast.Definiti
 			},
 		},
 	}...)
+}
+
+// createJsonTypeFilterInput creates a FilterInput for a JSON object type
+// This allows typed JSON fields to use the same filter structure as relations
+func createJsonTypeFilterInput(s *ast.Schema, jsonType *ast.Definition, filterInputName string) {
+	log.Printf("creating filter input for JSON type %s\n", jsonType.Name)
+
+	filterInput := &ast.Definition{
+		Kind:        ast.InputObject,
+		Description: fmt.Sprintf("Filter input for JSON type %s", jsonType.Name),
+		Name:        filterInputName,
+		Fields:      make([]*ast.FieldDefinition, 0),
+	}
+
+	// Add field comparators for the JSON type fields
+	for _, field := range jsonType.Fields {
+		fieldType := GetType(field.Type)
+		def, ok := s.Types[fieldType.Name()]
+		if !ok {
+			continue
+		}
+
+		var fieldDef *ast.Definition
+		switch def.Kind {
+		case ast.Scalar, ast.Enum:
+			if IsListType(field.Type) {
+				fieldDef = s.Types[fmt.Sprintf("%sListComparator", fieldType.Name())]
+			} else {
+				fieldDef = s.Types[fmt.Sprintf("%sComparator", fieldType.Name())]
+			}
+		case ast.Object:
+			// Nested JSON object - recursively create its filter input
+			nestedFilterInputName := fmt.Sprintf("%sFilterInput", fieldType.Name())
+			if _, exists := s.Types[nestedFilterInputName]; !exists {
+				createJsonTypeFilterInput(s, def, nestedFilterInputName)
+			}
+			fieldDef = s.Types[nestedFilterInputName]
+		}
+
+		if fieldDef != nil {
+			filterInput.Fields = append(filterInput.Fields, &ast.FieldDefinition{
+				Name: field.Name,
+				Type: &ast.Type{NamedType: fieldDef.Name},
+			})
+		}
+	}
+
+	// Add logical operators
+	filterInput.Fields = append(filterInput.Fields, []*ast.FieldDefinition{
+		{
+			Name:        "AND",
+			Description: "Logical AND of FilterInput",
+			Type: &ast.Type{
+				Elem: &ast.Type{
+					NamedType: filterInputName,
+				},
+			},
+		},
+		{
+			Name:        "OR",
+			Description: "Logical OR of FilterInput",
+			Type: &ast.Type{
+				Elem: &ast.Type{
+					NamedType: filterInputName,
+				},
+			},
+		},
+		{
+			Name:        "NOT",
+			Description: "Logical NOT of FilterInput",
+			Type: &ast.Type{
+				NamedType: filterInputName,
+			},
+		},
+	}...)
+
+	s.Types[filterInputName] = filterInput
 }
 
 // initInputs initialize all filter inputs before adding fields to avoid recursive reference

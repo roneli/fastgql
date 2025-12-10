@@ -31,9 +31,28 @@ type Query {
     users: [User] @generate
     categories: [Category] @generate
     animals: [Animal] @generate
+    products: [Product] @generate
 }
 type User @table(name: "user") @generateFilterInput {
     id: Int!
     name: String!
     posts: [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+}
+
+type ProductAttributes {
+    color: String
+    size: Int
+    details: ProductDetails
+}
+
+type ProductDetails {
+    manufacturer: String
+    model: String
+}
+
+type Product @generateFilterInput @table(name: "product") {
+    id: Int!
+    name: String!
+    attributes: ProductAttributes @json(column: "attributes")
+    metadata: Map
 }

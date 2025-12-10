@@ -32,9 +32,18 @@ directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 # default model is the default model that will be used to resolve the interface if none is found.
 directive @typename(name: String!) on INTERFACE
 
+# JSON directive marks a field as stored in a JSONB column
+directive @json(column: String!) on FIELD_DEFINITION
+
 # =================== Default Scalar types supported by fastgql ===================
 scalar Map
 # ================== Default Filter input types supported by fastgql ==================
+
+input IDComparator {
+    eq: ID
+    neq: ID
+    isNull: Boolean
+}
 
 enum _relationType {
     ONE_TO_ONE
@@ -127,5 +136,26 @@ input BooleanListComparator {
     contains: [Boolean]
     contained: [Boolean]
     overlap: [Boolean]
+    isNull: Boolean
+}
+
+# MapComparator for dynamic JSON (Map scalar) filtering
+input MapComparator {
+    contains: Map
+    where: [MapPathCondition!]
+    whereAny: [MapPathCondition!]
+    isNull: Boolean
+}
+
+# MapPathCondition defines a single condition in a JSONPath filter
+input MapPathCondition {
+    path: String!
+    eq: String
+    neq: String
+    gt: Float
+    gte: Float
+    lt: Float
+    lte: Float
+    like: String
     isNull: Boolean
 }

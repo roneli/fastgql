@@ -44,6 +44,7 @@ type ResolverRoot interface {
 
 type DirectiveRoot struct {
 	FastgqlField func(ctx context.Context, obj any, next graphql.Resolver, skipSelect *bool) (res any, err error)
+	Json         func(ctx context.Context, obj any, next graphql.Resolver, column string) (res any, err error)
 	Typename     func(ctx context.Context, obj any, next graphql.Resolver, name string) (res any, err error)
 }
 
@@ -115,6 +116,33 @@ type ComplexityRoot struct {
 		RowsAffected func(childComplexity int) int
 	}
 
+	Product struct {
+		Attributes func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Metadata   func(childComplexity int) int
+		Name       func(childComplexity int) int
+	}
+
+	ProductAttributes struct {
+		Color   func(childComplexity int) int
+		Details func(childComplexity int) int
+		Size    func(childComplexity int) int
+	}
+
+	ProductDetails struct {
+		Manufacturer func(childComplexity int) int
+		Model        func(childComplexity int) int
+	}
+
+	ProductsAggregate struct {
+		Avg   func(childComplexity int) int
+		Count func(childComplexity int) int
+		Group func(childComplexity int) int
+		Max   func(childComplexity int) int
+		Min   func(childComplexity int) int
+		Sum   func(childComplexity int) int
+	}
+
 	Query struct {
 		Animals             func(childComplexity int, limit *int, offset *int, orderBy []*model.AnimalOrdering, filter *model.AnimalFilterInput) int
 		AnimalsAggregate    func(childComplexity int, groupBy []model.AnimalGroupBy, filter *model.AnimalFilterInput) int
@@ -122,6 +150,8 @@ type ComplexityRoot struct {
 		CategoriesAggregate func(childComplexity int, groupBy []model.CategoryGroupBy, filter *model.CategoryFilterInput) int
 		Posts               func(childComplexity int, limit *int, offset *int, orderBy []*model.PostOrdering, filter *model.PostFilterInput) int
 		PostsAggregate      func(childComplexity int, groupBy []model.PostGroupBy, filter *model.PostFilterInput) int
+		Products            func(childComplexity int, limit *int, offset *int, orderBy []*model.ProductOrdering, filter *model.ProductFilterInput) int
+		ProductsAggregate   func(childComplexity int, groupBy []model.ProductGroupBy, filter *model.ProductFilterInput) int
 		Users               func(childComplexity int, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) int
 		UsersAggregate      func(childComplexity int, groupBy []model.UserGroupBy, filter *model.UserFilterInput) int
 	}
@@ -206,6 +236,24 @@ type ComplexityRoot struct {
 		UserID func(childComplexity int) int
 	}
 
+	_ProductAvg struct {
+		ID func(childComplexity int) int
+	}
+
+	_ProductMax struct {
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
+	}
+
+	_ProductMin struct {
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
+	}
+
+	_ProductSum struct {
+		ID func(childComplexity int) int
+	}
+
 	_UserAvg struct {
 		ID func(childComplexity int) int
 	}
@@ -235,10 +283,12 @@ type QueryResolver interface {
 	Users(ctx context.Context, limit *int, offset *int, orderBy []*model.UserOrdering, filter *model.UserFilterInput) ([]*model.User, error)
 	Categories(ctx context.Context, limit *int, offset *int, orderBy []*model.CategoryOrdering, filter *model.CategoryFilterInput) ([]*model.Category, error)
 	Animals(ctx context.Context, limit *int, offset *int, orderBy []*model.AnimalOrdering, filter *model.AnimalFilterInput) ([]model.Animal, error)
+	Products(ctx context.Context, limit *int, offset *int, orderBy []*model.ProductOrdering, filter *model.ProductFilterInput) ([]*model.Product, error)
 	PostsAggregate(ctx context.Context, groupBy []model.PostGroupBy, filter *model.PostFilterInput) ([]model.PostsAggregate, error)
 	UsersAggregate(ctx context.Context, groupBy []model.UserGroupBy, filter *model.UserFilterInput) ([]model.UsersAggregate, error)
 	CategoriesAggregate(ctx context.Context, groupBy []model.CategoryGroupBy, filter *model.CategoryFilterInput) ([]model.CategoriesAggregate, error)
 	AnimalsAggregate(ctx context.Context, groupBy []model.AnimalGroupBy, filter *model.AnimalFilterInput) ([]model.AnimalsAggregate, error)
+	ProductsAggregate(ctx context.Context, groupBy []model.ProductGroupBy, filter *model.ProductFilterInput) ([]model.ProductsAggregate, error)
 }
 
 type executableSchema struct {
@@ -539,6 +589,100 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PostsPayload.RowsAffected(childComplexity), true
 
+	case "Product.attributes":
+		if e.complexity.Product.Attributes == nil {
+			break
+		}
+
+		return e.complexity.Product.Attributes(childComplexity), true
+	case "Product.id":
+		if e.complexity.Product.ID == nil {
+			break
+		}
+
+		return e.complexity.Product.ID(childComplexity), true
+	case "Product.metadata":
+		if e.complexity.Product.Metadata == nil {
+			break
+		}
+
+		return e.complexity.Product.Metadata(childComplexity), true
+	case "Product.name":
+		if e.complexity.Product.Name == nil {
+			break
+		}
+
+		return e.complexity.Product.Name(childComplexity), true
+
+	case "ProductAttributes.color":
+		if e.complexity.ProductAttributes.Color == nil {
+			break
+		}
+
+		return e.complexity.ProductAttributes.Color(childComplexity), true
+	case "ProductAttributes.details":
+		if e.complexity.ProductAttributes.Details == nil {
+			break
+		}
+
+		return e.complexity.ProductAttributes.Details(childComplexity), true
+	case "ProductAttributes.size":
+		if e.complexity.ProductAttributes.Size == nil {
+			break
+		}
+
+		return e.complexity.ProductAttributes.Size(childComplexity), true
+
+	case "ProductDetails.manufacturer":
+		if e.complexity.ProductDetails.Manufacturer == nil {
+			break
+		}
+
+		return e.complexity.ProductDetails.Manufacturer(childComplexity), true
+	case "ProductDetails.model":
+		if e.complexity.ProductDetails.Model == nil {
+			break
+		}
+
+		return e.complexity.ProductDetails.Model(childComplexity), true
+
+	case "ProductsAggregate.avg":
+		if e.complexity.ProductsAggregate.Avg == nil {
+			break
+		}
+
+		return e.complexity.ProductsAggregate.Avg(childComplexity), true
+	case "ProductsAggregate.count":
+		if e.complexity.ProductsAggregate.Count == nil {
+			break
+		}
+
+		return e.complexity.ProductsAggregate.Count(childComplexity), true
+	case "ProductsAggregate.group":
+		if e.complexity.ProductsAggregate.Group == nil {
+			break
+		}
+
+		return e.complexity.ProductsAggregate.Group(childComplexity), true
+	case "ProductsAggregate.max":
+		if e.complexity.ProductsAggregate.Max == nil {
+			break
+		}
+
+		return e.complexity.ProductsAggregate.Max(childComplexity), true
+	case "ProductsAggregate.min":
+		if e.complexity.ProductsAggregate.Min == nil {
+			break
+		}
+
+		return e.complexity.ProductsAggregate.Min(childComplexity), true
+	case "ProductsAggregate.sum":
+		if e.complexity.ProductsAggregate.Sum == nil {
+			break
+		}
+
+		return e.complexity.ProductsAggregate.Sum(childComplexity), true
+
 	case "Query.animals":
 		if e.complexity.Query.Animals == nil {
 			break
@@ -605,6 +749,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.PostsAggregate(childComplexity, args["groupBy"].([]model.PostGroupBy), args["filter"].(*model.PostFilterInput)), true
+	case "Query.products":
+		if e.complexity.Query.Products == nil {
+			break
+		}
+
+		args, err := ec.field_Query_products_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Products(childComplexity, args["limit"].(*int), args["offset"].(*int), args["orderBy"].([]*model.ProductOrdering), args["filter"].(*model.ProductFilterInput)), true
+	case "Query._productsAggregate":
+		if e.complexity.Query.ProductsAggregate == nil {
+			break
+		}
+
+		args, err := ec.field_Query__productsAggregate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ProductsAggregate(childComplexity, args["groupBy"].([]model.ProductGroupBy), args["filter"].(*model.ProductFilterInput)), true
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
 			break
@@ -863,6 +1029,46 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity._PostSum.UserID(childComplexity), true
 
+	case "_ProductAvg.id":
+		if e.complexity._ProductAvg.ID == nil {
+			break
+		}
+
+		return e.complexity._ProductAvg.ID(childComplexity), true
+
+	case "_ProductMax.id":
+		if e.complexity._ProductMax.ID == nil {
+			break
+		}
+
+		return e.complexity._ProductMax.ID(childComplexity), true
+	case "_ProductMax.name":
+		if e.complexity._ProductMax.Name == nil {
+			break
+		}
+
+		return e.complexity._ProductMax.Name(childComplexity), true
+
+	case "_ProductMin.id":
+		if e.complexity._ProductMin.ID == nil {
+			break
+		}
+
+		return e.complexity._ProductMin.ID(childComplexity), true
+	case "_ProductMin.name":
+		if e.complexity._ProductMin.Name == nil {
+			break
+		}
+
+		return e.complexity._ProductMin.Name(childComplexity), true
+
+	case "_ProductSum.id":
+		if e.complexity._ProductSum.ID == nil {
+			break
+		}
+
+		return e.complexity._ProductSum.ID(childComplexity), true
+
 	case "_UserAvg.id":
 		if e.complexity._UserAvg.ID == nil {
 			break
@@ -922,10 +1128,17 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDogFilterInput,
 		ec.unmarshalInputFloatComparator,
 		ec.unmarshalInputFloatListComparator,
+		ec.unmarshalInputIDComparator,
 		ec.unmarshalInputIntComparator,
 		ec.unmarshalInputIntListComparator,
+		ec.unmarshalInputMapComparator,
+		ec.unmarshalInputMapPathCondition,
 		ec.unmarshalInputPostFilterInput,
 		ec.unmarshalInputPostOrdering,
+		ec.unmarshalInputProductAttributesFilterInput,
+		ec.unmarshalInputProductDetailsFilterInput,
+		ec.unmarshalInputProductFilterInput,
+		ec.unmarshalInputProductOrdering,
 		ec.unmarshalInputStringComparator,
 		ec.unmarshalInputStringListComparator,
 		ec.unmarshalInputUpdatePostInput,
@@ -1028,6 +1241,238 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	{Name: "../schema.graphql", Input: `interface Animal @table(name: "animals") @typename(name: "type") @generateFilterInput {
+	id: Int!
+	name: String!
+	type: String!
+}
+type Cat implements Animal {
+	id: Int!
+	name: String!
+	type: String!
+	color: String!
+}
+type Category @generateFilterInput @table(name: "category") {
+	id: Int!
+	name: String
+}
+type Dog implements Animal {
+	id: Int!
+	name: String!
+	type: String!
+	breed: String!
+}
+type Post @generateFilterInput @table(name: "post") @generateMutations {
+	id: Int!
+	name: String
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
+	user_id: Int
+	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate(groupBy: [CategoryGroupBy!],
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+	"""
+	user Aggregate
+	"""
+	_userAggregate(groupBy: [UserGroupBy!],
+		"""
+		Filter _userAggregate
+		"""
+		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+}
+type Product @generateFilterInput @table(name: "product") {
+	id: Int!
+	name: String!
+	attributes: ProductAttributes @json(column: "attributes")
+	metadata: Map
+}
+type ProductAttributes {
+	color: String
+	size: Int
+	details: ProductDetails
+}
+type ProductDetails {
+	manufacturer: String
+	model: String
+}
+type Query {
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @generate
+	users(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for User
+		"""
+		orderBy: [UserOrdering],
+		"""
+		Filter users
+		"""
+		filter: UserFilterInput): [User] @generate
+	categories(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Category
+		"""
+		orderBy: [CategoryOrdering],
+		"""
+		Filter categories
+		"""
+		filter: CategoryFilterInput): [Category] @generate
+	animals(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Animal
+		"""
+		orderBy: [AnimalOrdering],
+		"""
+		Filter animals
+		"""
+		filter: AnimalFilterInput): [Animal] @generate
+	products(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Product
+		"""
+		orderBy: [ProductOrdering],
+		"""
+		Filter products
+		"""
+		filter: ProductFilterInput): [Product] @generate
+	"""
+	posts Aggregate
+	"""
+	_postsAggregate(groupBy: [PostGroupBy!],
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+	"""
+	users Aggregate
+	"""
+	_usersAggregate(groupBy: [UserGroupBy!],
+		"""
+		Filter _usersAggregate
+		"""
+		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
+	"""
+	categories Aggregate
+	"""
+	_categoriesAggregate(groupBy: [CategoryGroupBy!],
+		"""
+		Filter _categoriesAggregate
+		"""
+		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
+	"""
+	animals Aggregate
+	"""
+	_animalsAggregate(groupBy: [AnimalGroupBy!],
+		"""
+		Filter _animalsAggregate
+		"""
+		filter: AnimalFilterInput): [AnimalsAggregate!]! @generate(filter: true)
+	"""
+	products Aggregate
+	"""
+	_productsAggregate(groupBy: [ProductGroupBy!],
+		"""
+		Filter _productsAggregate
+		"""
+		filter: ProductFilterInput): [ProductsAggregate!]! @generate(filter: true)
+}
+type User @table(name: "user") @generateFilterInput {
+	id: Int!
+	name: String!
+	posts(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Post
+		"""
+		orderBy: [PostOrdering],
+		"""
+		Filter posts
+		"""
+		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
+	"""
+	posts Aggregate
+	"""
+	_postsAggregate(groupBy: [PostGroupBy!],
+		"""
+		Filter _postsAggregate
+		"""
+		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
+}
+`, BuiltIn: false},
 	{Name: "../fastgql_schema.graphql", Input: `input AnimalFilterInput {
 	id: IntComparator
 	name: StringComparator
@@ -1338,6 +1783,126 @@ type PostsPayload {
 	rows_affected: Int!
 	posts: [Post]
 }
+"""
+Filter input for JSON type ProductAttributes
+"""
+input ProductAttributesFilterInput {
+	color: StringComparator
+	size: IntComparator
+	details: ProductDetailsFilterInput
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [ProductAttributesFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [ProductAttributesFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: ProductAttributesFilterInput
+}
+"""
+Filter input for JSON type ProductDetails
+"""
+input ProductDetailsFilterInput {
+	manufacturer: StringComparator
+	model: StringComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [ProductDetailsFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [ProductDetailsFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: ProductDetailsFilterInput
+}
+input ProductFilterInput {
+	id: IntComparator
+	name: StringComparator
+	attributes: ProductAttributesFilterInput
+	metadata: MapComparator
+	"""
+	Logical AND of FilterInput
+	"""
+	AND: [ProductFilterInput]
+	"""
+	Logical OR of FilterInput
+	"""
+	OR: [ProductFilterInput]
+	"""
+	Logical NOT of FilterInput
+	"""
+	NOT: ProductFilterInput
+}
+"""
+Group by Product
+"""
+enum ProductGroupBy {
+	"""
+	Group by id
+	"""
+	ID
+	"""
+	Group by name
+	"""
+	NAME
+	"""
+	Group by metadata
+	"""
+	METADATA
+}
+"""
+Ordering for Product
+"""
+input ProductOrdering {
+	"""
+	Order Product by id
+	"""
+	id: _OrderingTypes
+	"""
+	Order Product by name
+	"""
+	name: _OrderingTypes
+	"""
+	Order Product by metadata
+	"""
+	metadata: _OrderingTypes
+}
+"""
+Aggregate Product
+"""
+type ProductsAggregate {
+	"""
+	Group
+	"""
+	group: Map
+	"""
+	Count results
+	"""
+	count: Int!
+	"""
+	Max Aggregate
+	"""
+	max: _ProductMax!
+	"""
+	Min Aggregate
+	"""
+	min: _ProductMin!
+	"""
+	Avg Aggregate
+	"""
+	avg: _ProductAvg!
+	"""
+	Sum Aggregate
+	"""
+	sum: _ProductSum!
+}
 input UserFilterInput {
 	id: IntComparator
 	name: StringComparator
@@ -1569,6 +2134,50 @@ type _PostSum {
 """
 avg Aggregate
 """
+type _ProductAvg {
+	"""
+	Compute the avg for id
+	"""
+	id: Float!
+}
+"""
+max Aggregate
+"""
+type _ProductMax {
+	"""
+	Compute the max for id
+	"""
+	id: Int!
+	"""
+	Compute the max for name
+	"""
+	name: String!
+}
+"""
+min Aggregate
+"""
+type _ProductMin {
+	"""
+	Compute the min for id
+	"""
+	id: Int!
+	"""
+	Compute the min for name
+	"""
+	name: String!
+}
+"""
+sum Aggregate
+"""
+type _ProductSum {
+	"""
+	Compute the sum for id
+	"""
+	id: Float!
+}
+"""
+avg Aggregate
+"""
 type _UserAvg {
 	"""
 	Compute the avg for id
@@ -1632,6 +2241,7 @@ directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering
 directive @generateFilterInput(description: String) on OBJECT | INTERFACE
 directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
 directive @isInterfaceFilter on INPUT_FIELD_DEFINITION
+directive @json(column: String!) on FIELD_DEFINITION
 directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
 directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
 directive @typename(name: String!) on INTERFACE
@@ -1665,6 +2275,11 @@ input FloatListComparator {
 	overlap: [Float]
 	isNull: Boolean
 }
+input IDComparator {
+	eq: ID
+	neq: ID
+	isNull: Boolean
+}
 input IntComparator {
 	eq: Int
 	neq: Int
@@ -1683,6 +2298,23 @@ input IntListComparator {
 	isNull: Boolean
 }
 scalar Map
+input MapComparator {
+	contains: Map
+	where: [MapPathCondition!]
+	whereAny: [MapPathCondition!]
+	isNull: Boolean
+}
+input MapPathCondition {
+	path: String!
+	eq: String
+	neq: String
+	gt: Float
+	gte: Float
+	lt: Float
+	lte: Float
+	like: String
+	isNull: Boolean
+}
 input StringComparator {
 	eq: String
 	neq: String
@@ -1719,198 +2351,6 @@ enum _relationType {
 	MANY_TO_MANY
 }
 `, BuiltIn: false},
-	{Name: "../schema.graphql", Input: `interface Animal @table(name: "animals") @typename(name: "type") @generateFilterInput {
-	id: Int!
-	name: String!
-	type: String!
-}
-type Cat implements Animal {
-	id: Int!
-	name: String!
-	type: String!
-	color: String!
-}
-type Category @generateFilterInput @table(name: "category") {
-	id: Int!
-	name: String
-}
-type Dog implements Animal {
-	id: Int!
-	name: String!
-	type: String!
-	breed: String!
-}
-type Post @generateFilterInput @table(name: "post") @generateMutations {
-	id: Int!
-	name: String
-	categories(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Category
-		"""
-		orderBy: [CategoryOrdering],
-		"""
-		Filter categories
-		"""
-		filter: CategoryFilterInput): [Category] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_to_categories", manyToManyFields: ["post_id"], manyToManyReferences: ["category_id"])
-	user_id: Int
-	user: User @relation(type: ONE_TO_ONE, fields: ["user_id"], references: ["id"])
-	"""
-	categories Aggregate
-	"""
-	_categoriesAggregate(groupBy: [CategoryGroupBy!],
-		"""
-		Filter _categoriesAggregate
-		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
-	"""
-	user Aggregate
-	"""
-	_userAggregate(groupBy: [UserGroupBy!],
-		"""
-		Filter _userAggregate
-		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
-}
-type Query {
-	posts(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Post
-		"""
-		orderBy: [PostOrdering],
-		"""
-		Filter posts
-		"""
-		filter: PostFilterInput): [Post] @generate
-	users(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for User
-		"""
-		orderBy: [UserOrdering],
-		"""
-		Filter users
-		"""
-		filter: UserFilterInput): [User] @generate
-	categories(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Category
-		"""
-		orderBy: [CategoryOrdering],
-		"""
-		Filter categories
-		"""
-		filter: CategoryFilterInput): [Category] @generate
-	animals(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Animal
-		"""
-		orderBy: [AnimalOrdering],
-		"""
-		Filter animals
-		"""
-		filter: AnimalFilterInput): [Animal] @generate
-	"""
-	posts Aggregate
-	"""
-	_postsAggregate(groupBy: [PostGroupBy!],
-		"""
-		Filter _postsAggregate
-		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
-	"""
-	users Aggregate
-	"""
-	_usersAggregate(groupBy: [UserGroupBy!],
-		"""
-		Filter _usersAggregate
-		"""
-		filter: UserFilterInput): [UsersAggregate!]! @generate(filter: true)
-	"""
-	categories Aggregate
-	"""
-	_categoriesAggregate(groupBy: [CategoryGroupBy!],
-		"""
-		Filter _categoriesAggregate
-		"""
-		filter: CategoryFilterInput): [CategoriesAggregate!]! @generate(filter: true)
-	"""
-	animals Aggregate
-	"""
-	_animalsAggregate(groupBy: [AnimalGroupBy!],
-		"""
-		Filter _animalsAggregate
-		"""
-		filter: AnimalFilterInput): [AnimalsAggregate!]! @generate(filter: true)
-}
-type User @table(name: "user") @generateFilterInput {
-	id: Int!
-	name: String!
-	posts(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Post
-		"""
-		orderBy: [PostOrdering],
-		"""
-		Filter posts
-		"""
-		filter: PostFilterInput): [Post] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["user_id"])
-	"""
-	posts Aggregate
-	"""
-	_postsAggregate(groupBy: [PostGroupBy!],
-		"""
-		Filter _postsAggregate
-		"""
-		filter: PostFilterInput): [PostsAggregate!]! @generate(filter: true)
-}
-`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -1926,6 +2366,17 @@ func (ec *executionContext) dir_fastgqlField_args(ctx context.Context, rawArgs m
 		return nil, err
 	}
 	args["skipSelect"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) dir_json_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "column", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["column"] = arg0
 	return args, nil
 }
 
@@ -2100,6 +2551,22 @@ func (ec *executionContext) field_Query__postsAggregate_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Query__productsAggregate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy", ec.unmarshalOProductGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductGroupByᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["groupBy"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOProductFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductFilterInput)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query__usersAggregate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2187,6 +2654,32 @@ func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs 
 	}
 	args["orderBy"] = arg2
 	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOPostFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostFilterInput)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_products_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOProductOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductOrdering)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOProductFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductFilterInput)
 	if err != nil {
 		return nil, err
 	}
@@ -3693,6 +4186,493 @@ func (ec *executionContext) fieldContext_PostsPayload_posts(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Product_id(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Product_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Product_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Product",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Product_name(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Product_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Product_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Product",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Product_attributes(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Product_attributes,
+		func(ctx context.Context) (any, error) {
+			return obj.Attributes, nil
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				column, err := ec.unmarshalNString2string(ctx, "attributes")
+				if err != nil {
+					var zeroVal *model.ProductAttributes
+					return zeroVal, err
+				}
+				if ec.directives.Json == nil {
+					var zeroVal *model.ProductAttributes
+					return zeroVal, errors.New("directive json is not implemented")
+				}
+				return ec.directives.Json(ctx, obj, directive0, column)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalOProductAttributes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAttributes,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Product_attributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Product",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "color":
+				return ec.fieldContext_ProductAttributes_color(ctx, field)
+			case "size":
+				return ec.fieldContext_ProductAttributes_size(ctx, field)
+			case "details":
+				return ec.fieldContext_ProductAttributes_details(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProductAttributes", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Product_metadata(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Product_metadata,
+		func(ctx context.Context) (any, error) {
+			return obj.Metadata, nil
+		},
+		nil,
+		ec.marshalOMap2map,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Product_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Product",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductAttributes_color(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttributes) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductAttributes_color,
+		func(ctx context.Context) (any, error) {
+			return obj.Color, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductAttributes_color(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductAttributes_size(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttributes) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductAttributes_size,
+		func(ctx context.Context) (any, error) {
+			return obj.Size, nil
+		},
+		nil,
+		ec.marshalOInt2ᚖint,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductAttributes_size(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductAttributes_details(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttributes) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductAttributes_details,
+		func(ctx context.Context) (any, error) {
+			return obj.Details, nil
+		},
+		nil,
+		ec.marshalOProductDetails2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductDetails,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductAttributes_details(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "manufacturer":
+				return ec.fieldContext_ProductDetails_manufacturer(ctx, field)
+			case "model":
+				return ec.fieldContext_ProductDetails_model(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProductDetails", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductDetails_manufacturer(ctx context.Context, field graphql.CollectedField, obj *model.ProductDetails) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductDetails_manufacturer,
+		func(ctx context.Context) (any, error) {
+			return obj.Manufacturer, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductDetails_manufacturer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductDetails_model(ctx context.Context, field graphql.CollectedField, obj *model.ProductDetails) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductDetails_model,
+		func(ctx context.Context) (any, error) {
+			return obj.Model, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductDetails_model(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductsAggregate_group(ctx context.Context, field graphql.CollectedField, obj *model.ProductsAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductsAggregate_group,
+		func(ctx context.Context) (any, error) {
+			return obj.Group, nil
+		},
+		nil,
+		ec.marshalOMap2map,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductsAggregate_group(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductsAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductsAggregate_count(ctx context.Context, field graphql.CollectedField, obj *model.ProductsAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductsAggregate_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductsAggregate_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductsAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductsAggregate_max(ctx context.Context, field graphql.CollectedField, obj *model.ProductsAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductsAggregate_max,
+		func(ctx context.Context) (any, error) {
+			return obj.Max, nil
+		},
+		nil,
+		ec.marshalN_ProductMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductMax,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductsAggregate_max(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductsAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext__ProductMax_id(ctx, field)
+			case "name":
+				return ec.fieldContext__ProductMax_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _ProductMax", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductsAggregate_min(ctx context.Context, field graphql.CollectedField, obj *model.ProductsAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductsAggregate_min,
+		func(ctx context.Context) (any, error) {
+			return obj.Min, nil
+		},
+		nil,
+		ec.marshalN_ProductMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductMin,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductsAggregate_min(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductsAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext__ProductMin_id(ctx, field)
+			case "name":
+				return ec.fieldContext__ProductMin_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _ProductMin", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductsAggregate_avg(ctx context.Context, field graphql.CollectedField, obj *model.ProductsAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductsAggregate_avg,
+		func(ctx context.Context) (any, error) {
+			return obj.Avg, nil
+		},
+		nil,
+		ec.marshalN_ProductAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAvg,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductsAggregate_avg(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductsAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext__ProductAvg_id(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _ProductAvg", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProductsAggregate_sum(ctx context.Context, field graphql.CollectedField, obj *model.ProductsAggregate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProductsAggregate_sum,
+		func(ctx context.Context) (any, error) {
+			return obj.Sum, nil
+		},
+		nil,
+		ec.marshalN_ProductSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductSum,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProductsAggregate_sum(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProductsAggregate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext__ProductSum_id(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _ProductSum", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3883,6 +4863,57 @@ func (ec *executionContext) fieldContext_Query_animals(ctx context.Context, fiel
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_animals_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_products(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_products,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Products(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["orderBy"].([]*model.ProductOrdering), fc.Args["filter"].(*model.ProductFilterInput))
+		},
+		nil,
+		ec.marshalOProduct2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProduct,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_products(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Product_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Product_name(ctx, field)
+			case "attributes":
+				return ec.fieldContext_Product_attributes(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Product_metadata(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Product", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_products_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4103,6 +5134,61 @@ func (ec *executionContext) fieldContext_Query__animalsAggregate(ctx context.Con
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query__animalsAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query__productsAggregate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query__productsAggregate,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().ProductsAggregate(ctx, fc.Args["groupBy"].([]model.ProductGroupBy), fc.Args["filter"].(*model.ProductFilterInput))
+		},
+		nil,
+		ec.marshalNProductsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductsAggregateᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query__productsAggregate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "group":
+				return ec.fieldContext_ProductsAggregate_group(ctx, field)
+			case "count":
+				return ec.fieldContext_ProductsAggregate_count(ctx, field)
+			case "max":
+				return ec.fieldContext_ProductsAggregate_max(ctx, field)
+			case "min":
+				return ec.fieldContext_ProductsAggregate_min(ctx, field)
+			case "avg":
+				return ec.fieldContext_ProductsAggregate_avg(ctx, field)
+			case "sum":
+				return ec.fieldContext_ProductsAggregate_sum(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProductsAggregate", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query__productsAggregate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5294,6 +6380,180 @@ func (ec *executionContext) __PostSum_user_id(ctx context.Context, field graphql
 func (ec *executionContext) fieldContext__PostSum_user_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "_PostSum",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __ProductAvg_id(ctx context.Context, field graphql.CollectedField, obj *model.ProductAvg) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__ProductAvg_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__ProductAvg_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_ProductAvg",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __ProductMax_id(ctx context.Context, field graphql.CollectedField, obj *model.ProductMax) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__ProductMax_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__ProductMax_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_ProductMax",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __ProductMax_name(ctx context.Context, field graphql.CollectedField, obj *model.ProductMax) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__ProductMax_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__ProductMax_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_ProductMax",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __ProductMin_id(ctx context.Context, field graphql.CollectedField, obj *model.ProductMin) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__ProductMin_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__ProductMin_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_ProductMin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __ProductMin_name(ctx context.Context, field graphql.CollectedField, obj *model.ProductMin) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__ProductMin_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__ProductMin_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_ProductMin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __ProductSum_id(ctx context.Context, field graphql.CollectedField, obj *model.ProductSum) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext__ProductSum_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext__ProductSum_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_ProductSum",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -7543,6 +8803,47 @@ func (ec *executionContext) unmarshalInputFloatListComparator(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputIDComparator(ctx context.Context, obj any) (model.IDComparator, error) {
+	var it model.IDComparator
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"eq", "neq", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "eq":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Eq = data
+		case "neq":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Neq = data
+		case "isNull":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsNull = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputIntComparator(ctx context.Context, obj any) (model.IntComparator, error) {
 	var it model.IntComparator
 	asMap := map[string]any{}
@@ -7674,6 +8975,137 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMapComparator(ctx context.Context, obj any) (model.MapComparator, error) {
+	var it model.MapComparator
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"contains", "where", "whereAny", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "contains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Contains = data
+		case "where":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+			data, err := ec.unmarshalOMapPathCondition2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐMapPathConditionᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Where = data
+		case "whereAny":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("whereAny"))
+			data, err := ec.unmarshalOMapPathCondition2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐMapPathConditionᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WhereAny = data
+		case "isNull":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsNull = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMapPathCondition(ctx context.Context, obj any) (model.MapPathCondition, error) {
+	var it model.MapPathCondition
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"path", "eq", "neq", "gt", "gte", "lt", "lte", "like", "isNull"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "path":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("path"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Path = data
+		case "eq":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Eq = data
+		case "neq":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Neq = data
+		case "gt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gt"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Gt = data
+		case "gte":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gte"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Gte = data
+		case "lt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lt"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Lt = data
+		case "lte":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lte"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Lte = data
+		case "like":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Like = data
+		case "isNull":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsNull = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, obj any) (model.PostFilterInput, error) {
 	var it model.PostFilterInput
 	asMap := map[string]any{}
@@ -7785,6 +9217,233 @@ func (ec *executionContext) unmarshalInputPostOrdering(ctx context.Context, obj 
 				return it, err
 			}
 			it.UserID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputProductAttributesFilterInput(ctx context.Context, obj any) (model.ProductAttributesFilterInput, error) {
+	var it model.ProductAttributesFilterInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"color", "size", "details", "AND", "OR", "NOT"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "color":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("color"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Color = data
+		case "size":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("size"))
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Size = data
+		case "details":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("details"))
+			data, err := ec.unmarshalOProductDetailsFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductDetailsFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Details = data
+		case "AND":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			data, err := ec.unmarshalOProductAttributesFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAttributesFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "OR":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			data, err := ec.unmarshalOProductAttributesFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAttributesFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "NOT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			data, err := ec.unmarshalOProductAttributesFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAttributesFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputProductDetailsFilterInput(ctx context.Context, obj any) (model.ProductDetailsFilterInput, error) {
+	var it model.ProductDetailsFilterInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"manufacturer", "model", "AND", "OR", "NOT"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "manufacturer":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("manufacturer"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Manufacturer = data
+		case "model":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("model"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Model = data
+		case "AND":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			data, err := ec.unmarshalOProductDetailsFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductDetailsFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "OR":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			data, err := ec.unmarshalOProductDetailsFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductDetailsFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "NOT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			data, err := ec.unmarshalOProductDetailsFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductDetailsFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputProductFilterInput(ctx context.Context, obj any) (model.ProductFilterInput, error) {
+	var it model.ProductFilterInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "attributes", "metadata", "AND", "OR", "NOT"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOIntComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐIntComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOStringComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐStringComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "attributes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("attributes"))
+			data, err := ec.unmarshalOProductAttributesFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAttributesFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Attributes = data
+		case "metadata":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
+			data, err := ec.unmarshalOMapComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐMapComparator(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Metadata = data
+		case "AND":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
+			data, err := ec.unmarshalOProductFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "OR":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("OR"))
+			data, err := ec.unmarshalOProductFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "NOT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("NOT"))
+			data, err := ec.unmarshalOProductFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputProductOrdering(ctx context.Context, obj any) (model.ProductOrdering, error) {
+	var it model.ProductOrdering
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "metadata"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "metadata":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
+			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Metadata = data
 		}
 	}
 
@@ -8588,6 +10247,193 @@ func (ec *executionContext) _PostsPayload(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var productImplementors = []string{"Product"}
+
+func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, obj *model.Product) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, productImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Product")
+		case "id":
+			out.Values[i] = ec._Product_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Product_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "attributes":
+			out.Values[i] = ec._Product_attributes(ctx, field, obj)
+		case "metadata":
+			out.Values[i] = ec._Product_metadata(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var productAttributesImplementors = []string{"ProductAttributes"}
+
+func (ec *executionContext) _ProductAttributes(ctx context.Context, sel ast.SelectionSet, obj *model.ProductAttributes) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, productAttributesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProductAttributes")
+		case "color":
+			out.Values[i] = ec._ProductAttributes_color(ctx, field, obj)
+		case "size":
+			out.Values[i] = ec._ProductAttributes_size(ctx, field, obj)
+		case "details":
+			out.Values[i] = ec._ProductAttributes_details(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var productDetailsImplementors = []string{"ProductDetails"}
+
+func (ec *executionContext) _ProductDetails(ctx context.Context, sel ast.SelectionSet, obj *model.ProductDetails) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, productDetailsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProductDetails")
+		case "manufacturer":
+			out.Values[i] = ec._ProductDetails_manufacturer(ctx, field, obj)
+		case "model":
+			out.Values[i] = ec._ProductDetails_model(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var productsAggregateImplementors = []string{"ProductsAggregate"}
+
+func (ec *executionContext) _ProductsAggregate(ctx context.Context, sel ast.SelectionSet, obj *model.ProductsAggregate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, productsAggregateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProductsAggregate")
+		case "group":
+			out.Values[i] = ec._ProductsAggregate_group(ctx, field, obj)
+		case "count":
+			out.Values[i] = ec._ProductsAggregate_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "max":
+			out.Values[i] = ec._ProductsAggregate_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "min":
+			out.Values[i] = ec._ProductsAggregate_min(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "avg":
+			out.Values[i] = ec._ProductsAggregate_avg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sum":
+			out.Values[i] = ec._ProductsAggregate_sum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -8683,6 +10529,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "products":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_products(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "_postsAggregate":
 			field := field
 
@@ -8759,6 +10624,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query__animalsAggregate(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "_productsAggregate":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query__productsAggregate(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -9481,6 +11368,172 @@ func (ec *executionContext) __PostSum(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var _ProductAvgImplementors = []string{"_ProductAvg"}
+
+func (ec *executionContext) __ProductAvg(ctx context.Context, sel ast.SelectionSet, obj *model.ProductAvg) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _ProductAvgImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_ProductAvg")
+		case "id":
+			out.Values[i] = ec.__ProductAvg_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _ProductMaxImplementors = []string{"_ProductMax"}
+
+func (ec *executionContext) __ProductMax(ctx context.Context, sel ast.SelectionSet, obj *model.ProductMax) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _ProductMaxImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_ProductMax")
+		case "id":
+			out.Values[i] = ec.__ProductMax_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec.__ProductMax_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _ProductMinImplementors = []string{"_ProductMin"}
+
+func (ec *executionContext) __ProductMin(ctx context.Context, sel ast.SelectionSet, obj *model.ProductMin) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _ProductMinImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_ProductMin")
+		case "id":
+			out.Values[i] = ec.__ProductMin_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec.__ProductMin_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var _ProductSumImplementors = []string{"_ProductSum"}
+
+func (ec *executionContext) __ProductSum(ctx context.Context, sel ast.SelectionSet, obj *model.ProductSum) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _ProductSumImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_ProductSum")
+		case "id":
+			out.Values[i] = ec.__ProductSum_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var _UserAvgImplementors = []string{"_UserAvg"}
 
 func (ec *executionContext) __UserAvg(ctx context.Context, sel ast.SelectionSet, obj *model.UserAvg) graphql.Marshaler {
@@ -10166,6 +12219,11 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) unmarshalNMapPathCondition2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐMapPathCondition(ctx context.Context, v any) (model.MapPathCondition, error) {
+	res, err := ec.unmarshalInputMapPathCondition(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNPostGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostGroupBy(ctx context.Context, v any) (model.PostGroupBy, error) {
 	var res model.PostGroupBy
 	err := res.UnmarshalGQL(v)
@@ -10205,6 +12263,64 @@ func (ec *executionContext) marshalNPostsAggregate2ᚕgithubᚗcomᚋroneliᚋfa
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNPostsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPostsAggregate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNProductGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductGroupBy(ctx context.Context, v any) (model.ProductGroupBy, error) {
+	var res model.ProductGroupBy
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNProductGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductGroupBy(ctx context.Context, sel ast.SelectionSet, v model.ProductGroupBy) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNProductsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductsAggregate(ctx context.Context, sel ast.SelectionSet, v model.ProductsAggregate) graphql.Marshaler {
+	return ec._ProductsAggregate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProductsAggregate2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductsAggregateᚄ(ctx context.Context, sel ast.SelectionSet, v []model.ProductsAggregate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNProductsAggregate2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductsAggregate(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10451,6 +12567,46 @@ func (ec *executionContext) marshalN_PostSum2ᚖgithubᚗcomᚋroneliᚋfastgql�
 		return graphql.Null
 	}
 	return ec.__PostSum(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_ProductAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAvg(ctx context.Context, sel ast.SelectionSet, v *model.ProductAvg) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__ProductAvg(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_ProductMax2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductMax(ctx context.Context, sel ast.SelectionSet, v *model.ProductMax) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__ProductMax(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_ProductMin2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductMin(ctx context.Context, sel ast.SelectionSet, v *model.ProductMin) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__ProductMin(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalN_ProductSum2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductSum(ctx context.Context, sel ast.SelectionSet, v *model.ProductSum) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec.__ProductSum(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN_UserAvg2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐUserAvg(ctx context.Context, sel ast.SelectionSet, v *model.UserAvg) graphql.Marshaler {
@@ -11245,6 +13401,24 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalID(*v)
+	return res
+}
+
 func (ec *executionContext) unmarshalOInt2ᚕᚖint(ctx context.Context, v any) ([]*int, error) {
 	if v == nil {
 		return nil, nil
@@ -11317,6 +13491,32 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 	_ = ctx
 	res := graphql.MarshalMap(v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOMapComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐMapComparator(ctx context.Context, v any) (*model.MapComparator, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputMapComparator(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOMapPathCondition2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐMapPathConditionᚄ(ctx context.Context, v any) ([]model.MapPathCondition, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]model.MapPathCondition, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMapPathCondition2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐMapPathCondition(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
@@ -11489,6 +13689,237 @@ func (ec *executionContext) marshalOPostsPayload2ᚖgithubᚗcomᚋroneliᚋfast
 		return graphql.Null
 	}
 	return ec._PostsPayload(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOProduct2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProduct(ctx context.Context, sel ast.SelectionSet, v []*model.Product) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOProduct2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProduct(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOProduct2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProduct(ctx context.Context, sel ast.SelectionSet, v *model.Product) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Product(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOProductAttributes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAttributes(ctx context.Context, sel ast.SelectionSet, v *model.ProductAttributes) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProductAttributes(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOProductAttributesFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAttributesFilterInput(ctx context.Context, v any) ([]*model.ProductAttributesFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.ProductAttributesFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOProductAttributesFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAttributesFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOProductAttributesFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductAttributesFilterInput(ctx context.Context, v any) (*model.ProductAttributesFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputProductAttributesFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOProductDetails2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductDetails(ctx context.Context, sel ast.SelectionSet, v *model.ProductDetails) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProductDetails(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOProductDetailsFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductDetailsFilterInput(ctx context.Context, v any) ([]*model.ProductDetailsFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.ProductDetailsFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOProductDetailsFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductDetailsFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOProductDetailsFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductDetailsFilterInput(ctx context.Context, v any) (*model.ProductDetailsFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputProductDetailsFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOProductFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductFilterInput(ctx context.Context, v any) ([]*model.ProductFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.ProductFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOProductFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOProductFilterInput2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductFilterInput(ctx context.Context, v any) (*model.ProductFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputProductFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOProductGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductGroupByᚄ(ctx context.Context, v any) ([]model.ProductGroupBy, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]model.ProductGroupBy, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNProductGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductGroupBy(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOProductGroupBy2ᚕgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductGroupByᚄ(ctx context.Context, sel ast.SelectionSet, v []model.ProductGroupBy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNProductGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductGroupBy(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOProductOrdering2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductOrdering(ctx context.Context, v any) ([]*model.ProductOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.ProductOrdering, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOProductOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductOrdering(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOProductOrdering2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋpkgᚋexecutionᚋ__test__ᚋgraphᚋmodelᚐProductOrdering(ctx context.Context, v any) (*model.ProductOrdering, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputProductOrdering(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v any) ([]*string, error) {
