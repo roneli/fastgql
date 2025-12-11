@@ -128,67 +128,47 @@ query ObjectFilterExample {
 
 ## JSON Filtering
 
-FastGQL provides powerful filtering capabilities for PostgreSQL JSONB columns, allowing you to query structured and dynamic JSON data stored in your database. There are two approaches for working with JSON data, each suited to different use cases.
+FastGQL supports filtering PostgreSQL JSONB columns using two approaches: typed JSON for known structures, and Map scalar for dynamic data.
 
 :::note[Filtering vs. Field Selection]
-**Filtering** determines WHICH rows to return based on JSON content (this section).
-
-**Field Selection** determines WHICH fields to extract from JSON in the response. See [JSON Field Selection](queries.md#json-field-selection) for details on selecting specific nested fields from typed JSON columns.
-
-Both features can be used together - filter which rows to return, then select specific fields from the JSON data in those rows.
+**Filtering** determines which rows to return based on JSON content. **Field Selection** determines which fields to extract from JSON in the response (see [JSON Field Selection](queries#json-field-selection)). Both can be used together.
 :::
 
 ### Typed JSON Filtering (Recommended)
 
-For JSON data with a known, consistent structure, use the `@json` directive with a GraphQL object type. This provides type-safe filtering with full IDE support and validation.
-
-#### Schema Setup
-
-First, define the structure of your JSON data as a GraphQL type:
+Use the `@json` directive with a GraphQL object type for structured JSON with type-safe filtering:
 
 ```graphql
 type ProductAttributes {
     color: String
     size: Int
-    weight: Float
-    tags: [String]
+    details: ProductDetails
+}
+
+type ProductDetails {
+    manufacturer: String
+    year: Int
 }
 
 type Product @generateFilterInput @table(name: "products") {
     id: Int!
     name: String!
-    # Typed JSON field stored in JSONB column
     attributes: ProductAttributes @json(column: "attributes")
-}
-
-type Query {
-    products: [Product] @generate
 }
 ```
 
-FastGQL automatically generates a `ProductAttributesFilterInput` with all the standard filter operators.
-
-#### Simple Field Filtering
-
-Filter by a single field in the JSON object:
-
+**Simple filtering:**
 ```graphql
 query {
-    # Find products with red color
     products(filter: { attributes: { color: { eq: "red" } } }) {
         name
-        attributes
     }
 }
 ```
 
-#### Multiple Field Filtering
-
-Filter by multiple fields (implicit AND):
-
+**Multiple fields (implicit AND):**
 ```graphql
 query {
-    # Find blue products larger than size 15
     products(filter: {
         attributes: {
             color: { eq: "blue" },
@@ -196,114 +176,39 @@ query {
         }
     }) {
         name
-        attributes
     }
 }
 ```
 
-#### Logical Operators in JSON Filters
-
-Use AND, OR, and NOT operators within JSON filters:
+**Logical operators:**
 
 <Tabs>
-    <TabItem label="AND">
-        ```graphql
-        query {
-            # Red products with size greater than 12
-            products(filter: {
-                attributes: {
-                    AND: [
-                        { color: { eq: "red" } },
-                        { size: { gt: 12 } }
-                    ]
-                }
-            }) {
-                name
-            }
-        }
-        ```
-    </TabItem>
     <TabItem label="OR">
         ```graphql
-        query {
-            # Green products OR small products (size < 10)
-            products(filter: {
-                attributes: {
-                    OR: [
-                        { color: { eq: "green" } },
-                        { size: { lt: 10 } }
-                    ]
-                }
-            }) {
-                name
+        products(filter: {
+            attributes: {
+                OR: [
+                    { color: { eq: "green" } },
+                    { size: { lt: 10 } }
+                ]
             }
-        }
+        })
         ```
     </TabItem>
     <TabItem label="NOT">
         ```graphql
-        query {
-            # Products that are NOT blue
-            products(filter: {
-                attributes: {
-                    NOT: { color: { eq: "blue" } }
-                }
-            }) {
-                name
+        products(filter: {
+            attributes: {
+                NOT: { color: { eq: "blue" } }
             }
-        }
+        })
         ```
     </TabItem>
 </Tabs>
 
-#### Nested Object Filtering
-
-For JSON with nested objects, define the nested structure and filter through it:
-
-```graphql
-type ProductDetails {
-    manufacturer: String
-    model: String
-    year: Int
-}
-
-type ProductAttributes {
-    color: String
-    size: Int
-    # Nested object in JSON
-    details: ProductDetails
-}
-
-type Product @generateFilterInput @table(name: "products") {
-    id: Int!
-    name: String!
-    attributes: ProductAttributes @json(column: "attributes")
-}
-```
-
-Query with nested filters:
-
+**Nested objects:**
 ```graphql
 query {
-    # Filter by nested manufacturer field
-    products(filter: {
-        attributes: {
-            details: {
-                manufacturer: { eq: "Acme" }
-            }
-        }
-    }) {
-        name
-        attributes
-    }
-}
-```
-
-You can also combine nested and top-level filters:
-
-```graphql
-query {
-    # Red products from Acme
     products(filter: {
         attributes: {
             color: { eq: "red" },
@@ -320,253 +225,70 @@ query {
 
 ### Map Scalar Filtering (Dynamic JSON)
 
-For JSON data with a variable or unknown structure, use the `Map` scalar type. This provides runtime filtering using JSONPath expressions.
-
-#### Schema Setup
+Use the `Map` scalar type for JSON with variable structure. Filtering uses runtime JSONPath expressions.
 
 ```graphql
-type Product @generateFilterInput @table(name: "products") {
+type Product @generateFilterInput {
     id: Int!
-    name: String!
-    # Dynamic JSON field
     metadata: Map
 }
-
-type Query {
-    products: [Product] @generate
-}
 ```
 
-#### Contains Operator
-
-Use `contains` to check if the JSON contains specific key-value pairs (PostgreSQL `@>` operator):
-
+**Contains operator** (PostgreSQL `@>`):
 ```graphql
-query {
-    # Products with discount flag
-    products(filter: {
-        metadata: {
-            contains: { discount: "true" }
-        }
-    }) {
-        name
-    }
-}
+products(filter: {
+    metadata: { contains: { discount: "true" } }
+})
 ```
 
-For nested containment:
-
+**JSONPath with `where` (AND logic):**
 ```graphql
-query {
-    # Products with nested shipping info
-    products(filter: {
-        metadata: {
-            contains: {
-                shipping: {
-                    method: "express"
-                }
-            }
-        }
-    }) {
-        name
+products(filter: {
+    metadata: {
+        where: [
+            { path: "price", lt: 100 },
+            { path: "discount", eq: "true" }
+        ]
     }
-}
+})
 ```
 
-#### JSONPath Filtering with `where`
-
-Use `where` for conditions on specific JSON paths (combined with AND logic):
-
+**JSONPath with `whereAny` (OR logic):**
 ```graphql
-query {
-    # Products with price less than 100 AND discount enabled
-    products(filter: {
-        metadata: {
-            where: [
-                { path: "price", lt: 100 },
-                { path: "discount", eq: "true" }
-            ]
-        }
-    }) {
-        name
+products(filter: {
+    metadata: {
+        whereAny: [
+            { path: "rating", gt: 4 },
+            { path: "discount", eq: "true" }
+        ]
     }
-}
+})
 ```
 
-#### JSONPath Filtering with `whereAny`
-
-Use `whereAny` for OR conditions:
-
-```graphql
-query {
-    # Products with high rating OR discount
-    products(filter: {
-        metadata: {
-            whereAny: [
-                { path: "rating", gt: 4 },
-                { path: "discount", eq: "true" }
-            ]
-        }
-    }) {
-        name
-    }
-}
-```
-
-#### Complex JSONPath Expressions
-
-Filter on nested fields and array elements:
+**Complex paths:**
 
 <Tabs>
-    <TabItem label="Nested Fields">
+    <TabItem label="Nested">
         ```graphql
-        query {
-            # Filter by nested field path
-            products(filter: {
-                metadata: {
-                    where: [
-                        { path: "shipping.cost", lt: 10 }
-                    ]
-                }
-            }) {
-                name
-            }
-        }
+        where: [{ path: "shipping.cost", lt: 10 }]
         ```
     </TabItem>
-    <TabItem label="Array Index">
+    <TabItem label="Array">
         ```graphql
-        query {
-            # Filter by first item in array
-            products(filter: {
-                metadata: {
-                    where: [
-                        { path: "items[0].name", eq: "widget" }
-                    ]
-                }
-            }) {
-                name
-            }
-        }
-        ```
-    </TabItem>
-    <TabItem label="Null Checks">
-        ```graphql
-        query {
-            # Products where expiry field is not null
-            products(filter: {
-                metadata: {
-                    where: [
-                        { path: "expiry", isNull: false }
-                    ]
-                }
-            }) {
-                name
-            }
-        }
+        where: [{ path: "items[0].name", eq: "widget" }]
         ```
     </TabItem>
 </Tabs>
 
-#### Combining Map Operators
+**Available operators in MapPathCondition:** `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `isNull`
 
-You can combine multiple Map operators (they're combined with AND logic):
-
-```graphql
-query {
-    # Products with discount AND price less than 75
-    products(filter: {
-        metadata: {
-            contains: { discount: "true" },
-            where: [{ path: "price", lt: 75 }]
-        }
-    }) {
-        name
-    }
-}
-```
-
-#### Available Operators in MapPathCondition
-
-When using `where` or `whereAny`, each condition supports these operators:
-
-- `eq`: String equality
-- `neq`: String inequality
-- `gt`, `gte`, `lt`, `lte`: Numeric comparisons
-- `like`: Regex pattern matching
-- `isNull`: Check for null values
-
-Example using multiple operator types:
-
-```graphql
-query {
-    products(filter: {
-        metadata: {
-            where: [
-                { path: "name", like: "^Pro.*" },
-                { path: "price", gte: 50 },
-                { path: "discount", eq: "true" },
-                { path: "discontinued", isNull: true }
-            ]
-        }
-    }) {
-        name
-    }
-}
-```
+See [MapComparator](../schema/operators#mapcomparator) for operator details.
 
 ### Choosing Between Typed JSON and Map
 
-**Use Typed JSON (`@json` directive) when:**
-- Your JSON structure is known and consistent across records
-- You want compile-time type safety and GraphQL validation
-- You need IDE auto-completion and schema introspection
-- Your JSON represents well-defined domain objects
+- **Typed JSON**: Known structure, type safety, IDE auto-completion
+- **Map scalar**: Variable structure, runtime flexibility, arbitrary metadata
 
-**Use Map scalar when:**
-- Your JSON structure varies between records
-- You need maximum runtime flexibility
-- You're storing user-defined or external system data
-- Your JSON is truly dynamic metadata or configuration
+You can use both in the same type for different fields.
 
-**Example combining both:**
-
-```graphql
-type Product @generateFilterInput @table(name: "products") {
-    id: Int!
-    name: String!
-    # Known structure - use typed JSON
-    attributes: ProductAttributes @json(column: "attributes")
-    # Variable structure - use Map
-    metadata: Map
-}
-```
-
-This allows you to have type-safe filtering for known fields while maintaining flexibility for dynamic data.
-
-### Combining Filtering and Field Selection
-
-You can combine JSON filtering (to determine which rows to return) with field selection (to extract specific fields) in the same query:
-
-```graphql
-query {
-    # Filter: Return only products where attributes.color == "red"
-    # Selection: Extract only the manufacturer from the nested details
-    products(filter: { attributes: { color: { eq: "red" } } }) {
-        name
-        attributes {
-            color
-            details {
-                manufacturer
-            }
-        }
-    }
-}
-```
-
-This query:
-1. Filters products to only include those with red color (database WHERE clause)
-2. For matching products, extracts only the `color` field and `manufacturer` from nested `details`
-3. Does not extract other fields like `size`, `model`, `warranty`, etc.
-
-Both operations are performed efficiently at the database level using PostgreSQL's native JSONB operators.
+For a complete example, see [examples/json](https://github.com/roneli/fastgql/tree/master/examples/json).
