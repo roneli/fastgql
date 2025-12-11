@@ -27,8 +27,8 @@ var (
 	FastGQLSchema string
 	//go:embed server.gotpl
 	fastGqlServerTpl  string
-	FastGQLDirectives = []string{tableDirectiveName, generateDirectiveName, "generateFilterInput", "isInterfaceFilter",
-		skipGenerateDirectiveName, "generateMutations", jsonDirectiveName, relationDirectiveName}
+	FastGQLDirectives = []string{TableDirectiveName, GenerateDirectiveName, GenerateFilterInputDirectiveName, IsInterfaceFilterDirectiveName,
+		SkipGenerateDirectiveName, GenerateMutationsDirectiveName, JSONDirectiveName, RelationDirectiveName}
 	defaultAugmenters = []Augmenter{
 		MutationsAugmenter,
 		PaginationAugmenter,
@@ -119,7 +119,7 @@ func (f *FastGqlPlugin) GenerateCode(data *codegen.Data) error {
 
 func (f *FastGqlPlugin) Implement(_ string, field *codegen.Field) string {
 	buf := &bytes.Buffer{}
-	if field.TypeReference.Definition.Directives.ForName(generateDirectiveName) != nil {
+	if field.TypeReference.Definition.Directives.ForName(GenerateDirectiveName) != nil {
 		return `panic(fmt.Errorf("not implemented"))`
 	}
 	if field.TypeReference.Definition.IsLeafType() || field.TypeReference.Definition.IsInputType() {

@@ -15,12 +15,44 @@ const (
 	OrderBy     ArgName = "orderBy"
 )
 
+// Directive names used in fastgql GraphQL schemas
 const (
-	generateDirectiveName     = "generate"
-	skipGenerateDirectiveName = "skipGenerate"
-	tableDirectiveName        = "table"
-	relationDirectiveName     = "relation"
-	jsonDirectiveName         = "json"
+	GenerateDirectiveName            = "generate"
+	SkipGenerateDirectiveName        = "skipGenerate"
+	TableDirectiveName               = "table"
+	RelationDirectiveName            = "relation"
+	JSONDirectiveName                = "json"
+	GenerateMutationsDirectiveName   = "generateMutations"
+	GenerateFilterInputDirectiveName = "generateFilterInput"
+	IsInterfaceFilterDirectiveName   = "isInterfaceFilter"
+	FastGQLFieldDirectiveName        = "fastgqlField"
+)
+
+// Directive argument names - exported for external packages
+const (
+	ArgNameTable            = "name"
+	ArgNameDialect          = "dialect"
+	ArgNameSchema           = "schema"
+	ArgNameType             = "type"
+	ArgNameFields           = "fields"
+	ArgNameReferences       = "references"
+	ArgNameColumn           = "column"
+	ArgNameBaseTable        = "baseTable"
+	ArgNameRefTable         = "refTable"
+	ArgNameManyToManyTable  = "manyToManyTable"
+	ArgNameManyToManyFields = "manyToManyFields"
+	ArgNameManyToManyRefs   = "manyToManyReferences"
+)
+
+// GraphQL type names - exported for external packages
+const (
+	GraphQLTypeQuery   = "Query"
+	GraphQLTypeInt     = "Int"
+	GraphQLTypeString  = "String"
+	GraphQLTypeBoolean = "Boolean"
+	GraphQLTypeFloat   = "Float"
+	GraphQLTypeID      = "ID"
+	GraphQLTypeMap     = "Map" // Custom scalar for fastgql
 )
 
 type TableDirective struct {
@@ -56,42 +88,42 @@ type JSONDirective struct {
 }
 
 func GetTableDirective(def *ast.Definition) (*TableDirective, error) {
-	d := def.Directives.ForName("table")
+	d := def.Directives.ForName(TableDirectiveName)
 	if d == nil {
 		return nil, fmt.Errorf("failed to get table directive for %s", def.Name)
 	}
 	return &TableDirective{
-		Name:    getArgumentValue(d.Arguments, "name"),
-		Schema:  getArgumentValue(d.Arguments, "schema"),
-		Dialect: getArgumentValue(d.Arguments, "dialect"),
+		Name:    getArgumentValue(d.Arguments, ArgNameTable),
+		Schema:  getArgumentValue(d.Arguments, ArgNameSchema),
+		Dialect: getArgumentValue(d.Arguments, ArgNameDialect),
 	}, nil
 }
 
 func GetRelationDirective(field *ast.FieldDefinition) *RelationDirective {
-	d := field.Directives.ForName(relationDirectiveName)
+	d := field.Directives.ForName(RelationDirectiveName)
 	if d == nil {
 		return nil
 	}
-	relType := d.Arguments.ForName("type").Value.Raw
+	relType := d.Arguments.ForName(ArgNameType).Value.Raw
 	return &RelationDirective{
 		RelType:              RelationType(relType),
-		Fields:               cast.ToStringSlice(GetDirectiveValue(d, "fields")),
-		References:           cast.ToStringSlice(GetDirectiveValue(d, "references")),
-		BaseTable:            cast.ToString(GetDirectiveValue(d, "baseTable")),
-		ReferenceTable:       cast.ToString(GetDirectiveValue(d, "refTable")),
-		ManyToManyTable:      cast.ToString(GetDirectiveValue(d, "manyToManyTable")),
-		ManyToManyFields:     cast.ToStringSlice(GetDirectiveValue(d, "manyToManyFields")),
-		ManyToManyReferences: cast.ToStringSlice(GetDirectiveValue(d, "manyToManyReferences")),
+		Fields:               cast.ToStringSlice(GetDirectiveValue(d, ArgNameFields)),
+		References:           cast.ToStringSlice(GetDirectiveValue(d, ArgNameReferences)),
+		BaseTable:            cast.ToString(GetDirectiveValue(d, ArgNameBaseTable)),
+		ReferenceTable:       cast.ToString(GetDirectiveValue(d, ArgNameRefTable)),
+		ManyToManyTable:      cast.ToString(GetDirectiveValue(d, ArgNameManyToManyTable)),
+		ManyToManyFields:     cast.ToStringSlice(GetDirectiveValue(d, ArgNameManyToManyFields)),
+		ManyToManyReferences: cast.ToStringSlice(GetDirectiveValue(d, ArgNameManyToManyRefs)),
 	}
 }
 
 func GetJSONDirective(field *ast.FieldDefinition) *JSONDirective {
-	d := field.Directives.ForName(jsonDirectiveName)
+	d := field.Directives.ForName(JSONDirectiveName)
 	if d == nil {
 		return nil
 	}
 	return &JSONDirective{
-		Column: cast.ToString(GetDirectiveValue(d, "column")),
+		Column: cast.ToString(GetDirectiveValue(d, ArgNameColumn)),
 	}
 }
 

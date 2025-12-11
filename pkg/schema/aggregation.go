@@ -41,7 +41,7 @@ var aggregateTypes = []aggregate{
 type Aggregation struct{}
 
 func (a Aggregation) DirectiveName() string {
-	return generateDirectiveName
+	return GenerateDirectiveName
 }
 
 func (a Aggregation) Name() string {
@@ -50,7 +50,7 @@ func (a Aggregation) Name() string {
 
 func AggregationAugmenter(s *ast.Schema) error {
 	for _, v := range s.Query.Fields {
-		d := v.Directives.ForName(generateDirectiveName)
+		d := v.Directives.ForName(GenerateDirectiveName)
 		if d == nil {
 			continue
 		}
@@ -83,7 +83,7 @@ func addAggregationField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDef
 	// check if field already exists, if so, skip
 	if def := obj.Fields.ForName(aggregateName); def != nil {
 		log.Printf("aggreationField for field %s@%s already exists skipping\n", field.Name, obj.Name)
-		if def.Directives.ForName(generateDirectiveName) == nil {
+		if def.Directives.ForName(GenerateDirectiveName) == nil {
 			// add directive to field, so filter can be generated
 			def.Directives = append(def.Directives, addGenerateDirective(s))
 		}
@@ -124,7 +124,7 @@ func addAggregateField(s *ast.Schema, obj *ast.Definition, field *ast.FieldDefin
 
 func addGenerateDirective(s *ast.Schema) *ast.Directive {
 	return &ast.Directive{
-		Name: generateDirectiveName,
+		Name: GenerateDirectiveName,
 		Arguments: []*ast.Argument{
 			{
 				Name: "filter",
@@ -134,7 +134,7 @@ func addGenerateDirective(s *ast.Schema) *ast.Directive {
 				},
 			},
 		},
-		Definition: s.Directives[generateDirectiveName],
+		Definition: s.Directives[GenerateDirectiveName],
 	}
 }
 
@@ -233,7 +233,7 @@ func addAggregationFieldToSchema(s *ast.Schema, obj *ast.Definition, a aggregate
 	// check if field already exists, if so, skip
 	if def := obj.Fields.ForName(aggregateName); def != nil {
 		log.Printf("aggreationField for field %s@%s already exists skipping\n", aggregateName, obj.Name)
-		if def.Directives.ForName(generateDirectiveName) == nil {
+		if def.Directives.ForName(GenerateDirectiveName) == nil {
 			log.Printf("adding directive to field %s@%s\n", aggregateName, obj.Name)
 			// add directive to field, so filter can be generated
 			def.Directives = append(def.Directives, addGenerateDirective(s))

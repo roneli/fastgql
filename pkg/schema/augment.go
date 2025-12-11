@@ -17,7 +17,7 @@ type (
 // skipAugment checks if the field should be skipped for augmentation, based on the directive skipGenerate
 // or if the field name starts with __
 func skipAugment(f *ast.FieldDefinition, args ...string) bool {
-	if f.Directives.ForName(skipGenerateDirectiveName) != nil || strings.HasPrefix(f.Name, "__") {
+	if f.Directives.ForName(SkipGenerateDirectiveName) != nil || strings.HasPrefix(f.Name, "__") {
 		return true
 	}
 	for _, arg := range args {

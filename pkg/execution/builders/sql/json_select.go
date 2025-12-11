@@ -32,7 +32,7 @@ func BuildJsonFieldObject(
 		case builders.TypeScalar:
 			// Extract scalar: use native -> operator for efficiency (faster than jsonb_path_query_first)
 			// For simple paths, -> is more efficient as it's a native operator
-			if err := validatePath(sel.Name); err != nil {
+			if err := ValidatePath(sel.Name); err != nil {
 				return nil, fmt.Errorf("invalid JSON field name %s: %w", sel.Name, err)
 			}
 			// Build path using -> operator: col->'field' for JSONB, or col->>'field' for text
@@ -41,7 +41,7 @@ func BuildJsonFieldObject(
 
 		case builders.TypeObject, builders.TypeJson:
 			// Nested object: extract the nested JSON object first, then recursively build
-			if err := validatePath(sel.Name); err != nil {
+			if err := ValidatePath(sel.Name); err != nil {
 				return nil, fmt.Errorf("invalid JSON field name %s: %w", sel.Name, err)
 			}
 			// Extract the nested object using -> operator (more efficient than jsonb_path_query_first for simple paths)

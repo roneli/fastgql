@@ -73,7 +73,7 @@ func addDeleteMutation(s *ast.Schema, obj *ast.Definition) *ast.FieldDefinition 
 		},
 		Directives: []*ast.Directive{
 			{
-				Name: generateDirectiveName,
+				Name: GenerateDirectiveName,
 				Arguments: []*ast.Argument{
 					{
 						Name:  "filter",
@@ -87,7 +87,7 @@ func addDeleteMutation(s *ast.Schema, obj *ast.Definition) *ast.FieldDefinition 
 						},
 					},
 				},
-				Definition: s.Directives[generateDirectiveName],
+				Definition: s.Directives[GenerateDirectiveName],
 			},
 		},
 		Type: &ast.Type{
@@ -184,7 +184,7 @@ func addUpdateMutation(s *ast.Schema, obj *ast.Definition) *ast.FieldDefinition 
 		Name:        fmt.Sprintf("update%s", inflection.Plural(obj.Name)),
 		Directives: []*ast.Directive{
 			{
-				Name: generateDirectiveName,
+				Name: GenerateDirectiveName,
 				Arguments: []*ast.Argument{
 					{
 						Name:  "filter",
@@ -198,7 +198,7 @@ func addUpdateMutation(s *ast.Schema, obj *ast.Definition) *ast.FieldDefinition 
 						},
 					},
 				},
-				Definition: s.Directives[generateDirectiveName],
+				Definition: s.Directives[GenerateDirectiveName],
 			},
 		},
 		Arguments: []*ast.ArgumentDefinition{
