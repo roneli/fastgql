@@ -524,9 +524,7 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 				expBuilder = expBuilder.Append(b.buildInterfaceFilter(table, astDefinition, b.Schema.Types[strcase.ToCamel(k)], kv))
 				continue
 			}
-
 			ffd := astDefinition.Fields.ForName(k)
-
 			// Check if field has @json directive - use JSONPath filter instead of EXISTS subquery
 			if jsonDir := ffd.Directives.ForName("json"); jsonDir != nil {
 				col := table.table.Col(b.CaseConverter(k))
@@ -562,6 +560,7 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			for op := range opMap {
 				opKeys = append(opKeys, op)
 			}
+			// sort keys for consistency in query building
 			slices.Sort(opKeys)
 
 			for _, op := range opKeys {
@@ -641,14 +640,18 @@ func (b Builder) buildJsonField(query *queryHelper, jsonField builders.Field) er
 	// Get the JSONB column reference from the parent table
 	jsonCol := query.table.Col(b.CaseConverter(jsonColumnName))
 
-	// Build expression using jsonb_path_query_first for efficient extraction
+	// Build expression using PostgreSQL -> operator and jsonb_build_object for JSON field extraction
 	jsonObjExpr, err := buildJsonFieldObject(jsonCol, jsonField.Selections, "", b.Dialect)
 	if err != nil {
 		return fmt.Errorf("building JSON object for field %s: %w", jsonField.Name, err)
 	}
 
 	// Apply alias to the expression
-	aliasedExpr := jsonObjExpr.(exp.Aliaseable).As(jsonField.Name)
+	aliaseableExpr, ok := jsonObjExpr.(exp.Aliaseable)
+	if !ok {
+		return fmt.Errorf("expression for field %s does not implement exp.Aliaseable", jsonField.Name)
+	}
+	aliasedExpr := aliaseableExpr.As(jsonField.Name)
 
 	// Add as a single column with the field name as alias
 	query.selects = append(query.selects, column{

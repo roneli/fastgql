@@ -836,3 +836,207 @@ func TestIsOperatorMap(t *testing.T) {
 func boolPtr(b bool) *bool {
 	return &b
 }
+
+// TestCompareOldVsNewImplementation will be used to compare old vs new implementation
+// This test suite will help ensure the refactor produces equivalent results
+// NOTE: These tests will be uncommented and used once the new implementation is ready
+func TestCompareOldVsNewImplementation(t *testing.T) {
+	t.Skip("Skipping comparison tests until new implementation is complete")
+
+	// Test cases for comparison
+	testCases := []struct {
+		name      string
+		filterMap map[string]any
+		describe  string
+	}{
+		{
+			name: "simple eq",
+			filterMap: map[string]any{
+				"color": map[string]any{"eq": "red"},
+			},
+			describe: "Simple equality filter",
+		},
+		{
+			name: "multiple operators",
+			filterMap: map[string]any{
+				"size": map[string]any{"gt": 10, "lt": 100},
+			},
+			describe: "Multiple operators on same field",
+		},
+		{
+			name: "AND operator",
+			filterMap: map[string]any{
+				"AND": []any{
+					map[string]any{"color": map[string]any{"eq": "red"}},
+					map[string]any{"size": map[string]any{"gt": 10}},
+				},
+			},
+			describe: "Logical AND",
+		},
+		{
+			name: "OR operator",
+			filterMap: map[string]any{
+				"OR": []any{
+					map[string]any{"color": map[string]any{"eq": "red"}},
+					map[string]any{"color": map[string]any{"eq": "blue"}},
+				},
+			},
+			describe: "Logical OR",
+		},
+		{
+			name: "NOT operator",
+			filterMap: map[string]any{
+				"NOT": map[string]any{
+					"color": map[string]any{"eq": "red"},
+				},
+			},
+			describe: "Logical NOT",
+		},
+		{
+			name: "nested object",
+			filterMap: map[string]any{
+				"details": map[string]any{
+					"manufacturer": map[string]any{"eq": "Acme"},
+				},
+			},
+			describe: "Nested object filter",
+		},
+		{
+			name: "deeply nested",
+			filterMap: map[string]any{
+				"details": map[string]any{
+					"warranty": map[string]any{
+						"years": map[string]any{"gte": 2},
+					},
+				},
+			},
+			describe: "Deeply nested object",
+		},
+		{
+			name: "array any",
+			filterMap: map[string]any{
+				"items": map[string]any{
+					"any": map[string]any{
+						"name": map[string]any{"eq": "widget"},
+					},
+				},
+			},
+			describe: "Array any operator",
+		},
+		{
+			name: "array all",
+			filterMap: map[string]any{
+				"items": map[string]any{
+					"all": map[string]any{
+						"qty": map[string]any{"gte": 1},
+					},
+				},
+			},
+			describe: "Array all operator (will show bug in old)",
+		},
+		{
+			name: "complex combination",
+			filterMap: map[string]any{
+				"AND": []any{
+					map[string]any{
+						"OR": []any{
+							map[string]any{"color": map[string]any{"eq": "red"}},
+							map[string]any{"color": map[string]any{"eq": "green"}},
+						},
+					},
+					map[string]any{
+						"details": map[string]any{
+							"manufacturer": map[string]any{"eq": "Acme"},
+						},
+					},
+				},
+			},
+			describe: "Complex AND/OR combination",
+		},
+		{
+			name: "isNull",
+			filterMap: map[string]any{
+				"field": map[string]any{"isNull": true},
+			},
+			describe: "Null check",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// col := goqu.C("data") // Uncomment when using new implementation
+
+			// OLD implementation
+			oldPath, oldVars, oldErr := BuildJsonFilterFromOperatorMap(tc.filterMap)
+
+			// NEW implementation (to be implemented)
+			// newExpr, newErr := ConvertFilterMapToExpression(col, tc.filterMap, PostgresDialect{})
+
+			// For now, just verify old implementation works
+			require.NoError(t, oldErr, "Old implementation failed for: %s", tc.describe)
+			require.NotEmpty(t, oldPath, "Old implementation returned empty path")
+
+			// Once new implementation exists, we'll compare:
+			// 1. Both should succeed or both should fail
+			// 2. Generated SQL should be semantically equivalent
+			// 3. Variable values should match
+			// 4. Results from database should be identical
+
+			t.Logf("Old JSONPath: %s", oldPath)
+			t.Logf("Old Vars: %v", oldVars)
+
+			// TODO: Uncomment when new implementation is ready:
+			// require.NoError(t, newErr, "New implementation failed for: %s", tc.describe)
+			//
+			// // Compare generated SQL
+			// oldExpr, _ := BuildJsonPathExistsExpression(col, oldPath, oldVars)
+			// oldSQL, oldArgs, _ := goqu.Dialect("postgres").Select("*").From("test").Where(oldExpr).ToSQL()
+			// newSQL, newArgs, _ := goqu.Dialect("postgres").Select("*").From("test").Where(newExpr).ToSQL()
+			//
+			// // Log for manual inspection
+			// t.Logf("Old SQL: %s | Args: %v", oldSQL, oldArgs)
+			// t.Logf("New SQL: %s | Args: %v", newSQL, newArgs)
+			//
+			// // Verify args have same values (order might differ)
+			// assert.ElementsMatch(t, oldArgs, newArgs, "Args should match for: %s", tc.describe)
+		})
+	}
+}
+
+// TestSQLEquivalence tests that different JSONPath expressions produce equivalent results
+// This is useful for validating refactoring maintains correctness
+func TestSQLEquivalence(t *testing.T) {
+	t.Skip("Skipping SQL equivalence tests until needed")
+
+	// This test would execute both old and new SQL against a database
+	// and verify they return identical results
+}
+
+// BenchmarkJSONFilterBuilding benchmarks the performance of JSON filter building
+func BenchmarkJSONFilterBuilding(t *testing.B) {
+	filterMap := map[string]any{
+		"AND": []any{
+			map[string]any{"color": map[string]any{"eq": "red"}},
+			map[string]any{"size": map[string]any{"gt": 10}},
+			map[string]any{
+				"details": map[string]any{
+					"manufacturer": map[string]any{"eq": "Acme"},
+				},
+			},
+		},
+	}
+
+	t.Run("BuildJsonFilterFromOperatorMap", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _, _ = BuildJsonFilterFromOperatorMap(filterMap)
+		}
+	})
+
+	// TODO: Add benchmark for new implementation
+	// t.Run("ConvertFilterMapToExpression", func(b *testing.B) {
+	// 	col := goqu.C("data")
+	// 	for i := 0; i < b.N; i++ {
+	// 		_, _ = ConvertFilterMapToExpression(col, filterMap, PostgresDialect{})
+	// 	}
+	// })
+}

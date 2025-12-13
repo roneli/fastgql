@@ -64,24 +64,6 @@ func ValidatePath(path string) error {
 	return nil
 }
 
-// isOperatorMap checks if a map contains operators (eq, neq, etc.) vs nested field filters
-func isOperatorMap(m map[string]any) bool {
-	for k := range m {
-		if knownOperators[k] {
-			return true
-		}
-	}
-	return false
-}
-
-// toJsonPathOp converts a GraphQL operator to JSONPath operator
-func toJsonPathOp(op string) (string, error) {
-	if jpOp, ok := jsonPathOpMap[op]; ok {
-		return jpOp, nil
-	}
-	return "", fmt.Errorf("unsupported operator: %s", op)
-}
-
 // BuildJsonPathExpression builds a combined JSONPath expression from conditions
 // logic should be "AND" or "OR"
 // Returns the JSONPath string and a map of variables for parameterized query
@@ -609,4 +591,22 @@ func buildJsonFieldObject(
 
 	sqlDialect := GetSQLDialect(dialect)
 	return sqlDialect.JSONBuildObject(args...), nil
+}
+
+// isOperatorMap checks if a map contains operators (eq, neq, etc.) vs nested field filters
+func isOperatorMap(m map[string]any) bool {
+	for k := range m {
+		if knownOperators[k] {
+			return true
+		}
+	}
+	return false
+}
+
+// toJsonPathOp converts a GraphQL operator to JSONPath operator
+func toJsonPathOp(op string) (string, error) {
+	if jpOp, ok := jsonPathOpMap[op]; ok {
+		return jpOp, nil
+	}
+	return "", fmt.Errorf("unsupported operator: %s", op)
 }
