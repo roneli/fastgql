@@ -26,6 +26,7 @@ const (
 	GenerateFilterInputDirectiveName = "generateFilterInput"
 	IsInterfaceFilterDirectiveName   = "isInterfaceFilter"
 	FastGQLFieldDirectiveName        = "fastgqlField"
+	TypenameDirectiveName            = "typename"
 )
 
 // Directive argument names - exported for external packages

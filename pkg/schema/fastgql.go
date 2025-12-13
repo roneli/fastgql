@@ -131,7 +131,7 @@ func (f *FastGqlPlugin) Implement(_ string, field *codegen.Field) string {
 	baseFuncs["deref"] = deref
 	var implementors = make(map[string]codegen.InterfaceImplementor)
 	var fieldType = field.TypeReference.GO
-	var implTypeName = "typename"
+	var implTypeName = TypenameDirectiveName
 	interfaces, ok := f.codgen.Interfaces[field.Type.Name()]
 	if ok {
 		implTypeName = getTypeName(field.Directives)
@@ -178,12 +178,12 @@ type fastGQLResolver struct {
 
 func getTypeName(directives []*codegen.Directive) string {
 	for _, d := range directives {
-		if d.Name != "typename" {
+		if d.Name != TypenameDirectiveName {
 			continue
 		}
 		for _, a := range d.Args {
 			return cast.ToString(a.Value)
 		}
 	}
-	return "typename"
+	return TypenameDirectiveName
 }

@@ -175,7 +175,7 @@ func addAggregateGroupByObject(s *ast.Schema, obj *ast.Definition) {
 func addRecursiveAggregation(s *ast.Schema, obj *ast.Definition) {
 	for _, f := range obj.Fields {
 		// aggregate only on fields with the @relation directive
-		if f.Directives.ForName("relation") == nil {
+		if f.Directives.ForName(RelationDirectiveName) == nil {
 			continue
 		}
 		def := s.Types[f.Type.Name()]
