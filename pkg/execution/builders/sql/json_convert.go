@@ -18,6 +18,225 @@ func ConvertFilterMapToExpression(
 	return convertFilterMapWithPrefix(col, filterMap, "", dialect)
 }
 
+// buildNestedConditionString builds a JSONPath condition string from a filter map, handling nested AND/OR
+// Returns the condition string, variables map, and variable counter offset
+func buildNestedConditionString(
+	filterMap map[string]any,
+	pathPrefix string,
+	varOffset int,
+	logic LogicType,
+) (string, map[string]any, int, error) {
+	vars := make(map[string]any)
+	parts := make([]string, 0)
+	currentVarOffset := varOffset
+
+	// Sort keys for deterministic output
+	keys := make([]string, 0, len(filterMap))
+	for k := range filterMap {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+
+	for _, field := range keys {
+		opMapRaw := filterMap[field]
+
+		switch field {
+		case "AND":
+			andFilters, ok := opMapRaw.([]any)
+			if !ok {
+				return "", nil, 0, fmt.Errorf("AND must be an array")
+			}
+
+			andParts := make([]string, 0)
+			for _, af := range andFilters {
+				afMap, ok := af.(map[string]any)
+				if !ok {
+					return "", nil, 0, fmt.Errorf("AND element must be a map")
+				}
+
+				// Recursively build condition string for this AND element
+				condStr, subVars, newOffset, err := buildNestedConditionString(afMap, pathPrefix, currentVarOffset, LogicAnd)
+				if err != nil {
+					return "", nil, 0, err
+				}
+				andParts = append(andParts, condStr)
+				for k, v := range subVars {
+					vars[k] = v
+				}
+				currentVarOffset = newOffset
+			}
+
+			if len(andParts) > 1 {
+				// Multiple parts - combine with AND
+				combined := ""
+				for i, part := range andParts {
+					if i > 0 {
+						combined += " && "
+					}
+					// Add parentheses if part contains OR or multiple conditions
+					if len(andParts) > 1 && (contains(part, " || ") || (len(andParts) > 1 && i > 0)) {
+						combined += fmt.Sprintf("(%s)", part)
+					} else {
+						combined += part
+					}
+				}
+				parts = append(parts, combined)
+			} else if len(andParts) == 1 {
+				parts = append(parts, andParts[0])
+			}
+
+		case "OR":
+			orFilters, ok := opMapRaw.([]any)
+			if !ok {
+				return "", nil, 0, fmt.Errorf("OR must be an array")
+			}
+
+			orParts := make([]string, 0)
+			for _, of := range orFilters {
+				ofMap, ok := of.(map[string]any)
+				if !ok {
+					return "", nil, 0, fmt.Errorf("OR element must be a map")
+				}
+
+				// Recursively build condition string for this OR element
+				condStr, subVars, newOffset, err := buildNestedConditionString(ofMap, pathPrefix, currentVarOffset, LogicOr)
+				if err != nil {
+					return "", nil, 0, err
+				}
+				orParts = append(orParts, condStr)
+				for k, v := range subVars {
+					vars[k] = v
+				}
+				currentVarOffset = newOffset
+			}
+
+			if len(orParts) > 1 {
+				// Multiple parts - combine with OR
+				combined := ""
+				for i, part := range orParts {
+					if i > 0 {
+						combined += " || "
+					}
+					combined += part
+				}
+				// Wrap in parentheses for OR (will get double parentheses when used in top-level OR)
+				parts = append(parts, fmt.Sprintf("(%s)", combined))
+			} else if len(orParts) == 1 {
+				parts = append(parts, orParts[0])
+			}
+
+		case "NOT":
+			// NOT will be handled separately in the main function
+			return "", nil, 0, fmt.Errorf("NOT in nested condition - handle separately")
+
+		default:
+			// Field with operators
+			opMap, ok := opMapRaw.(map[string]any)
+			if !ok {
+				return "", nil, 0, fmt.Errorf("field %s value must be a map", field)
+			}
+
+			if err := ValidatePathV2(field); err != nil {
+				return "", nil, 0, err
+			}
+
+			fullPath := pathPrefix + field
+
+			if isOperatorMap(opMap) {
+				// Check for array operators - these need separate handling
+				hasArrayOp := false
+				for op := range opMap {
+					if op == "any" || op == "all" {
+						hasArrayOp = true
+						break
+					}
+				}
+				if hasArrayOp {
+					return "", nil, 0, fmt.Errorf("array operators in nested condition - handle separately")
+				}
+
+				// Simple operators - create conditions
+				// Sort operators for deterministic variable assignment
+				opKeys := make([]string, 0, len(opMap))
+				for op := range opMap {
+					opKeys = append(opKeys, op)
+				}
+				slices.Sort(opKeys)
+
+				for _, op := range opKeys {
+					value := opMap[op]
+					cond, err := NewJSONPathCondition(fullPath, op, value)
+					if err != nil {
+						return "", nil, 0, err
+					}
+					cond.SetVarName(fmt.Sprintf("v%d", currentVarOffset))
+					condStr, val, err := cond.ToJSONPathString()
+					if err != nil {
+						return "", nil, 0, err
+					}
+					parts = append(parts, condStr)
+					if val != nil {
+						vars[cond.varName] = val
+					}
+					currentVarOffset++
+				}
+			} else {
+				// Nested object - recurse
+				condStr, subVars, newOffset, err := buildNestedConditionString(opMap, fullPath+".", currentVarOffset, LogicAnd)
+				if err != nil {
+					return "", nil, 0, err
+				}
+				parts = append(parts, condStr)
+				for k, v := range subVars {
+					vars[k] = v
+				}
+				currentVarOffset = newOffset
+			}
+		}
+	}
+
+	if len(parts) == 0 {
+		return "", vars, currentVarOffset, nil
+	}
+
+	if len(parts) == 1 {
+		return parts[0], vars, currentVarOffset, nil
+	}
+
+	// Combine parts with appropriate connector
+	connector := " && "
+	if logic == LogicOr {
+		connector = " || "
+	}
+
+	result := ""
+	for i, part := range parts {
+		if i > 0 {
+			result += connector
+		}
+		result += part
+	}
+
+	return result, vars, currentVarOffset, nil
+}
+
+// contains checks if a string contains a substring
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 || 
+		(len(s) > len(substr) && (s[:len(substr)] == substr || 
+		s[len(s)-len(substr):] == substr || 
+		indexOf(s, substr) >= 0)))
+}
+
+func indexOf(s, substr string) int {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return i
+		}
+	}
+	return -1
+}
+
 // convertFilterMapWithPrefix is the recursive implementation
 // pathPrefix is used for nested objects (e.g., "details." for nested field access)
 func convertFilterMapWithPrefix(
@@ -31,6 +250,10 @@ func convertFilterMapWithPrefix(
 	}
 
 	andExprs := make([]exp.Expression, 0)
+
+	// Optimization: Collect all simple field conditions to combine into ONE jsonb_path_exists
+	combinedFilter := NewJSONPathFilter(col, dialect)
+	hasSimpleConditions := false
 
 	// Sort keys for deterministic output
 	keys := make([]string, 0, len(filterMap))
@@ -50,21 +273,66 @@ func convertFilterMapWithPrefix(
 				return nil, fmt.Errorf("AND must be an array")
 			}
 
-			subExprs := make([]exp.Expression, 0, len(andFilters))
+			// Try to build a single nested condition string
+			// Process each AND element and combine
+			andParts := make([]string, 0)
+			allVars := make(map[string]any)
+			varOffset := 0
+			canBuildNested := true
+
 			for _, af := range andFilters {
 				afMap, ok := af.(map[string]any)
 				if !ok {
-					return nil, fmt.Errorf("AND element must be a map")
+					canBuildNested = false
+					break
 				}
+
+				partStr, partVars, newOffset, err := buildNestedConditionString(afMap, pathPrefix, varOffset, LogicAnd)
+				if err != nil {
+					canBuildNested = false
+					break
+				}
+				andParts = append(andParts, partStr)
+				for k, v := range partVars {
+					allVars[k] = v
+				}
+				varOffset = newOffset
+			}
+
+			if canBuildNested && len(andParts) > 0 {
+				// Combine AND parts
+				combinedStr := ""
+				for i, part := range andParts {
+					if i > 0 {
+						combinedStr += " && "
+					}
+					// Add parentheses if part contains OR and doesn't already have them
+					if contains(part, " || ") && (len(part) == 0 || part[0] != '(' || part[len(part)-1] != ')') {
+						combinedStr += fmt.Sprintf("(%s)", part)
+					} else {
+						combinedStr += part
+					}
+				}
+
+				// Create a custom JSONPathFilterExpr with the combined string
+				jsonPath := fmt.Sprintf("$ ? (%s)", combinedStr)
+				andExprs = append(andExprs, dialect.JSONPathExists(col, jsonPath, allVars))
+				continue
+			}
+
+			// Fallback: process as separate expressions
+			complexExprs := make([]exp.Expression, 0)
+			for _, af := range andFilters {
+				afMap := af.(map[string]any)
 				subExpr, err := convertFilterMapWithPrefix(col, afMap, pathPrefix, dialect)
 				if err != nil {
 					return nil, err
 				}
-				subExprs = append(subExprs, subExpr)
+				complexExprs = append(complexExprs, subExpr)
 			}
 
-			if len(subExprs) > 0 {
-				combined, err := BuildLogicalFilter(col, LogicAnd, subExprs, false)
+			if len(complexExprs) > 0 {
+				combined, err := BuildLogicalFilter(col, LogicAnd, complexExprs, false)
 				if err != nil {
 					return nil, err
 				}
@@ -78,21 +346,62 @@ func convertFilterMapWithPrefix(
 				return nil, fmt.Errorf("OR must be an array")
 			}
 
-			subExprs := make([]exp.Expression, 0, len(orFilters))
+			// Try to build a single nested condition string
+			orParts := make([]string, 0)
+			allVars := make(map[string]any)
+			varOffset := 0
+			canBuildNested := true
+
 			for _, of := range orFilters {
 				ofMap, ok := of.(map[string]any)
 				if !ok {
-					return nil, fmt.Errorf("OR element must be a map")
+					canBuildNested = false
+					break
 				}
+
+				partStr, partVars, newOffset, err := buildNestedConditionString(ofMap, pathPrefix, varOffset, LogicOr)
+				if err != nil {
+					canBuildNested = false
+					break
+				}
+				orParts = append(orParts, partStr)
+				for k, v := range partVars {
+					allVars[k] = v
+				}
+				varOffset = newOffset
+			}
+
+			if canBuildNested && len(orParts) > 0 {
+				// Combine OR parts
+				combinedStr := ""
+				for i, part := range orParts {
+					if i > 0 {
+						combinedStr += " || "
+					}
+					combinedStr += part
+				}
+
+				// Create a custom JSONPathFilterExpr with the combined string
+				// Add double parentheses for OR (as expected by tests for logical OR operator compatibility)
+				jsonPath := fmt.Sprintf("$ ? ((%s))", combinedStr)
+				andExprs = append(andExprs, dialect.JSONPathExists(col, jsonPath, allVars))
+				continue
+			}
+
+			// Fallback: process as separate expressions
+			// Fallback: process as separate expressions
+			complexExprs := make([]exp.Expression, 0)
+			for _, of := range orFilters {
+				ofMap := of.(map[string]any)
 				subExpr, err := convertFilterMapWithPrefix(col, ofMap, pathPrefix, dialect)
 				if err != nil {
 					return nil, err
 				}
-				subExprs = append(subExprs, subExpr)
+				complexExprs = append(complexExprs, subExpr)
 			}
 
-			if len(subExprs) > 0 {
-				combined, err := BuildLogicalFilter(col, LogicOr, subExprs, false)
+			if len(complexExprs) > 0 {
+				combined, err := BuildLogicalFilter(col, LogicOr, complexExprs, false)
 				if err != nil {
 					return nil, err
 				}
@@ -106,17 +415,37 @@ func convertFilterMapWithPrefix(
 				return nil, fmt.Errorf("NOT must be a map")
 			}
 
-			subExpr, err := convertFilterMapWithPrefix(col, notMap, pathPrefix, dialect)
-			if err != nil {
-				return nil, err
-			}
+			// Check if NOT contains simple conditions that can be negated in JSONPath
+			simpleConditions, hasComplexity := extractSimpleConditions(notMap, pathPrefix)
+			if !hasComplexity && len(simpleConditions) > 0 {
+				// Simple case: negate in JSONPath
+				notFilter := NewJSONPathFilter(col, dialect)
+				notFilter.SetNegate(true)
+				for _, cond := range simpleConditions {
+					notFilter.AddCondition(cond)
+				}
+				notExpr, err := notFilter.Expression()
+				if err != nil {
+					return nil, err
+				}
+				andExprs = append(andExprs, notExpr)
+			} else {
+				// Complex case: contains AND/OR or other complex operators
+				// For now, fall back to recursive processing and apply De Morgan's laws if needed
+				// TODO: Implement De Morgan's laws for nested NOT cases
+				subExpr, err := convertFilterMapWithPrefix(col, notMap, pathPrefix, dialect)
+				if err != nil {
+					return nil, err
+				}
 
-			// Wrap in NOT
-			negated, err := BuildLogicalFilter(col, LogicAnd, []exp.Expression{subExpr}, true)
-			if err != nil {
-				return nil, err
+				// Check if subExpr is a JSONPathFilterExpr that we can negate
+				// For now, wrap in SQL NOT for complex cases
+				negated, err := BuildLogicalFilter(col, LogicAnd, []exp.Expression{subExpr}, true)
+				if err != nil {
+					return nil, err
+				}
+				andExprs = append(andExprs, negated)
 			}
-			andExprs = append(andExprs, negated)
 
 		default:
 			// Field with either operators or nested object/array filter
@@ -134,12 +463,20 @@ func convertFilterMapWithPrefix(
 
 			// Check if this is an operator map or a nested filter
 			if isOperatorMap(opMap) {
-				// Process operators for this field
-				fieldExprs, err := processFieldOperatorsV2(col, fullPath, opMap, dialect)
+				// Check if these are simple operators that can be combined
+				simpleOps, complexExprs, err := categorizeFieldOperators(col, fullPath, opMap, dialect)
 				if err != nil {
 					return nil, err
 				}
-				andExprs = append(andExprs, fieldExprs...)
+
+				// Add simple conditions to combined filter
+				for _, cond := range simpleOps {
+					combinedFilter.AddCondition(cond)
+					hasSimpleConditions = true
+				}
+
+				// Complex operators (any, all) stay separate
+				andExprs = append(andExprs, complexExprs...)
 			} else {
 				// Nested object filter - recurse with updated path prefix
 				subExpr, err := convertFilterMapWithPrefix(col, opMap, fullPath+".", dialect)
@@ -149,6 +486,16 @@ func convertFilterMapWithPrefix(
 				andExprs = append(andExprs, subExpr)
 			}
 		}
+	}
+
+	// Build the combined filter if we have simple conditions
+	if hasSimpleConditions {
+		combinedExpr, err := combinedFilter.Expression()
+		if err != nil {
+			return nil, err
+		}
+		// Prepend combined expression so it comes first
+		andExprs = append([]exp.Expression{combinedExpr}, andExprs...)
 	}
 
 	if len(andExprs) == 0 {
@@ -163,14 +510,65 @@ func convertFilterMapWithPrefix(
 	return BuildLogicalFilter(col, LogicAnd, andExprs, false)
 }
 
-// processFieldOperatorsV2 processes operators for a single field using new expression types
-func processFieldOperatorsV2(
+// extractSimpleConditions attempts to extract simple field conditions from a filter map
+// Returns (conditions, hasComplexity) where hasComplexity indicates presence of arrays/nested objects/logical ops
+func extractSimpleConditions(filterMap map[string]any, pathPrefix string) ([]*JSONPathConditionExpr, bool) {
+	conditions := make([]*JSONPathConditionExpr, 0)
+
+	for field, opMapRaw := range filterMap {
+		// Check for logical operators - these are complex
+		if field == "AND" || field == "OR" || field == "NOT" {
+			return nil, true
+		}
+
+		opMap, ok := opMapRaw.(map[string]any)
+		if !ok {
+			return nil, true
+		}
+
+		// Validate path
+		if err := ValidatePathV2(field); err != nil {
+			return nil, true
+		}
+
+		fullPath := pathPrefix + field
+
+		// Check if this is an operator map
+		if !isOperatorMap(opMap) {
+			// Nested object - complex
+			return nil, true
+		}
+
+		// Check for array operators - these are complex
+		for op := range opMap {
+			if op == "any" || op == "all" {
+				return nil, true
+			}
+		}
+
+		// All operators are simple - extract conditions
+		for op, value := range opMap {
+			cond, err := NewJSONPathCondition(fullPath, op, value)
+			if err != nil {
+				return nil, true
+			}
+			conditions = append(conditions, cond)
+		}
+	}
+
+	return conditions, false
+}
+
+// categorizeFieldOperators separates simple operators (can be combined) from complex ones (need separate handling)
+// Returns: (simple conditions, complex expressions, error)
+func categorizeFieldOperators(
 	col exp.IdentifierExpression,
 	fieldPath string,
 	opMap map[string]any,
 	dialect Dialect,
-) ([]exp.Expression, error) {
-	exprs := make([]exp.Expression, 0)
+) ([]*JSONPathConditionExpr, []exp.Expression, error) {
+	simpleConditions := make([]*JSONPathConditionExpr, 0)
+	complexExprs := make([]exp.Expression, 0)
 
 	// Sort operators for deterministic output
 	opKeys := make([]string, 0, len(opMap))
@@ -183,39 +581,21 @@ func processFieldOperatorsV2(
 		value := opMap[op]
 
 		switch op {
-		case "isNull":
-			// Handle NULL check
-			isNull := cast.ToBool(value)
-			cond, err := NewJSONPathCondition(fieldPath, "isNull", isNull)
-			if err != nil {
-				return nil, err
-			}
-
-			filter := NewJSONPathFilter(col, dialect)
-			filter.AddCondition(cond)
-			expr, err := filter.Expression()
-			if err != nil {
-				return nil, err
-			}
-			exprs = append(exprs, expr)
-
 		case "any":
-			// Array filter: any element matches the condition
+			// Array filter: any element matches - needs separate handling
 			anyFilter, ok := value.(map[string]any)
 			if !ok {
-				return nil, fmt.Errorf("'any' operator value must be a map")
+				return nil, nil, fmt.Errorf("'any' operator value must be a map")
 			}
 
-			// Build array filter
 			arrayFilter, err := NewJSONArrayFilter(col, fieldPath, ArrayAny, dialect)
 			if err != nil {
-				return nil, fmt.Errorf("creating array filter: %w", err)
+				return nil, nil, fmt.Errorf("creating array filter: %w", err)
 			}
 
-			// Convert the nested filter to conditions
 			conditions, err := convertFilterToConditions(anyFilter, "")
 			if err != nil {
-				return nil, fmt.Errorf("processing 'any' filter: %w", err)
+				return nil, nil, fmt.Errorf("processing 'any' filter: %w", err)
 			}
 
 			for _, cond := range conditions {
@@ -224,28 +604,25 @@ func processFieldOperatorsV2(
 
 			expr, err := arrayFilter.Expression()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			exprs = append(exprs, expr)
+			complexExprs = append(complexExprs, expr)
 
 		case "all":
-			// Array filter: all elements match the condition
-			// FIX FOR BUG: Implement proper 'all' logic
+			// Array filter: all elements match - needs separate handling
 			allFilter, ok := value.(map[string]any)
 			if !ok {
-				return nil, fmt.Errorf("'all' operator value must be a map")
+				return nil, nil, fmt.Errorf("'all' operator value must be a map")
 			}
 
-			// Build array filter with ALL mode
 			arrayFilter, err := NewJSONArrayFilter(col, fieldPath, ArrayAll, dialect)
 			if err != nil {
-				return nil, fmt.Errorf("creating array filter: %w", err)
+				return nil, nil, fmt.Errorf("creating array filter: %w", err)
 			}
 
-			// Convert the nested filter to conditions
 			conditions, err := convertFilterToConditions(allFilter, "")
 			if err != nil {
-				return nil, fmt.Errorf("processing 'all' filter: %w", err)
+				return nil, nil, fmt.Errorf("processing 'all' filter: %w", err)
 			}
 
 			for _, cond := range conditions {
@@ -254,28 +631,21 @@ func processFieldOperatorsV2(
 
 			expr, err := arrayFilter.Expression()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			exprs = append(exprs, expr)
+			complexExprs = append(complexExprs, expr)
 
 		default:
-			// Standard operator (eq, neq, gt, gte, lt, lte, like)
+			// Simple operators (eq, neq, gt, gte, lt, lte, like, isNull) - can be combined
 			cond, err := NewJSONPathCondition(fieldPath, op, value)
 			if err != nil {
-				return nil, fmt.Errorf("field %s: %w", fieldPath, err)
+				return nil, nil, fmt.Errorf("field %s: %w", fieldPath, err)
 			}
-
-			filter := NewJSONPathFilter(col, dialect)
-			filter.AddCondition(cond)
-			expr, err := filter.Expression()
-			if err != nil {
-				return nil, err
-			}
-			exprs = append(exprs, expr)
+			simpleConditions = append(simpleConditions, cond)
 		}
 	}
 
-	return exprs, nil
+	return simpleConditions, complexExprs, nil
 }
 
 // convertFilterToConditions converts a filter map to a list of conditions

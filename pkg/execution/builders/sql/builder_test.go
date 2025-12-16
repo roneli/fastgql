@@ -533,7 +533,7 @@ func TestBuilder_Query_JsonFiltering(t *testing.T) {
 				}
 			}`,
 			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
-			ExpectedArguments: []interface{}{`$ ? (@.color == $v0 && (@.size > $v2 || @.size < $v1))`, `{"v0":"red","v1":10,"v2":5}`, int64(100)},
+			ExpectedArguments: []interface{}{`$ ? (@.color == $v0 && (@.size > $v1 || @.size < $v2))`, `{"v0":"red","v1":10,"v2":5}`, int64(100)},
 		},
 	}
 

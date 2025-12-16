@@ -100,10 +100,12 @@ func (j *JSONPathConditionExpr) ToJSONPathString() (string, any, error) {
 
 // JSONPathFilterExpr combines multiple conditions into a single JSONPath filter
 type JSONPathFilterExpr struct {
-	column     exp.IdentifierExpression
-	conditions []*JSONPathConditionExpr
-	logic      LogicType
-	dialect    Dialect
+	column      exp.IdentifierExpression
+	conditions  []*JSONPathConditionExpr
+	logic       LogicType
+	dialect     Dialect
+	wrapORInPar bool // When true, wrap OR conditions in extra parentheses (for logical OR operator compatibility)
+	negate      bool // When true, negate the entire condition in JSONPath using ! operator
 }
 
 // NewJSONPathFilter creates a new JSONPath filter expression
@@ -124,6 +126,11 @@ func (j *JSONPathFilterExpr) AddCondition(cond *JSONPathConditionExpr) {
 // SetLogic sets the logic type (AND/OR) for combining conditions
 func (j *JSONPathFilterExpr) SetLogic(logic LogicType) {
 	j.logic = logic
+}
+
+// SetNegate sets whether to negate the entire condition in JSONPath
+func (j *JSONPathFilterExpr) SetNegate(negate bool) {
+	j.negate = negate
 }
 
 // Expression builds the final goqu expression
@@ -160,9 +167,9 @@ func (j *JSONPathFilterExpr) Expression() (exp.Expression, error) {
 	}
 
 	// Build final JSONPath
-	var jsonPath string
+	var conditionStr string
 	if len(conditionParts) == 1 {
-		jsonPath = fmt.Sprintf("$ ? (%s)", conditionParts[0])
+		conditionStr = conditionParts[0]
 	} else {
 		combinedConditions := ""
 		for i, part := range conditionParts {
@@ -171,8 +178,20 @@ func (j *JSONPathFilterExpr) Expression() (exp.Expression, error) {
 			}
 			combinedConditions += part
 		}
-		jsonPath = fmt.Sprintf("$ ? (%s)", combinedConditions)
+		// For OR logic with multiple conditions, add extra parentheses when requested (for logical OR operator)
+		if j.logic == LogicOr && j.wrapORInPar {
+			conditionStr = fmt.Sprintf("(%s)", combinedConditions)
+		} else {
+			conditionStr = combinedConditions
+		}
 	}
+
+	// Apply negation if requested (negate inside JSONPath, not SQL wrapper)
+	if j.negate {
+		conditionStr = fmt.Sprintf("!(%s)", conditionStr)
+	}
+
+	jsonPath := fmt.Sprintf("$ ? (%s)", conditionStr)
 
 	// Use dialect to build the expression
 	return j.dialect.JSONPathExists(j.column, jsonPath, vars), nil

@@ -503,12 +503,9 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			if !ok {
 				return nil, fmt.Errorf("MapComparator value must be a map")
 			}
-			filter, err := ParseMapComparator(kv)
-			if err != nil {
-				return nil, fmt.Errorf("parsing MapComparator for %s: %w", k, err)
-			}
 			col := table.table.Col(b.CaseConverter(k))
-			jsonExp, err := BuildMapFilter(col, filter)
+			// Use new expression-based conversion
+			jsonExp, err := ConvertMapComparatorToExpression(col, kv, GetSQLDialect(b.Dialect))
 			if err != nil {
 				return nil, fmt.Errorf("building JSON filter for %s: %w", k, err)
 			}
@@ -528,13 +525,10 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			// Check if field has @json directive - use JSONPath filter instead of EXISTS subquery
 			if jsonDir := ffd.Directives.ForName("json"); jsonDir != nil {
 				col := table.table.Col(b.CaseConverter(k))
-				jsonPath, vars, err := BuildJsonFilterFromOperatorMap(kv)
+				// Use new expression-based conversion
+				jsonExp, err := ConvertFilterMapToExpression(col, kv, GetSQLDialect(b.Dialect))
 				if err != nil {
 					return nil, fmt.Errorf("building JSON filter for @json field %s: %w", k, err)
-				}
-				jsonExp, err := BuildJsonPathExistsExpression(col, jsonPath, vars)
-				if err != nil {
-					return nil, fmt.Errorf("building JSONPath expression for %s: %w", k, err)
 				}
 				expBuilder = expBuilder.Append(jsonExp)
 				continue
