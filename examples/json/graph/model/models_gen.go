@@ -8,7 +8,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/roneli/fastgql/examples/interface/graph/model"
+	"github.com/roneli/fastgql/examples/json/graph/model"
 )
 
 type Dimensions struct {
