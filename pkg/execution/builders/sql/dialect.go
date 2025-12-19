@@ -17,8 +17,7 @@ type Dialect interface {
 	// CoalesceJSON returns a fallback value if the expression is null
 	CoalesceJSON(expr exp.Expression, fallback string) exp.SQLFunctionExpression
 
-	// JSON filtering methods
-	// JSONPathExists checks if a JSONPath expression matches
+	// JSONPathExists JSON filtering methods, and checks if a JSONPath expression matches
 	JSONPathExists(col exp.Expression, path string, vars map[string]any) exp.Expression
 	// JSONContains checks if JSON contains a value (@> operator)
 	JSONContains(col exp.Expression, value string) exp.Expression

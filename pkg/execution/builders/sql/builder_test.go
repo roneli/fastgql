@@ -404,72 +404,6 @@ func TestBuilder_Capabilities(t *testing.T) {
 func TestBuilder_Query_JsonFiltering(t *testing.T) {
 	testCases := []TestBuilderCase{
 		{
-			Name:       "map_scalar_contains_filter",
-			SchemaFile: "testdata/schema_json.graphql",
-			GraphQLQuery: `query {
-				products(filter: {metadata: {contains: {type: "premium"}}}) {
-					name
-				}
-			}`,
-			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE "sq0"."metadata" @> $1::jsonb LIMIT $2`,
-			ExpectedArguments: []interface{}{`{"type":"premium"}`, int64(100)},
-		},
-		{
-			Name:       "map_scalar_where_single_condition",
-			SchemaFile: "testdata/schema_json.graphql",
-			GraphQLQuery: `query {
-				products(filter: {metadata: {where: [{path: "price", gt: 100}]}}) {
-					name
-				}
-			}`,
-			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."metadata", $1::jsonpath, $2::jsonb) LIMIT $3`,
-			ExpectedArguments: []interface{}{`$ ? (@.price > $v0)`, `{"v0":100}`, int64(100)},
-		},
-		{
-			Name:       "map_scalar_where_multiple_conditions",
-			SchemaFile: "testdata/schema_json.graphql",
-			GraphQLQuery: `query {
-				products(filter: {metadata: {where: [{path: "price", gt: 50}, {path: "active", eq: "true"}]}}) {
-					name
-				}
-			}`,
-			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."metadata", $1::jsonpath, $2::jsonb) LIMIT $3`,
-			ExpectedArguments: []interface{}{`$ ? (@.price > $v0 && @.active == $v1)`, `{"v0":50,"v1":"true"}`, int64(100)},
-		},
-		{
-			Name:       "map_scalar_whereAny_or_conditions",
-			SchemaFile: "testdata/schema_json.graphql",
-			GraphQLQuery: `query {
-				products(filter: {metadata: {whereAny: [{path: "status", eq: "active"}, {path: "status", eq: "pending"}]}}) {
-					name
-				}
-			}`,
-			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."metadata", $1::jsonpath, $2::jsonb) LIMIT $3`,
-			ExpectedArguments: []interface{}{`$ ? (@.status == $v0 || @.status == $v1)`, `{"v0":"active","v1":"pending"}`, int64(100)},
-		},
-		{
-			Name:       "map_scalar_isNull",
-			SchemaFile: "testdata/schema_json.graphql",
-			GraphQLQuery: `query {
-				products(filter: {metadata: {isNull: true}}) {
-					name
-				}
-			}`,
-			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE ("sq0"."metadata" IS NULL) LIMIT $1`,
-			ExpectedArguments: []interface{}{int64(100)},
-		},
-		{
-			Name:       "map_scalar_combined_contains_and_where",
-			SchemaFile: "testdata/schema_json.graphql",
-			GraphQLQuery: `query {
-				products(filter: {metadata: {contains: {featured: true}, where: [{path: "price", lt: 1000}]}}) {
-					name
-				}
-			}`,
-			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE ("sq0"."metadata" @> $1::jsonb AND jsonb_path_exists("sq0"."metadata", $2::jsonpath, $3::jsonb)) LIMIT $4`,
-			ExpectedArguments: []interface{}{`{"featured":true}`, `$ ? (@.price < $v0)`, `{"v0":1000}`, int64(100)},
-		},
-		{
 			Name:       "typed_json_filter",
 			SchemaFile: "testdata/schema_json.graphql",
 			GraphQLQuery: `query {
@@ -534,6 +468,61 @@ func TestBuilder_Query_JsonFiltering(t *testing.T) {
 			}`,
 			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
 			ExpectedArguments: []interface{}{`$ ? (@.color == $v0 && (@.size > $v1 || @.size < $v2))`, `{"v0":"red","v1":10,"v2":5}`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_prefix",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {prefix: "red"}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath) LIMIT $2`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "^red")`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_suffix",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {suffix: "blue"}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath) LIMIT $2`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "blue$")`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_ilike",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {ilike: "red"}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath) LIMIT $2`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "red" flag "i")`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_contains",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {contains: "ed"}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath) LIMIT $2`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "ed")`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_multiple_new_operators",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {prefix: "red"}, size: {gt: 10}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "^red" && @.size > $v0)`, `{"v0":10}`, int64(100)},
 		},
 	}
 

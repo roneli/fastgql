@@ -9,35 +9,55 @@ import (
 	"github.com/doug-martin/goqu/v9/exp"
 )
 
-// Enhanced path validation regex - supports multiple array indices
+// pathValidationRegex validates JSON paths with support for multiple array indices
 // Allows: field, field.nested, field[0], field[0][1], field[0].nested[1][2], etc.
-var pathValidationRegexV2 = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*(\[[0-9]+\])*(\.[a-zA-Z_][a-zA-Z0-9_]*(\[[0-9]+\])*)*$`)
+var pathValidationRegex = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*(\[[0-9]+\])*(\.[a-zA-Z_][a-zA-Z0-9_]*(\[[0-9]+\])*)*$`)
 
-// ValidatePathV2 validates a JSON path with support for multiple array indices
-func ValidatePathV2(path string) error {
+// jsonPathOpMap maps GraphQL operators to JSONPath operators
+var jsonPathOpMap = map[string]string{
+	"eq":       "==",
+	"neq":      "!=",
+	"gt":       ">",
+	"gte":      ">=",
+	"lt":       "<",
+	"lte":      "<=",
+	"like":     "like_regex",
+	"prefix":   "like_regex",
+	"suffix":   "like_regex",
+	"ilike":    "like_regex",
+	"contains": "like_regex",
+}
+
+// knownOperators is used to detect if a map contains operators or nested field filters
+var knownOperators = map[string]bool{
+	"eq": true, "neq": true, "gt": true, "gte": true,
+	"lt": true, "lte": true, "like": true,
+	"ilike":    true,
+	"prefix":   true,
+	"suffix":   true,
+	"contains": true,
+	"isNull":   true,
+	"any":      true,
+	"all":      true,
+}
+
+// validatePath validates a JSON path
+func validatePath(path string) error {
 	if path == "" {
 		return fmt.Errorf("path cannot be empty")
 	}
-	if !pathValidationRegexV2.MatchString(path) {
+	if !pathValidationRegex.MatchString(path) {
 		return fmt.Errorf("invalid path format: %s", path)
 	}
 	return nil
 }
 
-// LogicType represents the logical combination type for conditions
-type LogicType int
+// arrayFilterMode represents how array filtering should work
+type arrayFilterMode int
 
 const (
-	LogicAnd LogicType = iota
-	LogicOr
-)
-
-// ArrayFilterMode represents how array filtering should work
-type ArrayFilterMode int
-
-const (
-	ArrayAny ArrayFilterMode = iota
-	ArrayAll
+	arrayAny arrayFilterMode = iota
+	arrayAll
 )
 
 // JSONPathConditionExpr represents a single JSONPath condition
@@ -51,7 +71,7 @@ type JSONPathConditionExpr struct {
 
 // NewJSONPathCondition creates a new JSON path condition
 func NewJSONPathCondition(path string, operator string, value any) (*JSONPathConditionExpr, error) {
-	if err := ValidatePathV2(path); err != nil {
+	if err := validatePath(path); err != nil {
 		return nil, err
 	}
 
@@ -83,6 +103,33 @@ func (j *JSONPathConditionExpr) ToJSONPathString() (string, any, error) {
 		return fmt.Sprintf("@.%s != null", j.path), nil, nil
 	}
 
+	// Handle regex-based operators that need pattern transformation
+	switch j.operator {
+	case "prefix":
+		// Escape pattern and prepend ^
+		escaped := escapeRegexPattern(fmt.Sprintf("%v", j.value))
+		condition := fmt.Sprintf("@.%s like_regex \"^%s\"", j.path, escaped)
+		return condition, nil, nil // No variable needed, pattern embedded
+
+	case "suffix":
+		// Escape pattern and append $
+		escaped := escapeRegexPattern(fmt.Sprintf("%v", j.value))
+		condition := fmt.Sprintf("@.%s like_regex \"%s$\"", j.path, escaped)
+		return condition, nil, nil
+
+	case "ilike":
+		// Use like_regex with case-insensitive flag
+		escaped := escapeRegexPattern(fmt.Sprintf("%v", j.value))
+		condition := fmt.Sprintf("@.%s like_regex \"%s\" flag \"i\"", j.path, escaped)
+		return condition, nil, nil
+
+	case "contains":
+		// Use like_regex without anchors (substring match)
+		escaped := escapeRegexPattern(fmt.Sprintf("%v", j.value))
+		condition := fmt.Sprintf("@.%s like_regex \"%s\"", j.path, escaped)
+		return condition, nil, nil
+	}
+
 	// Map operator to JSONPath operator
 	jpOp, err := toJsonPathOp(j.operator)
 	if err != nil {
@@ -100,12 +147,11 @@ func (j *JSONPathConditionExpr) ToJSONPathString() (string, any, error) {
 
 // JSONPathFilterExpr combines multiple conditions into a single JSONPath filter
 type JSONPathFilterExpr struct {
-	column      exp.IdentifierExpression
-	conditions  []*JSONPathConditionExpr
-	logic       LogicType
-	dialect     Dialect
-	wrapORInPar bool // When true, wrap OR conditions in extra parentheses (for logical OR operator compatibility)
-	negate      bool // When true, negate the entire condition in JSONPath using ! operator
+	column     exp.IdentifierExpression
+	conditions []*JSONPathConditionExpr
+	logic      exp.ExpressionListType
+	dialect    Dialect
+	negate     bool // When true, negate the entire condition in JSONPath using ! operator
 }
 
 // NewJSONPathFilter creates a new JSONPath filter expression
@@ -113,7 +159,7 @@ func NewJSONPathFilter(col exp.IdentifierExpression, dialect Dialect) *JSONPathF
 	return &JSONPathFilterExpr{
 		column:     col,
 		conditions: make([]*JSONPathConditionExpr, 0),
-		logic:      LogicAnd,
+		logic:      exp.AndType,
 		dialect:    dialect,
 	}
 }
@@ -121,11 +167,6 @@ func NewJSONPathFilter(col exp.IdentifierExpression, dialect Dialect) *JSONPathF
 // AddCondition adds a condition to the filter
 func (j *JSONPathFilterExpr) AddCondition(cond *JSONPathConditionExpr) {
 	j.conditions = append(j.conditions, cond)
-}
-
-// SetLogic sets the logic type (AND/OR) for combining conditions
-func (j *JSONPathFilterExpr) SetLogic(logic LogicType) {
-	j.logic = logic
 }
 
 // SetNegate sets whether to negate the entire condition in JSONPath
@@ -143,10 +184,17 @@ func (j *JSONPathFilterExpr) Expression() (exp.Expression, error) {
 	vars := make(map[string]any)
 	conditionParts := make([]string, 0, len(j.conditions))
 
-	for i, cond := range j.conditions {
-		// Set variable name
-		varName := fmt.Sprintf("v%d", i)
-		cond.SetVarName(varName)
+	varIndex := 0
+	for _, cond := range j.conditions {
+		// Check if this operator needs a variable (not prefix, suffix, ilike, contains, isNull)
+		needsVariable := cond.operator != "prefix" && cond.operator != "suffix" &&
+			cond.operator != "ilike" && cond.operator != "contains" && cond.operator != "isNull"
+
+		if needsVariable {
+			varName := fmt.Sprintf("v%d", varIndex)
+			cond.SetVarName(varName)
+			varIndex++
+		}
 
 		// Get condition string
 		condStr, val, err := cond.ToJSONPathString()
@@ -156,13 +204,13 @@ func (j *JSONPathFilterExpr) Expression() (exp.Expression, error) {
 
 		conditionParts = append(conditionParts, condStr)
 		if val != nil {
-			vars[varName] = val
+			vars[cond.varName] = val
 		}
 	}
 
 	// Combine conditions with logic operator
 	connector := " && "
-	if j.logic == LogicOr {
+	if j.logic == exp.OrType {
 		connector = " || "
 	}
 
@@ -178,12 +226,7 @@ func (j *JSONPathFilterExpr) Expression() (exp.Expression, error) {
 			}
 			combinedConditions += part
 		}
-		// For OR logic with multiple conditions, add extra parentheses when requested (for logical OR operator)
-		if j.logic == LogicOr && j.wrapORInPar {
-			conditionStr = fmt.Sprintf("(%s)", combinedConditions)
-		} else {
-			conditionStr = combinedConditions
-		}
+		conditionStr = combinedConditions
 	}
 
 	// Apply negation if requested (negate inside JSONPath, not SQL wrapper)
@@ -232,13 +275,13 @@ type JSONArrayFilterExpr struct {
 	column     exp.IdentifierExpression
 	arrayPath  string
 	conditions []*JSONPathConditionExpr
-	mode       ArrayFilterMode
+	mode       arrayFilterMode
 	dialect    Dialect
 }
 
 // NewJSONArrayFilter creates a new array filter expression
-func NewJSONArrayFilter(col exp.IdentifierExpression, arrayPath string, mode ArrayFilterMode, dialect Dialect) (*JSONArrayFilterExpr, error) {
-	if err := ValidatePathV2(arrayPath); err != nil {
+func NewJSONArrayFilter(col exp.IdentifierExpression, arrayPath string, mode arrayFilterMode, dialect Dialect) (*JSONArrayFilterExpr, error) {
+	if err := validatePath(arrayPath); err != nil {
 		return nil, err
 	}
 
@@ -298,7 +341,7 @@ func (j *JSONArrayFilterExpr) Expression() (exp.Expression, error) {
 	}
 
 	var jsonPath string
-	if j.mode == ArrayAny {
+	if j.mode == arrayAny {
 		// For 'any': at least one element matches
 		jsonPath = fmt.Sprintf("$ ? (%s)", combinedConditions)
 		return j.dialect.JSONPathExists(j.column, jsonPath, vars), nil
@@ -366,12 +409,12 @@ func (j *JSONNullCheckExpr) Expression() (exp.Expression, error) {
 // JSONLogicalExpr combines multiple expressions with AND/OR/NOT
 type JSONLogicalExpr struct {
 	expressions []exp.Expression
-	logic       LogicType
+	logic       exp.ExpressionListType
 	negate      bool
 }
 
 // NewJSONLogicalExpr creates a new logical expression combiner
-func NewJSONLogicalExpr(logic LogicType) *JSONLogicalExpr {
+func NewJSONLogicalExpr(logic exp.ExpressionListType) *JSONLogicalExpr {
 	return &JSONLogicalExpr{
 		expressions: make([]exp.Expression, 0),
 		logic:       logic,
@@ -396,14 +439,8 @@ func (j *JSONLogicalExpr) Expression() (exp.Expression, error) {
 	}
 
 	// Build expression list
-	var result exp.Expression
-	if j.logic == LogicAnd {
-		expList := exp.NewExpressionList(exp.AndType, j.expressions...)
-		result = expList
-	} else {
-		expList := exp.NewExpressionList(exp.OrType, j.expressions...)
-		result = expList
-	}
+	expList := exp.NewExpressionList(j.logic, j.expressions...)
+	var result exp.Expression = expList
 
 	// Apply negation if requested
 	if j.negate {
@@ -411,4 +448,29 @@ func (j *JSONLogicalExpr) Expression() (exp.Expression, error) {
 	}
 
 	return result, nil
+}
+
+// isOperatorMap checks if a map contains operators (eq, neq, etc.) vs nested field filters
+func isOperatorMap(m map[string]any) bool {
+	for k := range m {
+		if knownOperators[k] {
+			return true
+		}
+	}
+	return false
+}
+
+// toJsonPathOp converts a GraphQL operator to JSONPath operator
+func toJsonPathOp(op string) (string, error) {
+	if jpOp, ok := jsonPathOpMap[op]; ok {
+		return jpOp, nil
+	}
+	return "", fmt.Errorf("unsupported operator: %s", op)
+}
+
+// escapeRegexPattern escapes special regex characters to prevent injection
+func escapeRegexPattern(pattern string) string {
+	// Escape special regex characters: . ^ $ * + ? { } [ ] \ | ( )
+	// Use regexp.QuoteMeta which escapes all special characters
+	return regexp.QuoteMeta(pattern)
 }

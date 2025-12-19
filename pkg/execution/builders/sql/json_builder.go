@@ -106,56 +106,6 @@ func (b *JSONFilterBuilder) Contains(value map[string]any) *JSONFilterBuilder {
 	return b
 }
 
-// ArrayAny adds an array filter where at least one element matches
-func (b *JSONFilterBuilder) ArrayAny(arrayPath string, conditionFn func(*JSONFilterBuilder)) *JSONFilterBuilder {
-	// Create a new builder for array conditions
-	subBuilder := NewJSONFilterBuilder(b.column, b.dialect)
-	conditionFn(subBuilder)
-
-	// Build the array filter
-	arrayFilter, err := NewJSONArrayFilter(b.column, arrayPath, ArrayAny, b.dialect)
-	if err != nil {
-		b.exprs = append(b.exprs, nil)
-		return b
-	}
-
-	// Extract conditions from sub-builder and add to array filter
-	// Note: This is a simplified implementation
-	// The full implementation would need to properly extract the conditions
-	// For now, we'll create a simpler version
-
-	expr, err := arrayFilter.Expression()
-	if err != nil {
-		b.exprs = append(b.exprs, nil)
-		return b
-	}
-
-	b.currentAnd = append(b.currentAnd, expr)
-	return b
-}
-
-// ArrayAll adds an array filter where all elements match
-func (b *JSONFilterBuilder) ArrayAll(arrayPath string, conditionFn func(*JSONFilterBuilder)) *JSONFilterBuilder {
-	// Similar to ArrayAny but with ArrayAll mode
-	subBuilder := NewJSONFilterBuilder(b.column, b.dialect)
-	conditionFn(subBuilder)
-
-	arrayFilter, err := NewJSONArrayFilter(b.column, arrayPath, ArrayAll, b.dialect)
-	if err != nil {
-		b.exprs = append(b.exprs, nil)
-		return b
-	}
-
-	expr, err := arrayFilter.Expression()
-	if err != nil {
-		b.exprs = append(b.exprs, nil)
-		return b
-	}
-
-	b.currentAnd = append(b.currentAnd, expr)
-	return b
-}
-
 // Or flushes current AND conditions and starts a new OR group
 func (b *JSONFilterBuilder) Or() *JSONFilterBuilder {
 	// Flush current AND conditions
@@ -163,7 +113,7 @@ func (b *JSONFilterBuilder) Or() *JSONFilterBuilder {
 		if len(b.currentAnd) == 1 {
 			b.currentOr = append(b.currentOr, b.currentAnd[0])
 		} else {
-			andExpr := NewJSONLogicalExpr(LogicAnd)
+			andExpr := NewJSONLogicalExpr(exp.AndType)
 			for _, expr := range b.currentAnd {
 				andExpr.AddExpression(expr)
 			}
@@ -191,7 +141,7 @@ func (b *JSONFilterBuilder) Not(conditionFn func(*JSONFilterBuilder)) *JSONFilte
 	}
 
 	// Wrap in NOT
-	notExpr := NewJSONLogicalExpr(LogicAnd)
+	notExpr := NewJSONLogicalExpr(exp.AndType)
 	notExpr.AddExpression(subExpr)
 	notExpr.SetNegate(true)
 
@@ -225,7 +175,7 @@ func (b *JSONFilterBuilder) Build() (exp.Expression, error) {
 		if len(b.currentAnd) == 1 {
 			b.currentOr = append(b.currentOr, b.currentAnd[0])
 		} else {
-			andExpr := NewJSONLogicalExpr(LogicAnd)
+			andExpr := NewJSONLogicalExpr(exp.AndType)
 			for _, expr := range b.currentAnd {
 				if expr == nil {
 					return nil, fmt.Errorf("invalid expression in builder")
@@ -250,7 +200,7 @@ func (b *JSONFilterBuilder) Build() (exp.Expression, error) {
 	}
 
 	if len(b.currentOr) > 1 {
-		orExpr := NewJSONLogicalExpr(LogicOr)
+		orExpr := NewJSONLogicalExpr(exp.OrType)
 		for _, expr := range b.currentOr {
 			if expr == nil {
 				return nil, fmt.Errorf("invalid expression in OR group")
@@ -268,7 +218,7 @@ func (b *JSONFilterBuilder) Build() (exp.Expression, error) {
 		return b.exprs[0], nil
 	}
 
-	andExpr := NewJSONLogicalExpr(LogicAnd)
+	andExpr := NewJSONLogicalExpr(exp.AndType)
 	for _, expr := range b.exprs {
 		if expr == nil {
 			return nil, fmt.Errorf("invalid expression in builder")
@@ -289,7 +239,7 @@ func BuildSimpleFilter(col exp.IdentifierExpression, path string, operator strin
 }
 
 // BuildLogicalFilter creates a filter with AND/OR/NOT logic
-func BuildLogicalFilter(col exp.IdentifierExpression, logic LogicType, exprs []exp.Expression, negate bool) (exp.Expression, error) {
+func BuildLogicalFilter(col exp.IdentifierExpression, logic exp.ExpressionListType, exprs []exp.Expression, negate bool) (exp.Expression, error) {
 	logicalExpr := NewJSONLogicalExpr(logic)
 	for _, expr := range exprs {
 		logicalExpr.AddExpression(expr)

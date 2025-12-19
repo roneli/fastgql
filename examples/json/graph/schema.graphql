@@ -33,10 +33,8 @@ type ProductAttributes {
 type Product @generateFilterInput @table(name: "products", schema: "app") {
     id: Int!
     name: String!
-    # Typed JSON field - supports nested field selection
+    # Typed JSON field - supports nested field selection and filtering
     attributes: ProductAttributes @json(column: "attributes")
-    # Dynamic JSON field - uses Map scalar
-    metadata: Map
 }
 
 type Query {

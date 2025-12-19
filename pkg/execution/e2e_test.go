@@ -328,64 +328,6 @@ func TestE2E(t *testing.T) {
 				assert.Equal(t, "Tool", result.Products[0].Name)
 			},
 		},
-
-		// JSON Filtering Tests - Map scalar (dynamic JSON)
-		{
-			Name:  "json/map_contains_simple",
-			Query: `query { products(filter: { metadata: { contains: { discount: "true" } } }) { name } }`,
-			Validate: func(t *testing.T, data json.RawMessage) {
-				var result struct {
-					Products []struct{ Name string } `json:"products"`
-				}
-				require.NoError(t, json.Unmarshal(data, &result))
-				assert.Len(t, result.Products, 2) // Widget and Gizmo have discount
-			},
-		},
-		{
-			Name:  "json/map_where_single_condition",
-			Query: `query { products(filter: { metadata: { where: [{ path: "price", gt: 100 }] } }) { name } }`,
-			Validate: func(t *testing.T, data json.RawMessage) {
-				var result struct {
-					Products []struct{ Name string } `json:"products"`
-				}
-				require.NoError(t, json.Unmarshal(data, &result))
-				assert.Len(t, result.Products, 2) // Gadget (149.99) and Device (199.99)
-			},
-		},
-		{
-			Name:  "json/map_where_multiple_conditions",
-			Query: `query { products(filter: { metadata: { where: [{ path: "price", lt: 100 }, { path: "discount", eq: "true" }] } }) { name } }`,
-			Validate: func(t *testing.T, data json.RawMessage) {
-				var result struct {
-					Products []struct{ Name string } `json:"products"`
-				}
-				require.NoError(t, json.Unmarshal(data, &result))
-				assert.Len(t, result.Products, 2) // Widget (99.99 with discount) and Gizmo (49.99 with discount)
-			},
-		},
-		{
-			Name:  "json/map_whereAny_or_conditions",
-			Query: `query { products(filter: { metadata: { whereAny: [{ path: "rating", gt: 4 }, { path: "discount", eq: "true" }] } }) { name } }`,
-			Validate: func(t *testing.T, data json.RawMessage) {
-				var result struct {
-					Products []struct{ Name string } `json:"products"`
-				}
-				require.NoError(t, json.Unmarshal(data, &result))
-				assert.Len(t, result.Products, 3) // Widget, Gizmo (discount), Device (rating 4.5)
-			},
-		},
-		{
-			Name:  "json/map_combined_contains_and_where",
-			Query: `query { products(filter: { metadata: { contains: {discount: "true"}, where: [{ path: "price", lt: 75 }] } }) { name } }`,
-			Validate: func(t *testing.T, data json.RawMessage) {
-				var result struct {
-					Products []struct{ Name string } `json:"products"`
-				}
-				require.NoError(t, json.Unmarshal(data, &result))
-				assert.Len(t, result.Products, 1) // Only Gizmo (discount + price 49.99)
-				assert.Equal(t, "Gizmo", result.Products[0].Name)
-			},
-		},
 	}
 
 	for _, tc := range tests {

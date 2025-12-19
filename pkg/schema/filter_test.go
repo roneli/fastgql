@@ -599,6 +599,29 @@ func Test_FilterInput_JsonTypes(t *testing.T) {
 			},
 		},
 		{
+			name: "json_filter_input_uses_jsonpath_comparators",
+			schemaDefinition: `
+				type ProductAttributes {
+					color: String!
+					size: Int!
+					isActive: Boolean!
+				}
+				type Product @generateFilterInput {
+					id: ID!
+					attributes: ProductAttributes @json(column: "attributes")
+				}
+				type Query {
+					products: [Product]
+				}
+			`,
+			typeName: "ProductAttributes",
+			expectedFilters: map[string]string{
+				"color":    "JsonPathStringComparator",
+				"size":     "JsonPathIntComparator",
+				"isActive": "JsonPathBooleanComparator",
+			},
+		},
+		{
 			name: "creates_nested_filter_inputs_for_nested_json_types",
 			schemaDefinition: `
 				type Address {
@@ -624,24 +647,7 @@ func Test_FilterInput_JsonTypes(t *testing.T) {
 			},
 		},
 		{
-			name: "uses_map_comparator_for_map_scalar",
-			schemaDefinition: `
-				type Product @generateFilterInput {
-					id: ID!
-					metadata: Map
-				}
-				type Query {
-					products: [Product]
-				}
-			`,
-			typeName: "Product",
-			expectedFilters: map[string]string{
-				"id":       "IDComparator",
-				"metadata": "MapComparator",
-			},
-		},
-		{
-			name: "handles_mixed_json_and_regular_fields",
+			name: "handles_json_directive_fields",
 			schemaDefinition: `
 				type ProductAttributes {
 					color: String!
@@ -650,7 +656,6 @@ func Test_FilterInput_JsonTypes(t *testing.T) {
 					id: ID!
 					name: String!
 					attributes: ProductAttributes @json(column: "attributes")
-					metadata: Map
 				}
 				type Query {
 					products: [Product]
@@ -661,7 +666,6 @@ func Test_FilterInput_JsonTypes(t *testing.T) {
 				"id":         "IDComparator",
 				"name":       "StringComparator",
 				"attributes": "ProductAttributesFilterInput",
-				"metadata":   "MapComparator",
 			},
 		},
 	}

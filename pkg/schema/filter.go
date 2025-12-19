@@ -120,6 +120,18 @@ func resolveScalarOrEnumComparator(s *ast.Schema, field *ast.FieldDefinition, fi
 	return s.Types[fmt.Sprintf("%sComparator", fieldType.Name())]
 }
 
+// resolveJsonPathScalarOrEnumComparator resolves JSONPath-specific comparators for JSON fields
+func resolveJsonPathScalarOrEnumComparator(s *ast.Schema, field *ast.FieldDefinition, fieldType *ast.Type) *ast.Definition {
+	if IsListType(field.Type) {
+		// For arrays, we might need JsonPath*ListComparator in the future
+		// For now, return nil or handle differently
+		return nil
+	}
+	// Return JsonPath*Comparator types
+	comparatorName := fmt.Sprintf("JsonPath%sComparator", fieldType.Name())
+	return s.Types[comparatorName]
+}
+
 // resolveObjectFilterInput resolves filter input for object types in regular (non-JSON) context
 func resolveObjectFilterInput(s *ast.Schema, fieldType *ast.Type) *ast.Definition {
 	return s.Types[fmt.Sprintf("%sFilterInput", fieldType.Name())]
@@ -263,7 +275,15 @@ func createJsonTypeFilterInput(s *ast.Schema, jsonType *ast.Definition, filterIn
 
 		var fieldDef *ast.Definition
 		switch def.Kind {
-		case ast.Scalar, ast.Enum:
+		case ast.Scalar:
+			// Use JsonPath comparators for JSON fields
+			fieldDef = resolveJsonPathScalarOrEnumComparator(s, field, fieldType)
+			// If JsonPath comparator doesn't exist (e.g., for unsupported types), fall back to standard
+			if fieldDef == nil {
+				fieldDef = resolveScalarOrEnumComparator(s, field, fieldType)
+			}
+		case ast.Enum:
+			// For enums, use standard comparator (enums are just equality checks with ==)
 			fieldDef = resolveScalarOrEnumComparator(s, field, fieldType)
 		case ast.Object:
 			fieldDef = resolveJsonObjectFilterInput(s, fieldType, def)

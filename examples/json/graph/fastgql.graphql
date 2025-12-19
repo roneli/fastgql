@@ -138,24 +138,3 @@ input BooleanListComparator {
     overlap: [Boolean]
     isNull: Boolean
 }
-
-# MapComparator for dynamic JSON (Map scalar) filtering
-input MapComparator {
-    contains: Map
-    where: [MapPathCondition!]
-    whereAny: [MapPathCondition!]
-    isNull: Boolean
-}
-
-# MapPathCondition defines a single condition in a JSONPath filter
-input MapPathCondition {
-    path: String!
-    eq: String
-    neq: String
-    gt: Float
-    gte: Float
-    lt: Float
-    lte: Float
-    like: String
-    isNull: Boolean
-}

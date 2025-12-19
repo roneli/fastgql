@@ -497,19 +497,6 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 				return nil, err
 			}
 			expBuilder = expBuilder.Append(goqu.Func("NOT", filterExp))
-		case keyType.Name() == "MapComparator":
-			// Handle Map scalar filtering with JSONPath
-			kv, ok := v.(map[string]any)
-			if !ok {
-				return nil, fmt.Errorf("MapComparator value must be a map")
-			}
-			col := table.table.Col(b.CaseConverter(k))
-			// Use new expression-based conversion
-			jsonExp, err := ConvertMapComparatorToExpression(col, kv, GetSQLDialect(b.Dialect))
-			if err != nil {
-				return nil, fmt.Errorf("building JSON filter for %s: %w", k, err)
-			}
-			expBuilder = expBuilder.Append(jsonExp)
 		case strings.HasSuffix(keyType.Name(), "FilterInput"):
 			kv, ok := v.(map[string]any)
 			if !ok {
@@ -635,7 +622,7 @@ func (b Builder) buildJsonField(query *queryHelper, jsonField builders.Field) er
 	jsonCol := query.table.Col(b.CaseConverter(jsonColumnName))
 
 	// Build expression using PostgreSQL -> operator and jsonb_build_object for JSON field extraction
-	jsonObjExpr, err := buildJsonFieldObject(jsonCol, jsonField.Selections, "", b.Dialect)
+	jsonObjExpr, err := BuildJsonFieldObject(jsonCol, jsonField.Selections, b.Dialect)
 	if err != nil {
 		return fmt.Errorf("building JSON object for field %s: %w", jsonField.Name, err)
 	}

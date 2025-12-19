@@ -36,8 +36,6 @@ type Product @generateFilterInput @table(name: "products", schema: "app") {
     name: String!
     # Typed JSON field - filters like a relation but uses JSONPath under the hood
     attributes: ProductAttributes @json(column: "attributes")
-    # Dynamic JSON field - uses MapComparator
-    metadata: Map
 }
 
 type Query {
@@ -108,26 +106,6 @@ input IntComparator {
     gte: Int
     lt: Int
     lte: Int
-    isNull: Boolean
-}
-
-# MapComparator for dynamic JSON (Map scalar) filtering
-input MapComparator {
-    contains: Map
-    where: [MapPathCondition!]
-    whereAny: [MapPathCondition!]
-    isNull: Boolean
-}
-
-input MapPathCondition {
-    path: String!
-    eq: String
-    neq: String
-    gt: Float
-    gte: Float
-    lt: Float
-    lte: Float
-    like: String
     isNull: Boolean
 }
 

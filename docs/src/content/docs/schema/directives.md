@@ -221,10 +221,10 @@ type Product @generateFilterInput {
 }
 ```
 
-With `Map`, the entire JSON value is returned. Use [MapComparator](operators#mapcomparator) for runtime filtering with JSONPath expressions.
+With `Map`, the entire JSON value is returned without filtering support.
 
 **When to use which:**
-- **Typed JSON**: Known structure, type safety, IDE auto-completion, selective field extraction
-- **Map scalar**: Variable structure, runtime flexibility, arbitrary metadata
+- **Typed JSON with @json**: Known structure, type safety, IDE auto-completion, selective field extraction, filtering support
+- **Map scalar**: Variable structure, runtime flexibility, arbitrary metadata (no filtering)
 
 For a complete example, see [examples/json](https://github.com/roneli/fastgql/tree/master/examples/json).
