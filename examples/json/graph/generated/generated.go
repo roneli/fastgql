@@ -57,7 +57,6 @@ type ComplexityRoot struct {
 	Product struct {
 		Attributes func(childComplexity int) int
 		ID         func(childComplexity int) int
-		Metadata   func(childComplexity int) int
 		Name       func(childComplexity int) int
 	}
 
@@ -177,12 +176,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Product.ID(childComplexity), true
-	case "Product.metadata":
-		if e.complexity.Product.Metadata == nil {
-			break
-		}
-
-		return e.complexity.Product.Metadata(childComplexity), true
 	case "Product.name":
 		if e.complexity.Product.Name == nil {
 			break
@@ -389,8 +382,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputIDComparator,
 		ec.unmarshalInputIntComparator,
 		ec.unmarshalInputIntListComparator,
-		ec.unmarshalInputMapComparator,
-		ec.unmarshalInputMapPathCondition,
 		ec.unmarshalInputProductAttributesFilterInput,
 		ec.unmarshalInputProductDetailsFilterInput,
 		ec.unmarshalInputProductFilterInput,
@@ -481,6 +472,162 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
+directive @generateFilterInput(description: String) on OBJECT | INTERFACE
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+directive @isInterfaceFilter on INPUT_FIELD_DEFINITION
+directive @json(column: String!) on FIELD_DEFINITION
+directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+directive @typename(name: String!) on INTERFACE
+input BooleanComparator {
+	eq: Boolean
+	neq: Boolean
+	isNull: Boolean
+}
+input BooleanListComparator {
+	eq: [Boolean]
+	neq: [Boolean]
+	contains: [Boolean]
+	contained: [Boolean]
+	overlap: [Boolean]
+	isNull: Boolean
+}
+input FloatComparator {
+	eq: Float
+	neq: Float
+	gt: Float
+	gte: Float
+	lt: Float
+	lte: Float
+	isNull: Boolean
+}
+input FloatListComparator {
+	eq: [Float]
+	neq: [Float]
+	contains: [Float]
+	contained: [Float]
+	overlap: [Float]
+	isNull: Boolean
+}
+input IDComparator {
+	eq: ID
+	neq: ID
+	isNull: Boolean
+}
+input IntComparator {
+	eq: Int
+	neq: Int
+	gt: Int
+	gte: Int
+	lt: Int
+	lte: Int
+	isNull: Boolean
+}
+input IntListComparator {
+	eq: [Int]
+	neq: [Int]
+	contains: [Int]
+	contained: [Int]
+	overlap: [Int]
+	isNull: Boolean
+}
+scalar Map
+input StringComparator {
+	eq: String
+	neq: String
+	contains: [String]
+	notContains: [String]
+	like: String
+	ilike: String
+	suffix: String
+	prefix: String
+	isNull: Boolean
+}
+input StringListComparator {
+	eq: [String]
+	neq: [String]
+	contains: [String]
+	containedBy: [String]
+	overlap: [String]
+	isNull: Boolean
+}
+type _AggregateResult {
+	count: Int!
+}
+enum _OrderingTypes {
+	ASC
+	DESC
+	ASC_NULL_FIRST
+	DESC_NULL_FIRST
+	ASC_NULL_LAST
+	DESC_NULL_LAST
+}
+enum _relationType {
+	ONE_TO_ONE
+	ONE_TO_MANY
+	MANY_TO_MANY
+}
+`, BuiltIn: false},
+	{Name: "../schema.graphql", Input: `type Dimensions {
+	width: Float
+	height: Float
+	depth: Float
+}
+type Product @generateFilterInput @table(name: "products", schema: "app") {
+	id: Int!
+	name: String!
+	attributes: ProductAttributes @json(column: "attributes")
+}
+type ProductAttributes {
+	color: String
+	size: Int
+	tags: [String]
+	details: ProductDetails
+	specs: Specs
+}
+type ProductDetails {
+	manufacturer: String
+	model: String
+	warranty: WarrantyInfo
+}
+type Query {
+	products(
+		"""
+		Limit
+		"""
+		limit: Int = 100,
+		"""
+		Offset
+		"""
+		offset: Int = 0,
+		"""
+		Ordering for Product
+		"""
+		orderBy: [ProductOrdering],
+		"""
+		Filter products
+		"""
+		filter: ProductFilterInput): [Product] @generate
+	"""
+	products Aggregate
+	"""
+	_productsAggregate(groupBy: [ProductGroupBy!],
+		"""
+		Filter _productsAggregate
+		"""
+		filter: ProductFilterInput): [ProductsAggregate!]! @generate(filter: true)
+}
+type Specs {
+	weight: Float
+	dimensions: Dimensions
+}
+type WarrantyInfo {
+	years: Int
+	provider: String
+}
+`, BuiltIn: false},
 	{Name: "../fastgql_schema.graphql", Input: `"""
 Filter input for JSON type Dimensions
 """
@@ -547,7 +694,6 @@ input ProductFilterInput {
 	id: IntComparator
 	name: StringComparator
 	attributes: ProductAttributesFilterInput
-	metadata: MapComparator
 	"""
 	Logical AND of FilterInput
 	"""
@@ -573,10 +719,6 @@ enum ProductGroupBy {
 	Group by name
 	"""
 	NAME
-	"""
-	Group by metadata
-	"""
-	METADATA
 }
 """
 Ordering for Product
@@ -590,10 +732,6 @@ input ProductOrdering {
 	Order Product by name
 	"""
 	name: _OrderingTypes
-	"""
-	Order Product by metadata
-	"""
-	metadata: _OrderingTypes
 }
 """
 Aggregate Product
@@ -705,180 +843,6 @@ type _ProductSum {
 	Compute the sum for id
 	"""
 	id: Float!
-}
-`, BuiltIn: false},
-	{Name: "../fastgql.graphql", Input: `directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
-directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
-directive @generateFilterInput(description: String) on OBJECT | INTERFACE
-directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
-directive @isInterfaceFilter on INPUT_FIELD_DEFINITION
-directive @json(column: String!) on FIELD_DEFINITION
-directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
-directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
-directive @typename(name: String!) on INTERFACE
-input BooleanComparator {
-	eq: Boolean
-	neq: Boolean
-	isNull: Boolean
-}
-input BooleanListComparator {
-	eq: [Boolean]
-	neq: [Boolean]
-	contains: [Boolean]
-	contained: [Boolean]
-	overlap: [Boolean]
-	isNull: Boolean
-}
-input FloatComparator {
-	eq: Float
-	neq: Float
-	gt: Float
-	gte: Float
-	lt: Float
-	lte: Float
-	isNull: Boolean
-}
-input FloatListComparator {
-	eq: [Float]
-	neq: [Float]
-	contains: [Float]
-	contained: [Float]
-	overlap: [Float]
-	isNull: Boolean
-}
-input IDComparator {
-	eq: ID
-	neq: ID
-	isNull: Boolean
-}
-input IntComparator {
-	eq: Int
-	neq: Int
-	gt: Int
-	gte: Int
-	lt: Int
-	lte: Int
-	isNull: Boolean
-}
-input IntListComparator {
-	eq: [Int]
-	neq: [Int]
-	contains: [Int]
-	contained: [Int]
-	overlap: [Int]
-	isNull: Boolean
-}
-scalar Map
-input MapComparator {
-	contains: Map
-	where: [MapPathCondition!]
-	whereAny: [MapPathCondition!]
-	isNull: Boolean
-}
-input MapPathCondition {
-	path: String!
-	eq: String
-	neq: String
-	gt: Float
-	gte: Float
-	lt: Float
-	lte: Float
-	like: String
-	isNull: Boolean
-}
-input StringComparator {
-	eq: String
-	neq: String
-	contains: [String]
-	notContains: [String]
-	like: String
-	ilike: String
-	suffix: String
-	prefix: String
-	isNull: Boolean
-}
-input StringListComparator {
-	eq: [String]
-	neq: [String]
-	contains: [String]
-	containedBy: [String]
-	overlap: [String]
-	isNull: Boolean
-}
-type _AggregateResult {
-	count: Int!
-}
-enum _OrderingTypes {
-	ASC
-	DESC
-	ASC_NULL_FIRST
-	DESC_NULL_FIRST
-	ASC_NULL_LAST
-	DESC_NULL_LAST
-}
-enum _relationType {
-	ONE_TO_ONE
-	ONE_TO_MANY
-	MANY_TO_MANY
-}
-`, BuiltIn: false},
-	{Name: "../schema.graphql", Input: `type Dimensions {
-	width: Float
-	height: Float
-	depth: Float
-}
-type Product @generateFilterInput @table(name: "products", schema: "app") {
-	id: Int!
-	name: String!
-	attributes: ProductAttributes @json(column: "attributes")
-	metadata: Map
-}
-type ProductAttributes {
-	color: String
-	size: Int
-	tags: [String]
-	details: ProductDetails
-	specs: Specs
-}
-type ProductDetails {
-	manufacturer: String
-	model: String
-	warranty: WarrantyInfo
-}
-type Query {
-	products(
-		"""
-		Limit
-		"""
-		limit: Int = 100,
-		"""
-		Offset
-		"""
-		offset: Int = 0,
-		"""
-		Ordering for Product
-		"""
-		orderBy: [ProductOrdering],
-		"""
-		Filter products
-		"""
-		filter: ProductFilterInput): [Product] @generate
-	"""
-	products Aggregate
-	"""
-	_productsAggregate(groupBy: [ProductGroupBy!],
-		"""
-		Filter _productsAggregate
-		"""
-		filter: ProductFilterInput): [ProductsAggregate!]! @generate(filter: true)
-}
-type Specs {
-	weight: Float
-	dimensions: Dimensions
-}
-type WarrantyInfo {
-	years: Int
-	provider: String
 }
 `, BuiltIn: false},
 }
@@ -1196,35 +1160,6 @@ func (ec *executionContext) fieldContext_Product_attributes(_ context.Context, f
 				return ec.fieldContext_ProductAttributes_specs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProductAttributes", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Product_metadata(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Product_metadata,
-		func(ctx context.Context) (any, error) {
-			return obj.Metadata, nil
-		},
-		nil,
-		ec.marshalOMap2map,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Product_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Product",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Map does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1707,8 +1642,6 @@ func (ec *executionContext) fieldContext_Query_products(ctx context.Context, fie
 				return ec.fieldContext_Product_name(ctx, field)
 			case "attributes":
 				return ec.fieldContext_Product_attributes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Product_metadata(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Product", field.Name)
 		},
@@ -4131,137 +4064,6 @@ func (ec *executionContext) unmarshalInputIntListComparator(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMapComparator(ctx context.Context, obj any) (model.MapComparator, error) {
-	var it model.MapComparator
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"contains", "where", "whereAny", "isNull"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "contains":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contains"))
-			data, err := ec.unmarshalOMap2map(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Contains = data
-		case "where":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-			data, err := ec.unmarshalOMapPathCondition2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐMapPathConditionᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Where = data
-		case "whereAny":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("whereAny"))
-			data, err := ec.unmarshalOMapPathCondition2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐMapPathConditionᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.WhereAny = data
-		case "isNull":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IsNull = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputMapPathCondition(ctx context.Context, obj any) (model.MapPathCondition, error) {
-	var it model.MapPathCondition
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"path", "eq", "neq", "gt", "gte", "lt", "lte", "like", "isNull"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "path":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("path"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Path = data
-		case "eq":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Eq = data
-		case "neq":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("neq"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Neq = data
-		case "gt":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gt"))
-			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Gt = data
-		case "gte":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gte"))
-			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Gte = data
-		case "lt":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lt"))
-			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Lt = data
-		case "lte":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lte"))
-			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Lte = data
-		case "like":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Like = data
-		case "isNull":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isNull"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IsNull = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputProductAttributesFilterInput(ctx context.Context, obj any) (model.ProductAttributesFilterInput, error) {
 	var it model.ProductAttributesFilterInput
 	asMap := map[string]any{}
@@ -4407,7 +4209,7 @@ func (ec *executionContext) unmarshalInputProductFilterInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name", "attributes", "metadata", "AND", "OR", "NOT"}
+	fieldsInOrder := [...]string{"id", "name", "attributes", "AND", "OR", "NOT"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4435,13 +4237,6 @@ func (ec *executionContext) unmarshalInputProductFilterInput(ctx context.Context
 				return it, err
 			}
 			it.Attributes = data
-		case "metadata":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
-			data, err := ec.unmarshalOMapComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐMapComparator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Metadata = data
 		case "AND":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AND"))
 			data, err := ec.unmarshalOProductFilterInput2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐProductFilterInput(ctx, v)
@@ -4476,7 +4271,7 @@ func (ec *executionContext) unmarshalInputProductOrdering(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name", "metadata"}
+	fieldsInOrder := [...]string{"id", "name"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4497,13 +4292,6 @@ func (ec *executionContext) unmarshalInputProductOrdering(ctx context.Context, o
 				return it, err
 			}
 			it.Name = data
-		case "metadata":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
-			data, err := ec.unmarshalO_OrderingTypes2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋinterfaceᚋgraphᚋmodelᚐOrderingTypes(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Metadata = data
 		}
 	}
 
@@ -4836,8 +4624,6 @@ func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "attributes":
 			out.Values[i] = ec._Product_attributes(ctx, field, obj)
-		case "metadata":
-			out.Values[i] = ec._Product_metadata(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5761,11 +5547,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNMapPathCondition2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐMapPathCondition(ctx context.Context, v any) (*model.MapPathCondition, error) {
-	res, err := ec.unmarshalInputMapPathCondition(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalNProductGroupBy2githubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐProductGroupBy(ctx context.Context, v any) (model.ProductGroupBy, error) {
 	var res model.ProductGroupBy
 	err := res.UnmarshalGQL(v)
@@ -6417,32 +6198,6 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 	_ = ctx
 	res := graphql.MarshalMap(v)
 	return res
-}
-
-func (ec *executionContext) unmarshalOMapComparator2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐMapComparator(ctx context.Context, v any) (*model.MapComparator, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputMapComparator(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOMapPathCondition2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐMapPathConditionᚄ(ctx context.Context, v any) ([]*model.MapPathCondition, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []any
-	vSlice = graphql.CoerceList(v)
-	var err error
-	res := make([]*model.MapPathCondition, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNMapPathCondition2ᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐMapPathCondition(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) marshalOProduct2ᚕᚖgithubᚗcomᚋroneliᚋfastgqlᚋexamplesᚋjsonᚋgraphᚋmodelᚐProduct(ctx context.Context, sel ast.SelectionSet, v []*model.Product) graphql.Marshaler {

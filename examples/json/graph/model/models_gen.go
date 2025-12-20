@@ -8,7 +8,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/roneli/fastgql/examples/json/graph/model"
+	"github.com/roneli/fastgql/examples/interface/graph/model"
 )
 
 type Dimensions struct {
@@ -36,30 +36,10 @@ type IDComparator struct {
 	IsNull *bool   `json:"isNull,omitempty" db:"is_null"`
 }
 
-type MapComparator struct {
-	Contains map[string]any      `json:"contains,omitempty" db:"contains"`
-	Where    []*MapPathCondition `json:"where,omitempty" db:"where"`
-	WhereAny []*MapPathCondition `json:"whereAny,omitempty" db:"where_any"`
-	IsNull   *bool               `json:"isNull,omitempty" db:"is_null"`
-}
-
-type MapPathCondition struct {
-	Path   string   `json:"path" db:"path"`
-	Eq     *string  `json:"eq,omitempty" db:"eq"`
-	Neq    *string  `json:"neq,omitempty" db:"neq"`
-	Gt     *float64 `json:"gt,omitempty" db:"gt"`
-	Gte    *float64 `json:"gte,omitempty" db:"gte"`
-	Lt     *float64 `json:"lt,omitempty" db:"lt"`
-	Lte    *float64 `json:"lte,omitempty" db:"lte"`
-	Like   *string  `json:"like,omitempty" db:"like"`
-	IsNull *bool    `json:"isNull,omitempty" db:"is_null"`
-}
-
 type Product struct {
 	ID         int                `json:"id" db:"id"`
 	Name       string             `json:"name" db:"name"`
 	Attributes *ProductAttributes `json:"attributes,omitempty" db:"attributes"`
-	Metadata   map[string]any     `json:"metadata,omitempty" db:"metadata"`
 }
 
 type ProductAttributes struct {
@@ -108,7 +88,6 @@ type ProductFilterInput struct {
 	ID         *model.IntComparator          `json:"id,omitempty" db:"id"`
 	Name       *model.StringComparator       `json:"name,omitempty" db:"name"`
 	Attributes *ProductAttributesFilterInput `json:"attributes,omitempty" db:"attributes"`
-	Metadata   *MapComparator                `json:"metadata,omitempty" db:"metadata"`
 	// Logical AND of FilterInput
 	And []*ProductFilterInput `json:"AND,omitempty" db:"and"`
 	// Logical OR of FilterInput
@@ -123,8 +102,6 @@ type ProductOrdering struct {
 	ID *model.OrderingTypes `json:"id,omitempty" db:"id"`
 	// Order Product by name
 	Name *model.OrderingTypes `json:"name,omitempty" db:"name"`
-	// Order Product by metadata
-	Metadata *model.OrderingTypes `json:"metadata,omitempty" db:"metadata"`
 }
 
 // Aggregate Product
@@ -213,19 +190,16 @@ const (
 	ProductGroupByID ProductGroupBy = "ID"
 	// Group by name
 	ProductGroupByName ProductGroupBy = "NAME"
-	// Group by metadata
-	ProductGroupByMetadata ProductGroupBy = "METADATA"
 )
 
 var AllProductGroupBy = []ProductGroupBy{
 	ProductGroupByID,
 	ProductGroupByName,
-	ProductGroupByMetadata,
 }
 
 func (e ProductGroupBy) IsValid() bool {
 	switch e {
-	case ProductGroupByID, ProductGroupByName, ProductGroupByMetadata:
+	case ProductGroupByID, ProductGroupByName:
 		return true
 	}
 	return false
