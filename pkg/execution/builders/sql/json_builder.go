@@ -2,248 +2,360 @@ package sql
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/doug-martin/goqu/v9/exp"
 )
 
-// JSONFilterBuilder provides a fluent API for building JSON filter expressions
+// JSONPathExpr is a marker interface for JSONPath expression nodes
+type JSONPathExpr interface {
+	jsonPathExpr()
+}
+
+// ConditionExpr represents a single condition: @.path op $var
+type ConditionExpr struct {
+	Path   string
+	Op     JSONPathOp
+	Value  any
+	IsNull *bool  // nil = not null check, true/false for null checks
+	Regex  string // for like_regex (value embedded)
+}
+
+func (ConditionExpr) jsonPathExpr() {}
+
+// LogicalExpr combines expressions with AND/OR
+type LogicalExpr struct {
+	Op       JSONPathOp // JSONPathAnd or JSONPathOr
+	Children []JSONPathExpr
+	Negate   bool
+}
+
+func (LogicalExpr) jsonPathExpr() {}
+
+// Expression constructors - goqu style
+
+// JsonExpr creates a condition expression from path, operator, and value
+func JsonExpr(path, op string, value any) (JSONPathExpr, error) {
+	return newCondition(path, op, value)
+}
+
+// JsonOr combines expressions with OR
+func JsonOr(exprs ...JSONPathExpr) JSONPathExpr {
+	return &LogicalExpr{Op: JSONPathOr, Children: exprs}
+}
+
+// JsonAnd combines expressions with AND
+func JsonAnd(exprs ...JSONPathExpr) JSONPathExpr {
+	return &LogicalExpr{Op: JSONPathAnd, Children: exprs}
+}
+
+// JsonNot negates an expression
+func JsonNot(expr JSONPathExpr) JSONPathExpr {
+	return &LogicalExpr{Op: JSONPathAnd, Children: []JSONPathExpr{expr}, Negate: true}
+}
+
+// JsonAny creates an array "any" filter - matches if any element satisfies conditions
+func JsonAny(arrayPath string, exprs ...JSONPathExpr) JSONPathExpr {
+	inner := &LogicalExpr{Op: JSONPathAnd, Children: exprs}
+	return convertToArrayExpr(arrayPath, inner, false)
+}
+
+// JsonAll creates an array "all" filter - matches if all elements satisfy conditions
+func JsonAll(arrayPath string, exprs ...JSONPathExpr) JSONPathExpr {
+	inner := &LogicalExpr{Op: JSONPathAnd, Children: exprs}
+	return convertToArrayExpr(arrayPath, inner, true)
+}
+
+// JSONPathBuilder walks expression tree and produces JSONPath string + vars
+type JSONPathBuilder struct {
+	vars   map[string]any
+	offset int
+}
+
+// NewJSONPathBuilder creates a new builder
+func NewJSONPathBuilder() *JSONPathBuilder {
+	return &JSONPathBuilder{
+		vars:   make(map[string]any),
+		offset: 0,
+	}
+}
+
+// Build converts an expression tree to a JSONPath condition string
+func (b *JSONPathBuilder) Build(expr JSONPathExpr) string {
+	switch e := expr.(type) {
+	case *ConditionExpr:
+		return b.buildCondition(e)
+	case *LogicalExpr:
+		return b.buildLogical(e)
+	default:
+		return ""
+	}
+}
+
+func (b *JSONPathBuilder) buildCondition(c *ConditionExpr) string {
+	if c.IsNull != nil {
+		if *c.IsNull {
+			return fmt.Sprintf("@.%s == null", c.Path)
+		}
+		return fmt.Sprintf("@.%s != null", c.Path)
+	}
+
+	if c.Regex != "" {
+		return fmt.Sprintf("@.%s %s %s", c.Path, JSONPathLikeRegex, c.Regex)
+	}
+
+	varName := fmt.Sprintf("v%d", b.offset)
+	b.vars[varName] = c.Value
+	b.offset++
+	return fmt.Sprintf("@.%s %s $%s", c.Path, c.Op, varName)
+}
+
+func (b *JSONPathBuilder) buildLogical(l *LogicalExpr) string {
+	if len(l.Children) == 0 {
+		return ""
+	}
+
+	parts := make([]string, 0, len(l.Children))
+	for _, child := range l.Children {
+		if part := b.Build(child); part != "" {
+			parts = append(parts, part)
+		}
+	}
+
+	if len(parts) == 0 {
+		return ""
+	}
+
+	result := strings.Join(parts, fmt.Sprintf(" %s ", l.Op))
+
+	if l.Op == JSONPathOr && len(parts) > 1 {
+		result = "(" + result + ")"
+	}
+
+	if l.Negate {
+		result = "!(" + result + ")"
+	}
+
+	return result
+}
+
+// Vars returns the collected variables
+func (b *JSONPathBuilder) Vars() map[string]any {
+	return b.vars
+}
+
+// JSONFilterBuilder builds JSON filter expressions.
+// All conditions are combined into a single jsonb_path_exists() call.
 type JSONFilterBuilder struct {
-	column     exp.IdentifierExpression
-	dialect    Dialect
-	exprs      []exp.Expression
-	currentAnd []exp.Expression // Accumulator for AND conditions
-	currentOr  []exp.Expression // Accumulator for OR conditions
+	column  exp.IdentifierExpression
+	dialect Dialect
+	exprs   []JSONPathExpr
+	err     error
 }
 
 // NewJSONFilterBuilder creates a new JSON filter builder
 func NewJSONFilterBuilder(col exp.IdentifierExpression, dialect Dialect) *JSONFilterBuilder {
 	return &JSONFilterBuilder{
-		column:     col,
-		dialect:    dialect,
-		exprs:      make([]exp.Expression, 0),
-		currentAnd: make([]exp.Expression, 0),
-		currentOr:  make([]exp.Expression, 0),
+		column:  col,
+		dialect: dialect,
+		exprs:   make([]JSONPathExpr, 0),
 	}
 }
 
-// Where adds a condition with a specific operator
-func (b *JSONFilterBuilder) Where(path string, operator string, value any) *JSONFilterBuilder {
-	cond, err := NewJSONPathCondition(path, operator, value)
-	if err != nil {
-		// Store error for Build() to handle
-		b.exprs = append(b.exprs, nil)
+// Where adds one or more expressions (AND'd together by default)
+func (b *JSONFilterBuilder) Where(exprs ...JSONPathExpr) *JSONFilterBuilder {
+	if b.err != nil {
 		return b
 	}
-
-	// Create a filter with this single condition
-	filter := NewJSONPathFilter(b.column, b.dialect)
-	filter.AddCondition(cond)
-	expr, err := filter.Expression()
-	if err != nil {
-		b.exprs = append(b.exprs, nil)
-		return b
-	}
-
-	b.currentAnd = append(b.currentAnd, expr)
+	b.exprs = append(b.exprs, exprs...)
 	return b
 }
 
-// WhereNull adds a NULL check condition
-func (b *JSONFilterBuilder) WhereNull(path string) *JSONFilterBuilder {
-	return b.Where(path, "isNull", true)
+// WhereOp adds a condition with path, operator, and value
+func (b *JSONFilterBuilder) WhereOp(path, op string, value any) *JSONFilterBuilder {
+	if b.err != nil {
+		return b
+	}
+	cond, err := newCondition(path, op, value)
+	if err != nil {
+		b.err = err
+		return b
+	}
+	b.exprs = append(b.exprs, cond)
+	return b
 }
 
-// WhereNotNull adds a NOT NULL check condition
-func (b *JSONFilterBuilder) WhereNotNull(path string) *JSONFilterBuilder {
-	return b.Where(path, "isNull", false)
-}
-
-// Eq is a convenience method for equality
+// Eq adds an equality condition
 func (b *JSONFilterBuilder) Eq(path string, value any) *JSONFilterBuilder {
-	return b.Where(path, "eq", value)
+	return b.WhereOp(path, "eq", value)
 }
 
-// Neq is a convenience method for inequality
+// Neq adds an inequality condition
 func (b *JSONFilterBuilder) Neq(path string, value any) *JSONFilterBuilder {
-	return b.Where(path, "neq", value)
+	return b.WhereOp(path, "neq", value)
 }
 
-// Gt is a convenience method for greater than
+// Gt adds a greater-than condition
 func (b *JSONFilterBuilder) Gt(path string, value any) *JSONFilterBuilder {
-	return b.Where(path, "gt", value)
+	return b.WhereOp(path, "gt", value)
 }
 
-// Gte is a convenience method for greater than or equal
+// Gte adds a greater-than-or-equal condition
 func (b *JSONFilterBuilder) Gte(path string, value any) *JSONFilterBuilder {
-	return b.Where(path, "gte", value)
+	return b.WhereOp(path, "gte", value)
 }
 
-// Lt is a convenience method for less than
+// Lt adds a less-than condition
 func (b *JSONFilterBuilder) Lt(path string, value any) *JSONFilterBuilder {
-	return b.Where(path, "lt", value)
+	return b.WhereOp(path, "lt", value)
 }
 
-// Lte is a convenience method for less than or equal
+// Lte adds a less-than-or-equal condition
 func (b *JSONFilterBuilder) Lte(path string, value any) *JSONFilterBuilder {
-	return b.Where(path, "lte", value)
+	return b.WhereOp(path, "lte", value)
 }
 
-// Like is a convenience method for pattern matching
+// Like adds a regex pattern match condition
 func (b *JSONFilterBuilder) Like(path string, pattern string) *JSONFilterBuilder {
-	return b.Where(path, "like", pattern)
+	return b.WhereOp(path, "like", pattern)
 }
 
-// Contains adds a containment check (@> operator)
-func (b *JSONFilterBuilder) Contains(value map[string]any) *JSONFilterBuilder {
-	containsExpr := NewJSONContains(b.column, value, b.dialect)
-	expr, err := containsExpr.Expression()
-	if err != nil {
-		b.exprs = append(b.exprs, nil)
-		return b
-	}
-
-	b.currentAnd = append(b.currentAnd, expr)
-	return b
+// Prefix adds a prefix match condition
+func (b *JSONFilterBuilder) Prefix(path string, prefix string) *JSONFilterBuilder {
+	return b.WhereOp(path, "prefix", prefix)
 }
 
-// Or flushes current AND conditions and starts a new OR group
-func (b *JSONFilterBuilder) Or() *JSONFilterBuilder {
-	// Flush current AND conditions
-	if len(b.currentAnd) > 0 {
-		if len(b.currentAnd) == 1 {
-			b.currentOr = append(b.currentOr, b.currentAnd[0])
-		} else {
-			andExpr := NewJSONLogicalExpr(exp.AndType)
-			for _, expr := range b.currentAnd {
-				andExpr.AddExpression(expr)
-			}
-			combined, err := andExpr.Expression()
-			if err == nil {
-				b.currentOr = append(b.currentOr, combined)
-			}
-		}
-		b.currentAnd = make([]exp.Expression, 0)
-	}
-	return b
+// Suffix adds a suffix match condition
+func (b *JSONFilterBuilder) Suffix(path string, suffix string) *JSONFilterBuilder {
+	return b.WhereOp(path, "suffix", suffix)
 }
 
-// Not wraps a set of conditions in a NOT operator
-func (b *JSONFilterBuilder) Not(conditionFn func(*JSONFilterBuilder)) *JSONFilterBuilder {
-	// Create a sub-builder
-	subBuilder := NewJSONFilterBuilder(b.column, b.dialect)
-	conditionFn(subBuilder)
-
-	// Build the sub-expression
-	subExpr, err := subBuilder.Build()
-	if err != nil {
-		b.exprs = append(b.exprs, nil)
-		return b
-	}
-
-	// Wrap in NOT
-	notExpr := NewJSONLogicalExpr(exp.AndType)
-	notExpr.AddExpression(subExpr)
-	notExpr.SetNegate(true)
-
-	combined, err := notExpr.Expression()
-	if err != nil {
-		b.exprs = append(b.exprs, nil)
-		return b
-	}
-
-	b.currentAnd = append(b.currentAnd, combined)
-	return b
+// Contains adds a substring match condition
+func (b *JSONFilterBuilder) Contains(path string, substr string) *JSONFilterBuilder {
+	return b.WhereOp(path, "contains", substr)
 }
 
-// IsNull adds a NULL check on the column itself
-func (b *JSONFilterBuilder) IsNull(isNull bool) *JSONFilterBuilder {
-	nullCheck := NewJSONNullCheck(b.column, isNull, b.dialect)
-	expr, err := nullCheck.Expression()
-	if err != nil {
-		b.exprs = append(b.exprs, nil)
-		return b
-	}
-
-	b.currentAnd = append(b.currentAnd, expr)
-	return b
+// ILike adds a case-insensitive pattern match condition
+func (b *JSONFilterBuilder) ILike(path string, pattern string) *JSONFilterBuilder {
+	return b.WhereOp(path, "ilike", pattern)
 }
 
-// Build finalizes and returns the expression
+// IsNull adds a null check condition
+func (b *JSONFilterBuilder) IsNull(path string) *JSONFilterBuilder {
+	return b.WhereOp(path, "isNull", true)
+}
+
+// IsNotNull adds a not-null check condition
+func (b *JSONFilterBuilder) IsNotNull(path string) *JSONFilterBuilder {
+	return b.WhereOp(path, "isNull", false)
+}
+
+// Build finalizes and returns the goqu expression
 func (b *JSONFilterBuilder) Build() (exp.Expression, error) {
-	// Flush any remaining AND conditions
-	if len(b.currentAnd) > 0 {
-		if len(b.currentAnd) == 1 {
-			b.currentOr = append(b.currentOr, b.currentAnd[0])
-		} else {
-			andExpr := NewJSONLogicalExpr(exp.AndType)
-			for _, expr := range b.currentAnd {
-				if expr == nil {
-					return nil, fmt.Errorf("invalid expression in builder")
-				}
-				andExpr.AddExpression(expr)
-			}
-			combined, err := andExpr.Expression()
-			if err != nil {
-				return nil, err
-			}
-			b.currentOr = append(b.currentOr, combined)
-		}
+	if b.err != nil {
+		return nil, b.err
 	}
 
-	// Combine OR expressions
-	if len(b.currentOr) == 0 && len(b.exprs) == 0 {
+	if len(b.exprs) == 0 {
 		return nil, fmt.Errorf("no conditions to build")
 	}
 
-	if len(b.currentOr) == 1 {
-		return b.currentOr[0], nil
+	// Wrap all expressions in AND
+	root := &LogicalExpr{Op: JSONPathAnd, Children: b.exprs}
+
+	builder := NewJSONPathBuilder()
+	condStr := builder.Build(root)
+
+	if condStr == "" {
+		return nil, fmt.Errorf("no valid conditions")
 	}
 
-	if len(b.currentOr) > 1 {
-		orExpr := NewJSONLogicalExpr(exp.OrType)
-		for _, expr := range b.currentOr {
-			if expr == nil {
-				return nil, fmt.Errorf("invalid expression in OR group")
+	jsonPath := fmt.Sprintf("$ ? (%s)", condStr)
+	return b.dialect.JSONPathExists(b.column, jsonPath, builder.Vars()), nil
+}
+
+func convertToArrayExpr(arrayPath string, expr *LogicalExpr, invert bool) JSONPathExpr {
+	children := make([]JSONPathExpr, 0, len(expr.Children))
+
+	for _, child := range expr.Children {
+		switch c := child.(type) {
+		case *ConditionExpr:
+			newPath := arrayPath + "[*]"
+			if c.Path != "" {
+				newPath = arrayPath + "[*]." + c.Path
 			}
-			orExpr.AddExpression(expr)
+
+			newCond := &ConditionExpr{
+				Path:   newPath,
+				Op:     c.Op,
+				Value:  c.Value,
+				IsNull: c.IsNull,
+				Regex:  c.Regex,
+			}
+
+			if invert && c.Op != "" {
+				if inverted, ok := invertedJSONPathOp[c.Op]; ok {
+					newCond.Op = inverted
+				}
+			}
+
+			children = append(children, newCond)
+
+		case *LogicalExpr:
+			children = append(children, convertToArrayExpr(arrayPath, c, invert))
 		}
-		return orExpr.Expression()
 	}
 
-	// Fallback to exprs if no OR groups
-	if len(b.exprs) == 1 {
-		if b.exprs[0] == nil {
-			return nil, fmt.Errorf("invalid expression")
-		}
-		return b.exprs[0], nil
+	return &LogicalExpr{
+		Op:       expr.Op,
+		Children: children,
+		Negate:   invert,
 	}
-
-	andExpr := NewJSONLogicalExpr(exp.AndType)
-	for _, expr := range b.exprs {
-		if expr == nil {
-			return nil, fmt.Errorf("invalid expression in builder")
-		}
-		andExpr.AddExpression(expr)
-	}
-	return andExpr.Expression()
 }
 
-// Helper method for creating simple filters
-// This is used by the conversion layer
+// newCondition creates a ConditionExpr for a field and operator
+func newCondition(fieldPath, op string, value any) (*ConditionExpr, error) {
+	switch op {
+	case "isNull":
+		isNull, ok := value.(bool)
+		if !ok {
+			return nil, fmt.Errorf("isNull value must be a boolean")
+		}
+		return &ConditionExpr{Path: fieldPath, IsNull: &isNull}, nil
 
-// BuildSimpleFilter creates a filter with a single condition
-func BuildSimpleFilter(col exp.IdentifierExpression, path string, operator string, value any, dialect Dialect) (exp.Expression, error) {
-	return NewJSONFilterBuilder(col, dialect).
-		Where(path, operator, value).
-		Build()
-}
+	case "prefix":
+		strVal, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("prefix value must be a string")
+		}
+		return &ConditionExpr{Path: fieldPath, Regex: `"^` + escapeRegexPattern(strVal) + `"`}, nil
 
-// BuildLogicalFilter creates a filter with AND/OR/NOT logic
-func BuildLogicalFilter(col exp.IdentifierExpression, logic exp.ExpressionListType, exprs []exp.Expression, negate bool) (exp.Expression, error) {
-	logicalExpr := NewJSONLogicalExpr(logic)
-	for _, expr := range exprs {
-		logicalExpr.AddExpression(expr)
+	case "suffix":
+		strVal, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("suffix value must be a string")
+		}
+		return &ConditionExpr{Path: fieldPath, Regex: `"` + escapeRegexPattern(strVal) + `$"`}, nil
+
+	case "ilike":
+		strVal, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("ilike value must be a string")
+		}
+		return &ConditionExpr{Path: fieldPath, Regex: `"` + escapeRegexPattern(strVal) + `" flag "i"`}, nil
+
+	case "contains":
+		strVal, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("contains value must be a string")
+		}
+		return &ConditionExpr{Path: fieldPath, Regex: `"` + escapeRegexPattern(strVal) + `"`}, nil
+
+	default:
+		jpOp, ok := graphqlToJSONPathOp[op]
+		if !ok {
+			return nil, fmt.Errorf("unsupported operator: %s", op)
+		}
+		return &ConditionExpr{Path: fieldPath, Op: jpOp, Value: value}, nil
 	}
-	logicalExpr.SetNegate(negate)
-	return logicalExpr.Expression()
 }
