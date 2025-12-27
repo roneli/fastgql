@@ -510,7 +510,8 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			}
 			ffd := astDefinition.Fields.ForName(k)
 			// Check if field has @json directive - use JSONPath filter instead of EXISTS subquery
-			if jsonDir := ffd.Directives.ForName("json"); jsonDir != nil {
+			jsonDir := schema.GetJSONDirective(ffd)
+			if jsonDir != nil {
 				col := table.table.Col(b.CaseConverter(k))
 				// Use new expression-based conversion
 				jsonExp, err := ConvertFilterMapToExpression(col, kv, GetSQLDialect(b.Dialect))
@@ -606,17 +607,17 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 	return nil
 }
 
+// buildJsonField builds a JSON field from a JSON directive, uses jsonb_build_object for JSON field extraction
 func (b Builder) buildJsonField(query *queryHelper, jsonField builders.Field) error {
 	// Get @json directive to find the column name
-	jsonDir := jsonField.Definition.Directives.ForName("json")
+	jsonDir := schema.GetJSONDirective(jsonField.Definition)
 	if jsonDir == nil {
 		return fmt.Errorf("field %s missing @json directive", jsonField.Name)
 	}
-	columnArg := jsonDir.Arguments.ForName("column")
-	if columnArg == nil {
+	if jsonDir.Column == "" {
 		return fmt.Errorf("@json directive missing 'column' argument")
 	}
-	jsonColumnName := columnArg.Value.Raw
+	jsonColumnName := jsonDir.Column
 
 	// Get the JSONB column reference from the parent table
 	jsonCol := query.table.Col(b.CaseConverter(jsonColumnName))
