@@ -77,11 +77,12 @@ directive @generateMutations(create: Boolean = True, delete: Boolean = True, upd
 
 Builder directives are used by builders to build queries based on the given GraphQL query requested.
 
-We have three builder directives:
+We have the following builder directives:
 
 * [#table](directives#table "mention")
 * [#relation](directives#relation "mention")
 * [#typename](directives#typename "mention")
+* [#json](directives#json "mention")
 * [#fastgqlfield](directives#fastgqlfield "mention")
 
 ### @table
@@ -124,7 +125,7 @@ There are three major types of database relationships:
 * <mark style="color:purple;">`ONE_TO_MANY`</mark>
 * <mark style="color:purple;">`MANY_TO_MANY`</mark>
 
-### @typename
+### @typename 
 
 The `@typename` directive is used for interface support (experimental), the typename tell fastgql builder what field in the table we should use
 to use when scanning into the original type of the interface
@@ -166,3 +167,64 @@ func (r *userResolver) FullName(ctx context.Context, obj *model.User) (string, e
     return obj.FirstName + " " + obj.LastName, nil
 }
 ```
+
+### @json
+
+The `@json` directive marks a field as stored in a PostgreSQL JSONB column, enabling type-safe filtering and efficient nested field selection.
+
+```graphql
+# Marks a field as stored in a JSONB column
+directive @json(column: String!) on FIELD_DEFINITION
+```
+
+**Arguments:**
+- `column` (required): The JSONB column name in the database table (typically snake_case)
+
+#### Typed JSON (Recommended)
+
+Use `@json` on a field with a GraphQL object type for structured JSON data:
+
+```graphql
+type ProductAttributes {
+    color: String
+    size: Int
+    details: ProductDetails
+}
+
+type ProductDetails {
+    manufacturer: String
+    model: String
+}
+
+type Product @generateFilterInput @table(name: "products") {
+    id: Int!
+    name: String!
+    attributes: ProductAttributes @json(column: "attributes")
+}
+```
+
+This enables:
+- **Type-safe filtering**: `filter: { attributes: { color: { eq: "red" } } }`
+- **Nested field selection**: Select only specific fields like `attributes { color size }`
+- Full support for standard operators (eq, neq, gt, lt, etc.) and logical operators (AND, OR, NOT)
+
+See [JSON Filtering](../../queries/filtering#json-filtering) and [JSON Field Selection](../../queries/queries#json-field-selection) for details.
+
+#### Map Scalar (Dynamic JSON)
+
+For dynamic JSON with unknown structure, use the `Map` scalar type:
+
+```graphql
+type Product @generateFilterInput {
+    id: Int!
+    metadata: Map
+}
+```
+
+With `Map`, the entire JSON value is returned without filtering support.
+
+**When to use which:**
+- **Typed JSON with @json**: Known structure, type safety, IDE auto-completion, selective field extraction, filtering support
+- **Map scalar**: Variable structure, runtime flexibility, arbitrary metadata (no filtering)
+
+For a complete example, see [examples/json](https://github.com/roneli/fastgql/tree/master/examples/json).

@@ -3,8 +3,8 @@
 internal/build/servergen-static/*
 !internal/build/servergen-static/readme.md
 
-
 docs/node_modules/*
 docs/resources/*
 docs/public/*
-docs/themes/docsy/*
+/plans
+/.cursor/analysis/

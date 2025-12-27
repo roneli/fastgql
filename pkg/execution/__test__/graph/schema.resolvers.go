@@ -51,6 +51,15 @@ func (r *queryResolver) Animals(ctx context.Context, limit *int, offset *int, or
 	return data, nil
 }
 
+// Products is the resolver for the products field.
+func (r *queryResolver) Products(ctx context.Context, limit *int, offset *int, orderBy []*model.ProductOrdering, filter *model.ProductFilterInput) ([]*model.Product, error) {
+	var data []*model.Product
+	if err := r.Executor.Query(ctx, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 // PostsAggregate is the resolver for the _postsAggregate field.
 func (r *queryResolver) PostsAggregate(ctx context.Context, groupBy []model.PostGroupBy, filter *model.PostFilterInput) ([]model.PostsAggregate, error) {
 	var data []model.PostsAggregate
@@ -87,7 +96,16 @@ func (r *queryResolver) AnimalsAggregate(ctx context.Context, groupBy []model.An
 	return data, nil
 }
 
-// Query returns generated1.QueryResolver implementation.
+// ProductsAggregate is the resolver for the _productsAggregate field.
+func (r *queryResolver) ProductsAggregate(ctx context.Context, groupBy []model.ProductGroupBy, filter *model.ProductFilterInput) ([]model.ProductsAggregate, error) {
+	var data []model.ProductsAggregate
+	if err := r.Executor.Query(ctx, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }

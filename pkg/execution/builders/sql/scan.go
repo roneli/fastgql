@@ -88,3 +88,4 @@ func getTypeName(row pgx.CollectableRow, i int, typeName string) (string, int) {
 	return "", -1
 }
 
+

@@ -1,0 +1,165 @@
+# Test schema for JSON/JSONB filtering
+
+# Product with typed JSON attributes
+type ProductDetails {
+    manufacturer: String
+    model: String
+    warranty: WarrantyInfo
+}
+
+type WarrantyInfo {
+    years: Int
+    provider: String
+}
+
+type ProductAttributes {
+    color: String
+    size: Int
+    tags: [String]
+    details: ProductDetails
+    specs: Specs
+}
+
+type Specs {
+    weight: Float
+    dimensions: Dimensions
+}
+
+type Dimensions {
+    width: Float
+    height: Float
+    depth: Float
+}
+
+type Product @generateFilterInput @table(name: "products", schema: "app") {
+    id: Int!
+    name: String!
+    # Typed JSON field - filters like a relation but uses JSONPath under the hood
+    attributes: ProductAttributes @json(column: "attributes")
+}
+
+type Query {
+    products: [Product] @generate
+}
+
+# ================== schema generation fastgql directives  ==================
+
+directive @generate(filter: Boolean = True, pagination: Boolean = True, ordering: Boolean = True, aggregate: Boolean = True, recursive: Boolean = True, filterTypeName: String) on FIELD_DEFINITION
+
+directive @generateMutations(create: Boolean = True, delete: Boolean = True, update: Boolean = True) on OBJECT
+
+directive @generateFilterInput(description: String) repeatable on OBJECT
+
+# ================== Directives supported by fastgql for Querying ==================
+
+directive @table(name: String!, dialect: String! = "postgres", schema: String = "") on OBJECT | INTERFACE
+
+directive @relation(type: _relationType!, fields: [String!]!, references: [String!]!, manyToManyTable: String = "", manyToManyFields: [String] = [], manyToManyReferences: [String] = []) on FIELD_DEFINITION
+
+directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
+
+directive @typename(name: String!) on INTERFACE
+
+# JSON directive marks a field as stored in a JSONB column
+directive @json(column: String!) on FIELD_DEFINITION
+
+# =================== Default Scalar types supported by fastgql ===================
+scalar Map
+
+# ================== Default Filter input types supported by fastgql ==================
+
+enum _relationType {
+    ONE_TO_ONE
+    ONE_TO_MANY
+    MANY_TO_MANY
+}
+
+enum _OrderingTypes {
+    ASC
+    DESC
+    ASC_NULL_FIRST
+    DESC_NULL_FIRST
+    ASC_NULL_LAST
+    DESC_NULL_LAST
+}
+
+type _AggregateResult {
+    count: Int!
+}
+
+input StringComparator {
+    eq: String
+    neq: String
+    contains: [String]
+    notContains: [String]
+    like: String
+    ilike: String
+    suffix: String
+    prefix: String
+    isNull: Boolean
+}
+
+input IntComparator {
+    eq: Int
+    neq: Int
+    gt: Int
+    gte: Int
+    lt: Int
+    lte: Int
+    isNull: Boolean
+}
+
+# Filter input for ProductAttributes (typed JSON)
+input ProductAttributesFilterInput {
+    color: StringComparator
+    size: IntComparator
+    details: ProductDetailsFilterInput
+    AND: [ProductAttributesFilterInput]
+    OR: [ProductAttributesFilterInput]
+    NOT: ProductAttributesFilterInput
+}
+
+input ProductDetailsFilterInput {
+    manufacturer: StringComparator
+    model: StringComparator
+    warranty: WarrantyInfoFilterInput
+    AND: [ProductDetailsFilterInput]
+    OR: [ProductDetailsFilterInput]
+    NOT: ProductDetailsFilterInput
+}
+
+input WarrantyInfoFilterInput {
+    years: IntComparator
+    provider: StringComparator
+    AND: [WarrantyInfoFilterInput]
+    OR: [WarrantyInfoFilterInput]
+    NOT: WarrantyInfoFilterInput
+}
+
+input SpecsFilterInput {
+    weight: FloatComparator
+    dimensions: DimensionsFilterInput
+    AND: [SpecsFilterInput]
+    OR: [SpecsFilterInput]
+    NOT: SpecsFilterInput
+}
+
+input DimensionsFilterInput {
+    width: FloatComparator
+    height: FloatComparator
+    depth: FloatComparator
+    AND: [DimensionsFilterInput]
+    OR: [DimensionsFilterInput]
+    NOT: DimensionsFilterInput
+}
+
+input FloatComparator {
+    eq: Float
+    neq: Float
+    gt: Float
+    gte: Float
+    lt: Float
+    lte: Float
+    isNull: Boolean
+}
+

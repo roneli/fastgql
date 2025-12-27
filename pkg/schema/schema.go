@@ -20,6 +20,7 @@ const (
 	skipGenerateDirectiveName = "skipGenerate"
 	tableDirectiveName        = "table"
 	relationDirectiveName     = "relation"
+	jsonDirectiveName         = "json"
 )
 
 type TableDirective struct {
@@ -50,6 +51,10 @@ type RelationDirective struct {
 	ManyToManyFields     []string
 }
 
+type JSONDirective struct {
+	Column string
+}
+
 func GetTableDirective(def *ast.Definition) (*TableDirective, error) {
 	d := def.Directives.ForName("table")
 	if d == nil {
@@ -77,6 +82,16 @@ func GetRelationDirective(field *ast.FieldDefinition) *RelationDirective {
 		ManyToManyTable:      cast.ToString(GetDirectiveValue(d, "manyToManyTable")),
 		ManyToManyFields:     cast.ToStringSlice(GetDirectiveValue(d, "manyToManyFields")),
 		ManyToManyReferences: cast.ToStringSlice(GetDirectiveValue(d, "manyToManyReferences")),
+	}
+}
+
+func GetJSONDirective(field *ast.FieldDefinition) *JSONDirective {
+	d := field.Directives.ForName(jsonDirectiveName)
+	if d == nil {
+		return nil
+	}
+	return &JSONDirective{
+		Column: cast.ToString(GetDirectiveValue(d, "column")),
 	}
 }
 

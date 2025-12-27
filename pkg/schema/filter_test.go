@@ -567,6 +567,326 @@ func Test_addFilterToMutationField(t *testing.T) {
 	}
 }
 
+// Test_FilterInput_JsonTypes tests filter generation for JSON fields
+func Test_FilterInput_JsonTypes(t *testing.T) {
+	tests := []struct {
+		name             string
+		schemaDefinition string
+		typeName         string
+		expectedFilters  map[string]string // field name -> filter type name
+	}{
+		{
+			name: "creates_filter_input_for_json_object_type",
+			schemaDefinition: `
+				type ProductAttributes {
+					color: String!
+					size: Int!
+				}
+				type Product @generateFilterInput {
+					id: ID!
+					name: String!
+					attributes: ProductAttributes @json(column: "attributes")
+				}
+				type Query {
+					products: [Product]
+				}
+			`,
+			typeName: "Product",
+			expectedFilters: map[string]string{
+				"id":         "IDComparator",
+				"name":       "StringComparator",
+				"attributes": "ProductAttributesFilterInput",
+			},
+		},
+		{
+			name: "json_filter_input_uses_jsonpath_comparators",
+			schemaDefinition: `
+				type ProductAttributes {
+					color: String!
+					size: Int!
+					isActive: Boolean!
+				}
+				type Product @generateFilterInput {
+					id: ID!
+					attributes: ProductAttributes @json(column: "attributes")
+				}
+				type Query {
+					products: [Product]
+				}
+			`,
+			typeName: "ProductAttributes",
+			expectedFilters: map[string]string{
+				"color":    "JsonPathStringComparator",
+				"size":     "JsonPathIntComparator",
+				"isActive": "JsonPathBooleanComparator",
+			},
+		},
+		{
+			name: "creates_nested_filter_inputs_for_nested_json_types",
+			schemaDefinition: `
+				type Address {
+					street: String!
+					city: String!
+				}
+				type UserProfile {
+					bio: String!
+					address: Address
+				}
+				type User @generateFilterInput {
+					id: ID!
+					profile: UserProfile @json(column: "profile")
+				}
+				type Query {
+					users: [User]
+				}
+			`,
+			typeName: "User",
+			expectedFilters: map[string]string{
+				"id":      "IDComparator",
+				"profile": "UserProfileFilterInput",
+			},
+		},
+		{
+			name: "handles_json_directive_fields",
+			schemaDefinition: `
+				type ProductAttributes {
+					color: String!
+				}
+				type Product @generateFilterInput {
+					id: ID!
+					name: String!
+					attributes: ProductAttributes @json(column: "attributes")
+				}
+				type Query {
+					products: [Product]
+				}
+			`,
+			typeName: "Product",
+			expectedFilters: map[string]string{
+				"id":         "IDComparator",
+				"name":       "StringComparator",
+				"attributes": "ProductAttributesFilterInput",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			schema := buildTestSchema(t, tt.schemaDefinition)
+
+			// Run FilterInputAugmenter
+			err := FilterInputAugmenter(schema)
+			require.NoError(t, err)
+
+			// Get the generated filter input
+			filterInputName := tt.typeName + "FilterInput"
+			filterInput, exists := schema.Types[filterInputName]
+			require.True(t, exists, "Filter input %s should exist", filterInputName)
+
+			// Check expected filter fields
+			for fieldName, expectedFilterType := range tt.expectedFilters {
+				field := filterInput.Fields.ForName(fieldName)
+				assert.NotNil(t, field, "Expected field %s to exist in %s", fieldName, filterInputName)
+				if field != nil {
+					assert.Equal(t, expectedFilterType, field.Type.Name(),
+						"Field %s should have filter type %s", fieldName, expectedFilterType)
+				}
+			}
+
+			// Verify logical operators are present
+			assert.NotNil(t, filterInput.Fields.ForName("AND"), "Expected AND operator")
+			assert.NotNil(t, filterInput.Fields.ForName("OR"), "Expected OR operator")
+			assert.NotNil(t, filterInput.Fields.ForName("NOT"), "Expected NOT operator")
+		})
+	}
+}
+
+// Test_createJsonTypeFilterInput tests the creation of filter inputs for JSON object types
+func Test_createJsonTypeFilterInput(t *testing.T) {
+	tests := []struct {
+		name             string
+		schemaDefinition string
+		jsonTypeName     string
+		expectedFields   []string
+		checkLogicalOps  bool
+	}{
+		{
+			name: "creates_filter_with_basic_scalar_fields",
+			schemaDefinition: `
+				type ProductAttributes {
+					color: String!
+					size: Int!
+					available: Boolean!
+				}
+			`,
+			jsonTypeName: "ProductAttributes",
+			expectedFields: []string{
+				"color",
+				"size",
+				"available",
+				"AND",
+				"OR",
+				"NOT",
+			},
+			checkLogicalOps: true,
+		},
+		{
+			name: "creates_filter_with_nested_object",
+			schemaDefinition: `
+				type Address {
+					street: String!
+					city: String!
+				}
+				type UserProfile {
+					bio: String!
+					address: Address
+				}
+			`,
+			jsonTypeName: "UserProfile",
+			expectedFields: []string{
+				"bio",
+				"address",
+				"AND",
+				"OR",
+				"NOT",
+			},
+			checkLogicalOps: true,
+		},
+		{
+			name: "handles_list_types",
+			schemaDefinition: `
+				type Tags {
+					names: [String!]
+					counts: [Int!]
+				}
+			`,
+			jsonTypeName: "Tags",
+			expectedFields: []string{
+				"names",
+				"counts",
+				"AND",
+				"OR",
+				"NOT",
+			},
+			checkLogicalOps: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			schema := buildTestSchema(t, tt.schemaDefinition)
+
+			jsonType := schema.Types[tt.jsonTypeName]
+			require.NotNil(t, jsonType, "JSON type %s should exist", tt.jsonTypeName)
+
+			filterInputName := tt.jsonTypeName + "FilterInput"
+
+			// Call createJsonTypeFilterInput
+			createJsonTypeFilterInput(schema, jsonType, filterInputName)
+
+			// Verify the filter input was created
+			filterInput, exists := schema.Types[filterInputName]
+			require.True(t, exists, "Filter input %s should be created", filterInputName)
+			assert.Equal(t, ast.InputObject, filterInput.Kind)
+
+			// Check expected fields
+			for _, fieldName := range tt.expectedFields {
+				field := filterInput.Fields.ForName(fieldName)
+				assert.NotNil(t, field, "Expected field %s to exist in %s", fieldName, filterInputName)
+			}
+
+			// Verify logical operators if requested
+			if tt.checkLogicalOps {
+				andField := filterInput.Fields.ForName("AND")
+				orField := filterInput.Fields.ForName("OR")
+				notField := filterInput.Fields.ForName("NOT")
+
+				assert.NotNil(t, andField, "AND operator should exist")
+				assert.NotNil(t, orField, "OR operator should exist")
+				assert.NotNil(t, notField, "NOT operator should exist")
+
+				// Verify AND/OR are arrays and NOT is single
+				if andField != nil {
+					assert.NotNil(t, andField.Type.Elem, "AND should be an array type")
+				}
+				if orField != nil {
+					assert.NotNil(t, orField.Type.Elem, "OR should be an array type")
+				}
+				if notField != nil {
+					assert.Nil(t, notField.Type.Elem, "NOT should be a single type, not an array")
+				}
+			}
+		})
+	}
+}
+
+// Test_JsonFilter_NestedObjects tests deeply nested JSON object filter generation
+func Test_JsonFilter_NestedObjects(t *testing.T) {
+	schemaDefinition := `
+		type Location {
+			lat: Float!
+			lng: Float!
+		}
+		type Address {
+			street: String!
+			location: Location
+		}
+		type UserProfile {
+			bio: String!
+			address: Address
+		}
+		type User @generateFilterInput {
+			id: ID!
+			profile: UserProfile @json(column: "profile")
+		}
+		type Query {
+			users: [User]
+		}
+	`
+
+	schema := buildTestSchema(t, schemaDefinition)
+
+	// Run FilterInputAugmenter
+	err := FilterInputAugmenter(schema)
+	require.NoError(t, err)
+
+	// Verify all nested filter inputs were created
+	filterInputs := []string{
+		"UserFilterInput",
+		"UserProfileFilterInput",
+		"AddressFilterInput",
+		"LocationFilterInput",
+	}
+
+	for _, inputName := range filterInputs {
+		filterInput, exists := schema.Types[inputName]
+		assert.True(t, exists, "Filter input %s should exist", inputName)
+		if exists {
+			assert.Equal(t, ast.InputObject, filterInput.Kind)
+			// Verify logical operators
+			assert.NotNil(t, filterInput.Fields.ForName("AND"))
+			assert.NotNil(t, filterInput.Fields.ForName("OR"))
+			assert.NotNil(t, filterInput.Fields.ForName("NOT"))
+		}
+	}
+
+	// Verify the field references are correct
+	userFilter := schema.Types["UserFilterInput"]
+	profileField := userFilter.Fields.ForName("profile")
+	require.NotNil(t, profileField)
+	assert.Equal(t, "UserProfileFilterInput", profileField.Type.Name())
+
+	profileFilter := schema.Types["UserProfileFilterInput"]
+	addressField := profileFilter.Fields.ForName("address")
+	require.NotNil(t, addressField)
+	assert.Equal(t, "AddressFilterInput", addressField.Type.Name())
+
+	addressFilter := schema.Types["AddressFilterInput"]
+	locationField := addressFilter.Fields.ForName("location")
+	require.NotNil(t, locationField)
+	assert.Equal(t, "LocationFilterInput", locationField.Type.Name())
+}
+
 // buildTestSchema is a helper to build a schema from a GraphQL SDL string
 func buildTestSchema(t *testing.T, schemaSDL string) *ast.Schema {
 	t.Helper()

@@ -32,9 +32,18 @@ directive @fastgqlField(skipSelect: Boolean = True) on FIELD_DEFINITION
 # default model is the default model that will be used to resolve the interface if none is found.
 directive @typename(name: String!) on INTERFACE
 
+# JSON directive marks a field as stored in a JSONB column
+directive @json(column: String!) on FIELD_DEFINITION
+
 # =================== Default Scalar types supported by fastgql ===================
 scalar Map
 # ================== Default Filter input types supported by fastgql ==================
+
+input IDComparator {
+    eq: ID
+    neq: ID
+    isNull: Boolean
+}
 
 enum _relationType {
     ONE_TO_ONE
@@ -127,5 +136,60 @@ input BooleanListComparator {
     contains: [Boolean]
     contained: [Boolean]
     overlap: [Boolean]
+    isNull: Boolean
+}
+
+# JSONPath-specific comparators (for @json directive fields)
+# These comparators only include operators that can be implemented in PostgreSQL JSONPath
+input JsonPathStringComparator {
+    eq: String
+    neq: String
+    gt: String
+    gte: String
+    lt: String
+    lte: String
+    like: String
+    ilike: String      # Implemented using like_regex with "i" flag
+    prefix: String    # Implemented using like_regex "^pattern"
+    suffix: String    # Implemented using like_regex "pattern$"
+    contains: String  # Implemented using like_regex "pattern" (substring)
+    isNull: Boolean
+    any: JsonPathStringComparator  # Array operator
+    all: JsonPathStringComparator  # Array operator
+}
+
+input JsonPathIntComparator {
+    eq: Int
+    neq: Int
+    gt: Int
+    gte: Int
+    lt: Int
+    lte: Int
+    isNull: Boolean
+    any: JsonPathIntComparator
+    all: JsonPathIntComparator
+}
+
+input JsonPathFloatComparator {
+    eq: Float
+    neq: Float
+    gt: Float
+    gte: Float
+    lt: Float
+    lte: Float
+    isNull: Boolean
+    any: JsonPathFloatComparator
+    all: JsonPathFloatComparator
+}
+
+input JsonPathBooleanComparator {
+    eq: Boolean
+    neq: Boolean
+    isNull: Boolean
+}
+
+input JsonPathIDComparator {
+    eq: ID
+    neq: ID
     isNull: Boolean
 }

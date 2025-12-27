@@ -401,6 +401,281 @@ func TestBuilder_Capabilities(t *testing.T) {
 	assert.Equal(t, -1, caps.MaxRelationDepth)
 }
 
+func TestBuilder_Query_JsonFiltering(t *testing.T) {
+	testCases := []TestBuilderCase{
+		{
+			Name:       "typed_json_filter",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {eq: "red"}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
+			ExpectedArguments: []interface{}{`$ ? (@.color == $v0)`, `{"v0":"red"}`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_multiple_fields",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {eq: "blue"}, size: {gt: 10}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
+			ExpectedArguments: []interface{}{`$ ? (@.color == $v0 && @.size > $v1)`, `{"v0":"blue","v1":10}`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_with_AND",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {AND: [{color: {eq: "red"}}, {size: {gt: 5}}]}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
+			ExpectedArguments: []interface{}{`$ ? (@.color == $v0 && @.size > $v1)`, `{"v0":"red","v1":5}`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_with_OR",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {OR: [{color: {eq: "red"}}, {color: {eq: "blue"}}]}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
+			ExpectedArguments: []interface{}{`$ ? ((@.color == $v0 || @.color == $v1))`, `{"v0":"red","v1":"blue"}`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_with_NOT",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {NOT: {color: {eq: "red"}}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
+			ExpectedArguments: []interface{}{`$ ? (!(@.color == $v0))`, `{"v0":"red"}`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_with_nested_logical_operators",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {AND: [{color: {eq: "red"}}, {OR: [{size: {gt: 10}}, {size: {lt: 5}}]}]}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
+			ExpectedArguments: []interface{}{`$ ? (@.color == $v0 && (@.size > $v1 || @.size < $v2))`, `{"v0":"red","v1":10,"v2":5}`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_prefix",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {prefix: "red"}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath) LIMIT $2`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "^red")`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_suffix",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {suffix: "blue"}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath) LIMIT $2`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "blue$")`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_ilike",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {ilike: "red"}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath) LIMIT $2`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "red" flag "i")`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_contains",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {contains: "ed"}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath) LIMIT $2`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "ed")`, int64(100)},
+		},
+		{
+			Name:       "typed_json_filter_multiple_new_operators",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products(filter: {attributes: {color: {prefix: "red"}, size: {gt: 10}}}) {
+					name
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name" FROM "app"."products" AS "sq0" WHERE jsonb_path_exists("sq0"."attributes", $1::jsonpath, $2::jsonb) LIMIT $3`,
+			ExpectedArguments: []interface{}{`$ ? (@.color like_regex "^red" && @.size > $v0)`, `{"v0":10}`, int64(100)},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
+				return b.Query(f)
+			})
+		})
+	}
+}
+
+func TestBuilder_Query_JsonFieldSelection(t *testing.T) {
+	testCases := []TestBuilderCase{
+		{
+			Name:       "json_field_simple_scalar",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						color
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('color', "sq0"."attributes"->$1) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $2`,
+			ExpectedArguments: []interface{}{"color", int64(100)},
+		},
+		{
+			Name:       "json_field_multiple_scalars",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						color
+						size
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('color', "sq0"."attributes"->$1, 'size', "sq0"."attributes"->$2) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $3`,
+			ExpectedArguments: []interface{}{"color", "size", int64(100)},
+		},
+		{
+			Name:       "json_field_nested_object",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						color
+						details {
+							manufacturer
+							model
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('color', "sq0"."attributes"->$1, 'details', jsonb_build_object('manufacturer', "sq0"."attributes"->$2->$3, 'model', "sq0"."attributes"->$4->$5)) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $6`,
+			ExpectedArguments: []interface{}{"color", "details", "manufacturer", "details", "model", int64(100)},
+		},
+		{
+			Name:       "json_field_deep_nesting",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						details {
+							warranty {
+								years
+								provider
+							}
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('details', jsonb_build_object('warranty', jsonb_build_object('years', "sq0"."attributes"->$1->$2->$3, 'provider', "sq0"."attributes"->$4->$5->$6))) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $7`,
+			ExpectedArguments: []interface{}{"details", "warranty", "years", "details", "warranty", "provider", int64(100)},
+		},
+		{
+			Name:       "json_field_mixed_scalar_and_nested",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						color
+						size
+						details {
+							manufacturer
+						}
+						specs {
+							weight
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('color', "sq0"."attributes"->$1, 'size', "sq0"."attributes"->$2, 'details', jsonb_build_object('manufacturer', "sq0"."attributes"->$3->$4), 'specs', jsonb_build_object('weight', "sq0"."attributes"->$5->$6)) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $7`,
+			ExpectedArguments: []interface{}{"color", "size", "details", "manufacturer", "specs", "weight", int64(100)},
+		},
+		{
+			Name:       "json_field_three_level_nesting",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						specs {
+							dimensions {
+								width
+								height
+								depth
+							}
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('specs', jsonb_build_object('dimensions', jsonb_build_object('width', "sq0"."attributes"->$1->$2->$3, 'height', "sq0"."attributes"->$4->$5->$6, 'depth', "sq0"."attributes"->$7->$8->$9))) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $10`,
+			ExpectedArguments: []interface{}{"specs", "dimensions", "width", "specs", "dimensions", "height", "specs", "dimensions", "depth", int64(100)},
+		},
+		{
+			Name:       "json_field_nested_object_all_fields",
+			SchemaFile: "testdata/schema_json.graphql",
+			GraphQLQuery: `query {
+				products {
+					name
+					attributes {
+						details {
+							manufacturer
+							model
+							warranty {
+								years
+								provider
+							}
+						}
+					}
+				}
+			}`,
+			ExpectedSQL:       `SELECT "sq0"."name" AS "name", jsonb_build_object('details', jsonb_build_object('manufacturer', "sq0"."attributes"->$1->$2, 'model', "sq0"."attributes"->$3->$4, 'warranty', jsonb_build_object('years', "sq0"."attributes"->$5->$6->$7, 'provider', "sq0"."attributes"->$8->$9->$10))) AS "attributes" FROM "app"."products" AS "sq0" LIMIT $11`,
+			ExpectedArguments: []interface{}{"details", "manufacturer", "details", "model", "details", "warranty", "years", "details", "warranty", "provider", int64(100)},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			builderTester(t, testCase, func(b sql.Builder, f builders.Field) (string, []interface{}, error) {
+				return b.Query(f)
+			})
+		})
+	}
+}
+
 func builderTester(t *testing.T, testCase TestBuilderCase, caller func(b sql.Builder, f builders.Field) (string, []interface{}, error)) {
 	fs := afero.NewOsFs()
 	data, err := afero.ReadFile(fs, testCase.SchemaFile)

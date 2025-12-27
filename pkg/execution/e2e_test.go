@@ -266,6 +266,68 @@ func TestE2E(t *testing.T) {
 				assert.Equal(t, 1, result.DeletePosts.RowsAffected)
 			},
 		},
+
+		// JSON Filtering Tests - Typed JSON (@json directive)
+		{
+			Name:  "json/typed_filter_simple_field",
+			Query: `query { products(filter: { attributes: { color: { eq: "red" } } }) { name } }`,
+			Validate: func(t *testing.T, data json.RawMessage) {
+				var result struct {
+					Products []struct{ Name string } `json:"products"`
+				}
+				require.NoError(t, json.Unmarshal(data, &result))
+				assert.Len(t, result.Products, 2) // Widget and Gizmo
+				names := []string{result.Products[0].Name, result.Products[1].Name}
+				assert.Contains(t, names, "Widget")
+				assert.Contains(t, names, "Gizmo")
+			},
+		},
+		{
+			Name:  "json/typed_filter_nested_object",
+			Query: `query { products(filter: { attributes: { details: { manufacturer: { eq: "Acme" } } } }) { name } }`,
+			Validate: func(t *testing.T, data json.RawMessage) {
+				var result struct {
+					Products []struct{ Name string } `json:"products"`
+				}
+				require.NoError(t, json.Unmarshal(data, &result))
+				assert.Len(t, result.Products, 2) // Widget and Gizmo
+			},
+		},
+		{
+			Name:  "json/typed_filter_multiple_fields",
+			Query: `query { products(filter: { attributes: { color: { eq: "blue" }, size: { gt: 15 } } }) { name } }`,
+			Validate: func(t *testing.T, data json.RawMessage) {
+				var result struct {
+					Products []struct{ Name string } `json:"products"`
+				}
+				require.NoError(t, json.Unmarshal(data, &result))
+				assert.Len(t, result.Products, 2) // Gadget (size 20) and Device (size 25)
+			},
+		},
+		{
+			Name:  "json/typed_filter_with_AND",
+			Query: `query { products(filter: { attributes: { AND: [{ color: { eq: "red" } }, { size: { gt: 12 } }] } }) { name } }`,
+			Validate: func(t *testing.T, data json.RawMessage) {
+				var result struct {
+					Products []struct{ Name string } `json:"products"`
+				}
+				require.NoError(t, json.Unmarshal(data, &result))
+				assert.Len(t, result.Products, 1) // Only Gizmo (red, size 15)
+				assert.Equal(t, "Gizmo", result.Products[0].Name)
+			},
+		},
+		{
+			Name:  "json/typed_filter_with_OR",
+			Query: `query { products(filter: { attributes: { OR: [{ color: { eq: "green" } }, { size: { lt: 10 } }] } }) { name } }`,
+			Validate: func(t *testing.T, data json.RawMessage) {
+				var result struct {
+					Products []struct{ Name string } `json:"products"`
+				}
+				require.NoError(t, json.Unmarshal(data, &result))
+				assert.Len(t, result.Products, 1) // Only Tool (green, size 5)
+				assert.Equal(t, "Tool", result.Products[0].Name)
+			},
+		},
 	}
 
 	for _, tc := range tests {

@@ -296,6 +296,11 @@ func (b Builder) buildQuery(tableDef tableDefinition, field builders.Field) (*qu
 			if err := b.buildRelationAggregate(&query, childField); err != nil {
 				return nil, fmt.Errorf("failed to build relation for %s", childField.Name)
 			}
+		case builders.TypeJson:
+			b.Logger.Debug("adding JSON field", "tableDefinition", tableDef.name, "fieldName", childField.Name)
+			if err := b.buildJsonField(&query, childField); err != nil {
+				return nil, fmt.Errorf("failed to build JSON field for %s: %w", childField.Name, err)
+			}
 		default:
 			b.Logger.Error("unknown field type", "tableDefinition", tableDef.name, "fieldName", childField.Name, "fieldType", childField.FieldType)
 			panic("unknown field type")
@@ -503,9 +508,21 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 				expBuilder = expBuilder.Append(b.buildInterfaceFilter(table, astDefinition, b.Schema.Types[strcase.ToCamel(k)], kv))
 				continue
 			}
-
 			ffd := astDefinition.Fields.ForName(k)
-			// Create a Builder
+			// Check if field has @json directive - use JSONPath filter instead of EXISTS subquery
+			jsonDir := schema.GetJSONDirective(ffd)
+			if jsonDir != nil {
+				col := table.table.Col(b.CaseConverter(k))
+				// Use new expression-based conversion
+				jsonExp, err := ConvertFilterMapToExpression(col, kv, GetSQLDialect(b.Dialect))
+				if err != nil {
+					return nil, fmt.Errorf("building JSON filter for @json field %s: %w", k, err)
+				}
+				expBuilder = expBuilder.Append(jsonExp)
+				continue
+			}
+
+			// Create a Builder for relational filter
 			rel := schema.GetRelationDirective(ffd)
 			if rel == nil {
 				return nil, fmt.Errorf("missing directive relation")
@@ -525,6 +542,7 @@ func (b Builder) buildFilterExp(table tableHelper, astDefinition *ast.Definition
 			for op := range opMap {
 				opKeys = append(opKeys, op)
 			}
+			// sort keys for consistency in query building
 			slices.Sort(opKeys)
 
 			for _, op := range opKeys {
@@ -586,6 +604,45 @@ func (b Builder) buildRelation(parentQuery *queryHelper, rf builders.Field) erro
 		parentQuery.selects = append(parentQuery.selects, column{name: rf.Name, alias: "", table: aggTableName})
 
 	}
+	return nil
+}
+
+// buildJsonField builds a JSON field from a JSON directive, uses jsonb_build_object for JSON field extraction
+func (b Builder) buildJsonField(query *queryHelper, jsonField builders.Field) error {
+	// Get @json directive to find the column name
+	jsonDir := schema.GetJSONDirective(jsonField.Definition)
+	if jsonDir == nil {
+		return fmt.Errorf("field %s missing @json directive", jsonField.Name)
+	}
+	if jsonDir.Column == "" {
+		return fmt.Errorf("@json directive missing 'column' argument")
+	}
+	jsonColumnName := jsonDir.Column
+
+	// Get the JSONB column reference from the parent table
+	jsonCol := query.table.Col(b.CaseConverter(jsonColumnName))
+
+	// Build expression using PostgreSQL -> operator and jsonb_build_object for JSON field extraction
+	jsonObjExpr, err := BuildJsonFieldObject(jsonCol, jsonField.Selections, b.Dialect)
+	if err != nil {
+		return fmt.Errorf("building JSON object for field %s: %w", jsonField.Name, err)
+	}
+
+	// Apply alias to the expression
+	aliaseableExpr, ok := jsonObjExpr.(exp.Aliaseable)
+	if !ok {
+		return fmt.Errorf("expression for field %s does not implement exp.Aliaseable", jsonField.Name)
+	}
+	aliasedExpr := aliaseableExpr.As(jsonField.Name)
+
+	// Add as a single column with the field name as alias
+	query.selects = append(query.selects, column{
+		table:      query.alias,
+		name:       jsonField.Name,
+		alias:      jsonField.Name,
+		expression: aliasedExpr,
+	})
+
 	return nil
 }
 

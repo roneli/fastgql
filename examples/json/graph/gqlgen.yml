@@ -1,0 +1,22 @@
+schema:
+  - schema.graphql
+  - ../../../pkg/schema/fastgql.graphql
+
+exec:
+  filename: graph/generated/generated.go
+  package: generated
+
+model:
+  filename: graph/model/models_gen.go
+  package: model
+
+resolver:
+  layout: follow-schema
+  dir: graph
+  package: graph
+  filename: graph/schema.resolvers.go
+  type: Resolver
+
+autobind:
+  - "github.com/roneli/fastgql/examples/json/graph/model"
+

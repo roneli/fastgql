@@ -1,4 +1,5 @@
 input ObjectFilterInput {
+    id: IDComparator
     name: StringComparator
     """
     Logical AND of FilterInput

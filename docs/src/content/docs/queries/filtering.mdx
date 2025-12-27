@@ -125,3 +125,102 @@ query ObjectFilterExample {
     }
 }
 ```
+
+## JSON Filtering
+
+FastGQL supports filtering PostgreSQL JSONB columns using two approaches: typed JSON for known structures, and Map scalar for dynamic data.
+
+:::note[Filtering vs. Field Selection]
+**Filtering** determines which rows to return based on JSON content. **Field Selection** determines which fields to extract from JSON in the response (see [JSON Field Selection](queries#json-field-selection)). Both can be used together.
+:::
+
+### Typed JSON Filtering (Recommended)
+
+Use the `@json` directive with a GraphQL object type for structured JSON with type-safe filtering:
+
+```graphql
+type ProductAttributes {
+    color: String
+    size: Int
+    details: ProductDetails
+}
+
+type ProductDetails {
+    manufacturer: String
+    year: Int
+}
+
+type Product @generateFilterInput @table(name: "products") {
+    id: Int!
+    name: String!
+    attributes: ProductAttributes @json(column: "attributes")
+}
+```
+
+**Simple filtering:**
+```graphql
+query {
+    products(filter: { attributes: { color: { eq: "red" } } }) {
+        name
+    }
+}
+```
+
+**Multiple fields (implicit AND):**
+```graphql
+query {
+    products(filter: {
+        attributes: {
+            color: { eq: "blue" },
+            size: { gt: 15 }
+        }
+    }) {
+        name
+    }
+}
+```
+
+**Logical operators:**
+
+<Tabs>
+    <TabItem label="OR">
+        ```graphql
+        products(filter: {
+            attributes: {
+                OR: [
+                    { color: { eq: "green" } },
+                    { size: { lt: 10 } }
+                ]
+            }
+        })
+        ```
+    </TabItem>
+    <TabItem label="NOT">
+        ```graphql
+        products(filter: {
+            attributes: {
+                NOT: { color: { eq: "blue" } }
+            }
+        })
+        ```
+    </TabItem>
+</Tabs>
+
+**Nested objects:**
+```graphql
+query {
+    products(filter: {
+        attributes: {
+            color: { eq: "red" },
+            details: {
+                manufacturer: { eq: "Acme" },
+                year: { gte: 2020 }
+            }
+        }
+    }) {
+        name
+    }
+}
+```
+
+For a complete example, see [examples/json](https://github.com/roneli/fastgql/tree/master/examples/json).
