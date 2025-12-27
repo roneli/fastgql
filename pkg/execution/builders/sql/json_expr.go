@@ -68,8 +68,8 @@ var knownOperators = map[string]bool{
 	"all":      true,
 }
 
-// validatePath validates a JSON path
-func validatePath(path string) error {
+// ValidatePath validates a JSON path
+func ValidatePath(path string) error {
 	if path == "" {
 		return fmt.Errorf("path cannot be empty")
 	}

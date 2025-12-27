@@ -118,7 +118,7 @@ var initCmd = &cobra.Command{
 				return err
 			}
 		}
-		if err := schema.Generate(configFilename, true, false); err != nil {
+		if err := schema.Generate(configFilename, true, false, serverFilename); err != nil {
 			fmt.Fprintln(os.Stderr, "failed to load config", err.Error())
 			os.Exit(2)
 		}

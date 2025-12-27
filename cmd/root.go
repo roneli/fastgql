@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	verbose        bool
 	configPath     string
 	configFilename string
 	schemaFilename string
@@ -22,9 +21,8 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(generateCmd, versionCmd, initCmd)
+	rootCmd.AddCommand(generateCmd, versionCmd, initCmd, importCmd)
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "path to server config")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "turns fastgql build log on")
 	initCmd.Flags().StringVarP(&schemaFilename, "schemaName", "s", "schema.graphql", "name of schema file")
 	initCmd.Flags().StringVarP(&configFilename, "configName", "n", "gqlgen.yml", "name of config file")
 	initCmd.Flags().StringVarP(&serverFilename, "serverName", "g", "server.go", "name of server file")

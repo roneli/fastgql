@@ -322,10 +322,10 @@ func parseFieldType(field *ast.Field, typeDef *ast.Definition) fieldType {
 	case strings.HasSuffix(field.Name, "Aggregate"):
 		return TypeAggregate
 	case typeDef.IsCompositeType():
-		if d := field.Definition.Directives.ForName("json"); d != nil {
+		if d := field.Definition.Directives.ForName(schema.JSONDirectiveName); d != nil {
 			return TypeJson
 		}
-		if d := field.Definition.Directives.ForName("relation"); d != nil {
+		if d := field.Definition.Directives.ForName(schema.RelationDirectiveName); d != nil {
 			return TypeRelation
 		}
 		return TypeObject

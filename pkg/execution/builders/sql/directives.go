@@ -7,6 +7,7 @@ import (
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/jinzhu/inflection"
+	schemapkg "github.com/roneli/fastgql/pkg/schema"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -61,7 +62,7 @@ func getTableName(schema *ast.Schema, typeName, fieldName string) tableDefinitio
 			objType: nil,
 		}
 	}
-	d := objType.Directives.ForName("table")
+	d := objType.Directives.ForName(schemapkg.TableDirectiveName)
 	if d == nil {
 		return tableDefinition{
 			name:    strings.ToLower(objType.Name),
@@ -69,8 +70,8 @@ func getTableName(schema *ast.Schema, typeName, fieldName string) tableDefinitio
 			objType: objType,
 		}
 	}
-	name := d.Arguments.ForName("name").Value.Raw
-	schemaValue := d.Arguments.ForName("schema")
+	name := d.Arguments.ForName(schemapkg.ArgNameTable).Value.Raw
+	schemaValue := d.Arguments.ForName(schemapkg.ArgNameSchema)
 	if schemaValue == nil {
 		return tableDefinition{
 			name:    name,

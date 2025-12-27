@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/roneli/fastgql/pkg/execution/builders"
+	"github.com/roneli/fastgql/pkg/schema"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -86,8 +87,8 @@ func (m *MultiExecutor) getDialectForType(typeDef *ast.Definition) string {
 	if typeDef == nil {
 		return m.defaultDialect
 	}
-	if d := typeDef.Directives.ForName("table"); d != nil {
-		if arg := d.Arguments.ForName("dialect"); arg != nil {
+	if d := typeDef.Directives.ForName(schema.TableDirectiveName); d != nil {
+		if arg := d.Arguments.ForName(schema.ArgNameDialect); arg != nil {
 			return arg.Value.Raw
 		}
 	}

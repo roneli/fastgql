@@ -14,7 +14,7 @@ import (
 
 // Generate generates the schema and the resolver files, if generateServer is true, it will also generate the server file.
 // if saveFiles is true, it will save the generated augmented graphql files to the disk, otherwise it the only be saved in generated code.
-func Generate(configPath string, generateServer, saveFiles bool, sources ...*ast.Source) error {
+func Generate(configPath string, generateServer, saveFiles bool, serverFilename string, sources ...*ast.Source) error {
 	log.Printf("loading config from %s", configPath)
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
@@ -27,7 +27,10 @@ func Generate(configPath string, generateServer, saveFiles bool, sources ...*ast
 		return err
 	}
 	// initialize the FastGQL plugin and add it to gqlgen
-	fgqlPlugin := NewFastGQLPlugin(cfg.Resolver.Package, "server.go", generateServer)
+	if serverFilename == "" {
+		serverFilename = "server.go"
+	}
+	fgqlPlugin := NewFastGQLPlugin(cfg.Resolver.Package, serverFilename, generateServer)
 	srcs, err := fgqlPlugin.CreateAugmented(cfg.Schema)
 	if err != nil {
 		return err

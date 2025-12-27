@@ -1,0 +1,44 @@
+type Categories @table(name: "categories", dialect: "postgres", schema: "public") @generateFilterInput {
+  id: Int!
+  name: String!
+  posts: [Posts] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_categories", manyToManyFields: ["categoryId"], manyToManyReferences: ["postId"])
+}
+
+type Posts @table(name: "posts", dialect: "postgres", schema: "public") @generateFilterInput {
+  id: Int!
+  userId: Int!
+  title: String!
+  content: String
+  attributes: Map @json(column: "attributes")
+  user: Users @relation(type: ONE_TO_ONE, fields: ["userId"], references: ["id"])
+  categories: [Categories] @relation(type: MANY_TO_MANY, fields: ["id"], references: ["id"], manyToManyTable: "posts_categories", manyToManyFields: ["postId"], manyToManyReferences: ["categoryId"])
+}
+
+type PostsCategories @table(name: "posts_categories", dialect: "postgres", schema: "public") @generateFilterInput {
+  postId: Int!
+  categoryId: Int!
+}
+
+type Profiles @table(name: "profiles", dialect: "postgres", schema: "public") @generateFilterInput {
+  id: Int!
+  userId: Int!
+  bio: String
+  user: Users @relation(type: ONE_TO_ONE, fields: ["userId"], references: ["id"])
+}
+
+type Users @table(name: "users", dialect: "postgres", schema: "public") @generateFilterInput {
+  id: Int!
+  name: String!
+  email: String!
+  metadata: Map @json(column: "metadata")
+  tags: [String]
+  posts: [Posts] @relation(type: ONE_TO_MANY, fields: ["id"], references: ["userId"])
+}
+
+type Query {
+  categories: [Categories] @generate
+  posts: [Posts] @generate
+  postsCategories: [PostsCategories] @generate
+  profiles: [Profiles] @generate
+  users: [Users] @generate
+}
