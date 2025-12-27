@@ -24,9 +24,22 @@ func ConvertFilterMapToExpression(col exp.IdentifierExpression, filterMap map[st
 		return nil, err
 	}
 
-	builder := NewJSONFilterBuilder(col, dialect)
-	builder.Where(exprs...)
-	return builder.Build()
+	if len(exprs) == 0 {
+		return nil, fmt.Errorf("no conditions to build")
+	}
+
+	// Wrap all expressions in AND
+	root := &LogicalExpr{Op: JSONPathAnd, Children: exprs}
+
+	pathBuilder := NewJSONPathBuilder()
+	condStr := pathBuilder.Build(root)
+
+	if condStr == "" {
+		return nil, fmt.Errorf("no valid conditions")
+	}
+
+	jsonPath := fmt.Sprintf("$ ? (%s)", condStr)
+	return dialect.JSONPathExists(col, jsonPath, pathBuilder.Vars()), nil
 }
 
 // buildExprs recursively converts a filter map to JSONPathExpr slice
@@ -189,12 +202,18 @@ func buildOperators(path string, opMap map[string]any) ([]JSONPathExpr, error) {
 	return exprs, nil
 }
 
+// buildNestedField recursively builds expressions for nested JSON fields
 func buildNestedField(basePath string, filterMap map[string]any) ([]JSONPathExpr, error) {
 	var exprs []JSONPathExpr
 
 	for _, field := range sortedKeys(filterMap) {
 		value := filterMap[field]
-		fullPath := basePath + "." + field
+		var fullPath string
+		if basePath == "" {
+			fullPath = field
+		} else {
+			fullPath = basePath + "." + field
+		}
 
 		opMap, ok := value.(map[string]any)
 		if !ok {
@@ -232,63 +251,18 @@ func buildArrayFilter(arrayPath string, filterMap map[string]any, isAll bool) (J
 		}
 	} else {
 		// Nested: {field: {eq: "value"}}
-		for _, field := range sortedKeys(filterMap) {
-			opMap, ok := filterMap[field].(map[string]any)
-			if !ok {
-				return nil, fmt.Errorf("field %s value must be a map", field)
-			}
-			if isOperatorMap(opMap) {
-				for _, op := range sortedKeys(opMap) {
-					expr, err := JsonExpr(field, op, opMap[op])
-					if err != nil {
-						return nil, err
-					}
-					innerExprs = append(innerExprs, expr)
-				}
-			} else {
-				nestedExprs, err := buildNestedArrayField(field, opMap)
-				if err != nil {
-					return nil, err
-				}
-				innerExprs = append(innerExprs, nestedExprs...)
-			}
+		// Use buildNestedField with empty base path since we're inside an array
+		nestedExprs, err := buildNestedField("", filterMap)
+		if err != nil {
+			return nil, err
 		}
+		innerExprs = append(innerExprs, nestedExprs...)
 	}
 
 	if isAll {
 		return JsonAll(arrayPath, innerExprs...), nil
 	}
 	return JsonAny(arrayPath, innerExprs...), nil
-}
-
-func buildNestedArrayField(basePath string, filterMap map[string]any) ([]JSONPathExpr, error) {
-	var exprs []JSONPathExpr
-
-	for _, field := range sortedKeys(filterMap) {
-		opMap, ok := filterMap[field].(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("field %s value must be a map", field)
-		}
-
-		fullPath := basePath + "." + field
-
-		if isOperatorMap(opMap) {
-			for _, op := range sortedKeys(opMap) {
-				expr, err := JsonExpr(fullPath, op, opMap[op])
-				if err != nil {
-					return nil, err
-				}
-				exprs = append(exprs, expr)
-			}
-		} else {
-			nestedExprs, err := buildNestedArrayField(fullPath, opMap)
-			if err != nil {
-				return nil, err
-			}
-			exprs = append(exprs, nestedExprs...)
-		}
-	}
-	return exprs, nil
 }
 
 func sortedKeys(m map[string]any) []string {

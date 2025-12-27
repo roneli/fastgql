@@ -22,35 +22,46 @@ func TestJSONFilterBuilder_SimpleConditions(t *testing.T) {
 		{
 			name: "single eq condition",
 			build: func(b *sql.JSONFilterBuilder) *sql.JSONFilterBuilder {
-				return b.Eq("color", "red")
+				expr, _ := sql.JsonExpr("color", "eq", "red")
+				return b.Where(expr)
 			},
 			wantErr: false,
 		},
 		{
 			name: "single neq condition",
 			build: func(b *sql.JSONFilterBuilder) *sql.JSONFilterBuilder {
-				return b.Neq("color", "blue")
+				expr, _ := sql.JsonExpr("color", "neq", "blue")
+				return b.Where(expr)
 			},
 			wantErr: false,
 		},
 		{
 			name: "comparison operators",
 			build: func(b *sql.JSONFilterBuilder) *sql.JSONFilterBuilder {
-				return b.Gt("size", 10).Gte("count", 5).Lt("price", 100).Lte("weight", 50)
+				gt, _ := sql.JsonExpr("size", "gt", 10)
+				gte, _ := sql.JsonExpr("count", "gte", 5)
+				lt, _ := sql.JsonExpr("price", "lt", 100)
+				lte, _ := sql.JsonExpr("weight", "lte", 50)
+				return b.Where(gt, gte, lt, lte)
 			},
 			wantErr: false,
 		},
 		{
 			name: "string operators",
 			build: func(b *sql.JSONFilterBuilder) *sql.JSONFilterBuilder {
-				return b.Prefix("name", "test").Suffix("email", ".com").Contains("desc", "hello")
+				prefix, _ := sql.JsonExpr("name", "prefix", "test")
+				suffix, _ := sql.JsonExpr("email", "suffix", ".com")
+				contains, _ := sql.JsonExpr("desc", "contains", "hello")
+				return b.Where(prefix, suffix, contains)
 			},
 			wantErr: false,
 		},
 		{
 			name: "null checks",
 			build: func(b *sql.JSONFilterBuilder) *sql.JSONFilterBuilder {
-				return b.IsNull("field1").IsNotNull("field2")
+				isNull, _ := sql.JsonExpr("field1", "isNull", true)
+				isNotNull, _ := sql.JsonExpr("field2", "isNull", false)
+				return b.Where(isNull, isNotNull)
 			},
 			wantErr: false,
 		},

@@ -47,3 +47,4 @@ INSERT INTO app.products (id, name, attributes, metadata) VALUES
 -- Product 4: { name: "Product 4", attributes: { specs: { dimensions: { width: 10.0, height: 20.0, depth: 5.0 } } } }
 
 
+

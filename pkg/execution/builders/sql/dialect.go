@@ -16,13 +16,8 @@ type Dialect interface {
 	JSONAgg(expr exp.Expression) exp.SQLFunctionExpression
 	// CoalesceJSON returns a fallback value if the expression is null
 	CoalesceJSON(expr exp.Expression, fallback string) exp.SQLFunctionExpression
-
 	// JSONPathExists JSON filtering methods, and checks if a JSONPath expression matches
 	JSONPathExists(col exp.Expression, path string, vars map[string]any) exp.Expression
-	// JSONContains checks if JSON contains a value (@> operator)
-	JSONContains(col exp.Expression, value string) exp.Expression
-	// JSONExtract extracts a value from JSON using a path
-	JSONExtract(col exp.Expression, path string) exp.Expression
 }
 
 // PostgresDialect implements Dialect for PostgreSQL.
@@ -54,14 +49,6 @@ func (PostgresDialect) JSONPathExists(col exp.Expression, path string, vars map[
 	}
 
 	return goqu.L("jsonb_path_exists(?, ?::jsonpath, ?::jsonb)", col, path, string(varsJSON))
-}
-
-func (PostgresDialect) JSONContains(col exp.Expression, value string) exp.Expression {
-	return goqu.L("? @> ?::jsonb", col, value)
-}
-
-func (PostgresDialect) JSONExtract(col exp.Expression, path string) exp.Expression {
-	return goqu.L("?->?", col, path)
 }
 
 // dialectRegistry maps dialect names to their implementations

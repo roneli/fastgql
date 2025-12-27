@@ -150,7 +150,6 @@ type JSONFilterBuilder struct {
 	column  exp.IdentifierExpression
 	dialect Dialect
 	exprs   []JSONPathExpr
-	err     error
 }
 
 // NewJSONFilterBuilder creates a new JSON filter builder
@@ -164,98 +163,12 @@ func NewJSONFilterBuilder(col exp.IdentifierExpression, dialect Dialect) *JSONFi
 
 // Where adds one or more expressions (AND'd together by default)
 func (b *JSONFilterBuilder) Where(exprs ...JSONPathExpr) *JSONFilterBuilder {
-	if b.err != nil {
-		return b
-	}
 	b.exprs = append(b.exprs, exprs...)
 	return b
 }
 
-// WhereOp adds a condition with path, operator, and value
-func (b *JSONFilterBuilder) WhereOp(path, op string, value any) *JSONFilterBuilder {
-	if b.err != nil {
-		return b
-	}
-	cond, err := newCondition(path, op, value)
-	if err != nil {
-		b.err = err
-		return b
-	}
-	b.exprs = append(b.exprs, cond)
-	return b
-}
-
-// Eq adds an equality condition
-func (b *JSONFilterBuilder) Eq(path string, value any) *JSONFilterBuilder {
-	return b.WhereOp(path, "eq", value)
-}
-
-// Neq adds an inequality condition
-func (b *JSONFilterBuilder) Neq(path string, value any) *JSONFilterBuilder {
-	return b.WhereOp(path, "neq", value)
-}
-
-// Gt adds a greater-than condition
-func (b *JSONFilterBuilder) Gt(path string, value any) *JSONFilterBuilder {
-	return b.WhereOp(path, "gt", value)
-}
-
-// Gte adds a greater-than-or-equal condition
-func (b *JSONFilterBuilder) Gte(path string, value any) *JSONFilterBuilder {
-	return b.WhereOp(path, "gte", value)
-}
-
-// Lt adds a less-than condition
-func (b *JSONFilterBuilder) Lt(path string, value any) *JSONFilterBuilder {
-	return b.WhereOp(path, "lt", value)
-}
-
-// Lte adds a less-than-or-equal condition
-func (b *JSONFilterBuilder) Lte(path string, value any) *JSONFilterBuilder {
-	return b.WhereOp(path, "lte", value)
-}
-
-// Like adds a regex pattern match condition
-func (b *JSONFilterBuilder) Like(path string, pattern string) *JSONFilterBuilder {
-	return b.WhereOp(path, "like", pattern)
-}
-
-// Prefix adds a prefix match condition
-func (b *JSONFilterBuilder) Prefix(path string, prefix string) *JSONFilterBuilder {
-	return b.WhereOp(path, "prefix", prefix)
-}
-
-// Suffix adds a suffix match condition
-func (b *JSONFilterBuilder) Suffix(path string, suffix string) *JSONFilterBuilder {
-	return b.WhereOp(path, "suffix", suffix)
-}
-
-// Contains adds a substring match condition
-func (b *JSONFilterBuilder) Contains(path string, substr string) *JSONFilterBuilder {
-	return b.WhereOp(path, "contains", substr)
-}
-
-// ILike adds a case-insensitive pattern match condition
-func (b *JSONFilterBuilder) ILike(path string, pattern string) *JSONFilterBuilder {
-	return b.WhereOp(path, "ilike", pattern)
-}
-
-// IsNull adds a null check condition
-func (b *JSONFilterBuilder) IsNull(path string) *JSONFilterBuilder {
-	return b.WhereOp(path, "isNull", true)
-}
-
-// IsNotNull adds a not-null check condition
-func (b *JSONFilterBuilder) IsNotNull(path string) *JSONFilterBuilder {
-	return b.WhereOp(path, "isNull", false)
-}
-
 // Build finalizes and returns the goqu expression
 func (b *JSONFilterBuilder) Build() (exp.Expression, error) {
-	if b.err != nil {
-		return nil, b.err
-	}
-
 	if len(b.exprs) == 0 {
 		return nil, fmt.Errorf("no conditions to build")
 	}
