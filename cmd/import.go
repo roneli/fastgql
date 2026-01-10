@@ -41,7 +41,11 @@ var importCmd = &cobra.Command{
 		if err := source.Connect(ctx, importConnStr); err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer source.Close()
+		defer func() {
+			if err := source.Close(); err != nil {
+				fmt.Printf("warning: failed to close database connection: %v\n", err)
+			}
+		}()
 
 		// Build options
 		options := importer.IntrospectOptions{

@@ -153,7 +153,7 @@ func setupTestDB(ctx context.Context, initSQLFile string) (*pgxpool.Pool, func()
 
 	// Remove comment lines and split into statements
 	lines := strings.Split(sql, "\n")
-	var cleanedLines []string
+	cleanedLines := make([]string, 0, len(lines))
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
 		// Skip empty lines and comment-only lines
