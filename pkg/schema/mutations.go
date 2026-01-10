@@ -10,7 +10,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-const mutationsDirectiveName = "generateMutations"
+const MutationsDirectiveName = "generateMutations"
 
 func MutationsAugmenter(s *ast.Schema) error {
 	if !schemaHasMutationDirective(s) {
@@ -26,9 +26,9 @@ func MutationsAugmenter(s *ast.Schema) error {
 		s.Types["Mutation"] = s.Mutation
 	}
 	for _, v := range s.Types {
-		d := v.Directives.ForName(mutationsDirectiveName)
+		d := v.Directives.ForName(MutationsDirectiveName)
 		if d == nil {
-			log.Printf("skipping %s, no directive %s", v.Name, mutationsDirectiveName)
+			log.Printf("skipping %s, no directive %s", v.Name, MutationsDirectiveName)
 			continue
 		}
 		log.Printf("adding mutations for %s", v.Name)
@@ -51,7 +51,7 @@ func MutationsAugmenter(s *ast.Schema) error {
 
 func schemaHasMutationDirective(s *ast.Schema) bool {
 	for _, v := range s.Types {
-		if v.Directives.ForName(mutationsDirectiveName) != nil {
+		if v.Directives.ForName(MutationsDirectiveName) != nil {
 			return true
 		}
 	}
@@ -73,7 +73,7 @@ func addDeleteMutation(s *ast.Schema, obj *ast.Definition) *ast.FieldDefinition 
 		},
 		Directives: []*ast.Directive{
 			{
-				Name: generateDirectiveName,
+				Name: GenerateDirectiveName,
 				Arguments: []*ast.Argument{
 					{
 						Name:  "filter",
@@ -87,7 +87,7 @@ func addDeleteMutation(s *ast.Schema, obj *ast.Definition) *ast.FieldDefinition 
 						},
 					},
 				},
-				Definition: s.Directives[generateDirectiveName],
+				Definition: s.Directives[GenerateDirectiveName],
 			},
 		},
 		Type: &ast.Type{
@@ -184,7 +184,7 @@ func addUpdateMutation(s *ast.Schema, obj *ast.Definition) *ast.FieldDefinition 
 		Name:        fmt.Sprintf("update%s", inflection.Plural(obj.Name)),
 		Directives: []*ast.Directive{
 			{
-				Name: generateDirectiveName,
+				Name: GenerateDirectiveName,
 				Arguments: []*ast.Argument{
 					{
 						Name:  "filter",
@@ -198,7 +198,7 @@ func addUpdateMutation(s *ast.Schema, obj *ast.Definition) *ast.FieldDefinition 
 						},
 					},
 				},
-				Definition: s.Directives[generateDirectiveName],
+				Definition: s.Directives[GenerateDirectiveName],
 			},
 		},
 		Arguments: []*ast.ArgumentDefinition{

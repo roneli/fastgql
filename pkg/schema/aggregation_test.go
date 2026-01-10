@@ -107,15 +107,15 @@ func Test_AggregationAugmenter_Unit(t *testing.T) {
 				assert.NotNil(t, aggField, "Aggregate field should be created")
 				if aggField != nil {
 					// Check that it has the generate directive for filter
-					assert.NotNil(t, aggField.Directives.ForName(generateDirectiveName))
+					assert.NotNil(t, aggField.Directives.ForName(GenerateDirectiveName))
 					// Check groupBy argument exists
 					groupByArg := aggField.Arguments.ForName("groupBy")
-				assert.NotNil(t, groupByArg, "groupBy argument should exist")
+					assert.NotNil(t, groupByArg, "groupBy argument should exist")
+				}
+			} else if tt.aggregateFieldName != "" {
+				aggField := schema.Query.Fields.ForName(tt.aggregateFieldName)
+				assert.Nil(t, aggField, "Aggregate field should not be created")
 			}
-		} else if tt.aggregateFieldName != "" {
-			aggField := schema.Query.Fields.ForName(tt.aggregateFieldName)
-			assert.Nil(t, aggField, "Aggregate field should not be created")
-		}
 		})
 	}
 }
@@ -210,10 +210,10 @@ func Test_addAggregateObject(t *testing.T) {
 // Test_addAggregationFieldToSchema tests aggregate field type creation
 func Test_addAggregationFieldToSchema(t *testing.T) {
 	tests := []struct {
-		name           string
-		aggregateType  aggregate
-		objectFields   []fieldInfo
-		expectFields   []string
+		name             string
+		aggregateType    aggregate
+		objectFields     []fieldInfo
+		expectFields     []string
 		unexpectedFields []string
 	}{
 		{
@@ -339,12 +339,12 @@ func Test_scalarAllowed(t *testing.T) {
 // Test_addAggregateGroupByObject tests groupBy enum creation
 func Test_addAggregateGroupByObject(t *testing.T) {
 	tests := []struct {
-		name           string
+		name             string
 		schemaDefinition string
-		objectType     string
-		expectedEnum   string
-		expectedValues []string
-		skipValues     []string
+		objectType       string
+		expectedEnum     string
+		expectedValues   []string
+		skipValues       []string
 	}{
 		{
 			name: "creates_groupby_enum_for_scalar_fields",
@@ -438,10 +438,10 @@ func Test_addAggregateGroupByObject(t *testing.T) {
 // Test_addRecursiveAggregation tests recursive aggregation on relations
 func Test_addRecursiveAggregation(t *testing.T) {
 	tests := []struct {
-		name              string
-		schemaDefinition  string
-		objectType        string
-		expectAggFields   []string
+		name             string
+		schemaDefinition string
+		objectType       string
+		expectAggFields  []string
 	}{
 		{
 			name: "adds_aggregate_for_relation_fields",
@@ -526,4 +526,3 @@ func buildSchemaWithFields(t *testing.T, typeName string, fields []fieldInfo) *a
 
 	return buildTestSchema(t, sdl)
 }
-

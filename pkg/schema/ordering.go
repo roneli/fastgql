@@ -10,7 +10,7 @@ import (
 
 func OrderByAugmenter(s *ast.Schema) error {
 	for _, v := range s.Query.Fields {
-		d := v.Directives.ForName(generateDirectiveName)
+		d := v.Directives.ForName(GenerateDirectiveName)
 		if d == nil {
 			continue
 		}

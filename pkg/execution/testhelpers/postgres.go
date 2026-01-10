@@ -34,7 +34,10 @@ func GetTestPostgresPool(ctx context.Context) (*pgxpool.Pool, func(), error) {
 		// In many CI/local setups (like Fedora), Ryuk might fail due to socket permissions.
 		// Users can set TESTCONTAINERS_RYUK_DISABLED=true to skip it.
 		// Alternatively, setting TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true often fixes it by running Ryuk as privileged.
-
+		if err := os.Setenv("TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED", "true"); err != nil {
+			// Log but don't fail - this is a best-effort optimization
+			fmt.Printf("warning: failed to set TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED: %v\n", err)
+		}
 		pgContainer, err := postgres.Run(ctx,
 			"postgres:16",
 			postgres.WithInitScripts(initScriptPath),

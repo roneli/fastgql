@@ -12,7 +12,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-const filterInputDirectiveName = "generateFilterInput"
+const FilterInputDirectiveName = "generateFilterInput"
 
 type createdInputDef struct {
 	object *ast.Definition
@@ -21,7 +21,7 @@ type createdInputDef struct {
 
 func FilterArgAugmenter(s *ast.Schema) error {
 	for _, v := range s.Query.Fields {
-		d := v.Directives.ForName(generateDirectiveName)
+		d := v.Directives.ForName(GenerateDirectiveName)
 		if d == nil {
 			continue
 		}
@@ -43,7 +43,7 @@ func FilterArgAugmenter(s *ast.Schema) error {
 	}
 	// add filter to mutation fields
 	for _, v := range s.Mutation.Fields {
-		d := v.Directives.ForName(generateDirectiveName)
+		d := v.Directives.ForName(GenerateDirectiveName)
 		if d == nil {
 			continue
 		}
@@ -308,7 +308,7 @@ func initInputs(s *ast.Schema) []*createdInputDef {
 	defs := make([]*createdInputDef, 0)
 	for _, obj := range s.Types {
 		// Check if object has a generateFilterInput directive
-		d := obj.Directives.ForName(filterInputDirectiveName)
+		d := obj.Directives.ForName(FilterInputDirectiveName)
 		if d == nil {
 			continue
 		}
